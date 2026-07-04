@@ -1,0 +1,16 @@
+<section class="auth-card">
+  <header class="auth-card-header">
+    <h1>{{ title }}</h1>
+    @if (subtitle) {
+      <p>{{ subtitle }}</p>
+    }
+  </header>
+
+  <div class="auth-card-body">
+    <ng-content />
+  </div>
+
+  <footer class="auth-card-footer">
+    <ng-content select="[auth-card-footer]" />
+  </footer>
+</section>

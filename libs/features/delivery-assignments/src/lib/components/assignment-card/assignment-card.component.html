@@ -1,0 +1,79 @@
+<article class="assignment-card">
+  <header class="assignment-card-header">
+    <div class="assignment-card-heading">
+      <span class="assignment-card-restaurant">{{ order?.restaurant?.name ?? 'Restaurant' }}</span>
+      @if (order?.orderNumber; as orderNumber) {
+        <span class="assignment-card-order-number">{{ orderNumber }}</span>
+      }
+    </div>
+    <lib-assignment-status-badge [status]="assignment.status" />
+  </header>
+
+  @if (pickupAddress; as address) {
+    <div class="assignment-card-address">
+      <span class="assignment-card-label">Pickup</span>
+      <span>{{ address }}</span>
+    </div>
+  }
+
+  <div class="assignment-card-address">
+    <span class="assignment-card-label">Deliver to</span>
+    @if (customerName; as name) {
+      <span class="assignment-card-customer">{{ name }}</span>
+    }
+    <span>{{ order?.deliveryAddress }}</span>
+    @if (order?.customer?.phone; as phone) {
+      <span class="assignment-card-phone">{{ phone }}</span>
+    }
+  </div>
+
+  @if (order?.notes; as notes) {
+    <div class="assignment-card-notes">
+      <span class="assignment-card-label">Delivery notes</span>
+      <span>{{ notes }}</span>
+    </div>
+  }
+
+  @if (order?.items; as items) {
+    <lib-assignment-items [items]="items" />
+  }
+
+  <div class="assignment-card-meta">
+    <span>Total <strong>₹{{ order?.totalAmount }}</strong></span>
+    <span>Delivery fee <strong>₹{{ order?.deliveryFee }}</strong></span>
+  </div>
+
+  @if (navigateTarget; as target) {
+    <a class="assignment-card-navigate" [href]="target.url" target="_blank" rel="noopener noreferrer">
+      {{ target.label }}
+    </a>
+  }
+
+  @if (actions.length) {
+    <div class="assignment-card-actions">
+      @for (action of actions; track action.key) {
+        <button
+          type="button"
+          class="assignment-card-action"
+          [class.is-danger]="action.tone === 'danger'"
+          [disabled]="isProcessing"
+          (click)="action.run()"
+        >
+          {{ action.label }}
+        </button>
+      }
+    </div>
+  }
+</article>
+
+<lib-confirm-dialog
+  [open]="rejectDialogOpen"
+  title="Reject this assignment?"
+  message="This assignment will be offered to another delivery partner."
+  confirmLabel="Reject assignment"
+  cancelLabel="Keep assignment"
+  tone="danger"
+  [busy]="isProcessing"
+  (confirmed)="confirmReject()"
+  (cancelled)="cancelReject()"
+/>

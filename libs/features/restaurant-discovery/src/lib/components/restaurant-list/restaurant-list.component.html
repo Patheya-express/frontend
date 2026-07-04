@@ -1,0 +1,17 @@
+@if (facade.loading()) {
+  <lib-skeleton [count]="6" />
+} @else if (facade.error()) {
+  <lib-error-state [message]="facade.error()!" (retry)="retry()" />
+} @else if (facade.isEmpty()) {
+  <lib-empty-state
+    title="No restaurants found"
+    message="Try adjusting your search or check back later."
+    (refresh)="retry()"
+  />
+} @else {
+  <div class="restaurant-grid">
+    @for (restaurant of facade.restaurants(); track restaurant.id) {
+      <lib-restaurant-card [restaurant]="restaurant" />
+    }
+  </div>
+}

@@ -1,0 +1,14 @@
+<section class="order-summary">
+  <h2>Your Order</h2>
+  @if (orderSummary().restaurantName) {
+    <p class="order-summary-restaurant">{{ orderSummary().restaurantName }}</p>
+  }
+
+  <div class="order-summary-items">
+    @for (item of orderSummary().items; track item.menuItemId) {
+      <lib-cart-item [item]="item" />
+    }
+  </div>
+
+  <lib-cart-summary />
+</section>

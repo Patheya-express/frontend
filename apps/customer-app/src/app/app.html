@@ -1,0 +1,9 @@
+<lib-app-shell
+  [isAuthenticated]="isAuthenticated()"
+  [cartItemCount]="cartItemCount()"
+  (logoutRequested)="onLogout()"
+  (cartToggled)="toggleCart()"
+/>
+
+<lib-cart-drawer [open]="cartOpen()" (closeRequested)="closeCart()" />
+<lib-cart-conflict-dialog />

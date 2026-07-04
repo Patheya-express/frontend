@@ -1,0 +1,42 @@
+.delivery-history-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.delivery-history-item-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.delivery-history-item-date {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-muted);
+}
+
+.delivery-history-item-address {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.delivery-history-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+
+  strong {
+    color: var(--color-text);
+  }
+}

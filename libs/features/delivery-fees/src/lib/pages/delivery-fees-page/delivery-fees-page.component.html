@@ -1,0 +1,32 @@
+<div class="delivery-fees-page">
+  <h1>Delivery Fees</h1>
+
+  @if (loading()) {
+    <lib-skeleton [count]="3" />
+  } @else if (error()) {
+    <lib-error-state [message]="error()!" (retry)="retry()" />
+  } @else {
+    <div class="delivery-fees-metrics">
+      <lib-metric-card label="Today's Delivery Fees" [value]="'₹' + state().metrics.todayFees.toFixed(2)" />
+      <lib-metric-card label="Completed Deliveries" [value]="state().metrics.completedTodayCount.toString()" />
+    </div>
+
+    <section class="delivery-fees-history">
+      <h2>Delivery History</h2>
+      @if (state().history.length > 0) {
+        <div class="delivery-fees-history-list">
+          @for (order of state().history; track order.id) {
+            <lib-delivery-history-item [order]="order" />
+          }
+        </div>
+      } @else {
+        <lib-empty-state
+          title="No deliveries yet"
+          message="Completed deliveries and their fees will show up here."
+          actionLabel="Refresh"
+          (refresh)="retry()"
+        />
+      }
+    </section>
+  }
+</div>

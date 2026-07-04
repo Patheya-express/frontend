@@ -1,0 +1,17 @@
+.app-shell {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100vh;
+  background: var(--color-background);
+}
+
+.app-shell-content {
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-5);
+
+  @media (max-width: 640px) {
+    padding: var(--space-4) var(--space-3);
+  }
+}

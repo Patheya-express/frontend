@@ -1,0 +1,15 @@
+.placeholder-copy {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+a {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}

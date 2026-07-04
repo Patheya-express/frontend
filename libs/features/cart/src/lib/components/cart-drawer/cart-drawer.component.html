@@ -1,0 +1,39 @@
+@if (open) {
+  <button type="button" class="drawer-backdrop" aria-label="Close cart" (click)="close()"></button>
+
+  <aside class="drawer-panel" role="dialog" aria-modal="true" aria-label="Cart">
+    <header class="drawer-header">
+      <h2>Your Cart</h2>
+      <button type="button" class="drawer-close" aria-label="Close cart" (click)="close()">✕</button>
+    </header>
+
+    @if (error()) {
+      <p class="drawer-error" role="alert">{{ error() }}</p>
+    }
+
+    <div class="drawer-body">
+      @if (items().length === 0) {
+        <lib-empty-state
+          title="Your cart is empty"
+          message="Add items from a restaurant to get started."
+          actionLabel="Browse restaurants"
+          (refresh)="browseRestaurants()"
+        />
+      } @else {
+        @for (item of items(); track item.menuItemId) {
+          <lib-cart-item [item]="item" />
+        }
+      }
+    </div>
+
+    @if (items().length > 0) {
+      <footer class="drawer-footer">
+        <lib-cart-summary />
+        <div class="drawer-actions">
+          <button type="button" class="drawer-clear" (click)="clearCart()">Clear cart</button>
+          <a routerLink="/cart" class="drawer-view-cart" (click)="close()">View full cart</a>
+        </div>
+      </footer>
+    }
+  </aside>
+}

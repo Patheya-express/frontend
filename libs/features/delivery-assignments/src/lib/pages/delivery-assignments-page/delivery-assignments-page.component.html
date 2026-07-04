@@ -1,0 +1,57 @@
+<div class="delivery-assignments-page">
+  <h1>Assignments</h1>
+
+  @if (actionError(); as message) {
+    <lib-error-state title="Action failed" [message]="message" (retry)="dismissActionError()" />
+  }
+
+  @if (loading()) {
+    <lib-skeleton [count]="3" />
+  } @else if (error()) {
+    <lib-error-state [message]="error()!" (retry)="retry()" />
+  } @else {
+    <section class="assignments-section">
+      <h2>Current Delivery</h2>
+      @if (groups().active.length > 0) {
+        <div class="assignments-list">
+          @for (assignment of groups().active; track assignment.id) {
+            <lib-assignment-card [assignment]="assignment" />
+          }
+        </div>
+      } @else {
+        <p class="assignments-section-empty">No active delivery right now.</p>
+      }
+    </section>
+
+    <section class="assignments-section">
+      <h2>Available Assignments</h2>
+      @if (groups().available.length > 0) {
+        <div class="assignments-list">
+          @for (assignment of groups().available; track assignment.id) {
+            <lib-assignment-card [assignment]="assignment" />
+          }
+        </div>
+      } @else {
+        <lib-empty-state
+          title="No assignments available"
+          message="New delivery assignments will show up here."
+          actionLabel="Refresh"
+          (refresh)="retry()"
+        />
+      }
+    </section>
+
+    <section class="assignments-section">
+      <h2>Completed</h2>
+      @if (groups().completed.length > 0) {
+        <div class="assignments-list">
+          @for (assignment of groups().completed; track assignment.id) {
+            <lib-assignment-card [assignment]="assignment" />
+          }
+        </div>
+      } @else {
+        <p class="assignments-section-empty">No completed deliveries yet.</p>
+      }
+    </section>
+  }
+</div>

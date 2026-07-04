@@ -1,0 +1,31 @@
+.checkout-page {
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-5) var(--space-8);
+}
+
+h1 {
+  margin: 0 0 var(--space-5);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+.checkout-layout {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: var(--space-5);
+  align-items: start;
+
+  @media (max-width: 800px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.checkout-main,
+.checkout-aside {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}

@@ -1,0 +1,136 @@
+.menu-item-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--color-border);
+
+  &.unavailable {
+    opacity: 0.55;
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.menu-item-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+h4 {
+  margin: 0;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.menu-item-description {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.menu-item-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.menu-item-price {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.menu-item-badge {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-error);
+  background: var(--color-error-soft);
+  border-radius: var(--radius-sm);
+  padding: 2px var(--space-2);
+}
+
+.menu-item-cart-action {
+  margin-top: var(--space-2);
+}
+
+.add-btn {
+  border: 1px solid var(--color-primary);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  border-radius: var(--radius-md);
+  padding: var(--space-1) var(--space-4);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+
+  &:hover {
+    background: var(--color-primary);
+    color: var(--color-text-on-primary);
+  }
+}
+
+.menu-item-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 2px var(--space-1);
+}
+
+.stepper-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--color-primary);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+
+  &:hover {
+    background: var(--color-primary-soft);
+  }
+}
+
+.stepper-value {
+  min-width: 16px;
+  text-align: center;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.menu-item-image {
+  flex-shrink: 0;
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-md);
+  background: var(--color-secondary-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-subtle);
+
+  svg {
+    width: 28px;
+    height: 28px;
+  }
+}

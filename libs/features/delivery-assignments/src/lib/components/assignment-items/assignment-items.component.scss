@@ -1,0 +1,29 @@
+.assignment-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.assignment-item {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+}
+
+.assignment-item-quantity {
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-semibold);
+}
+
+.assignment-item-name {
+  flex: 1;
+}
+
+.assignment-item-price {
+  color: var(--color-text-muted);
+}

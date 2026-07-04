@@ -1,0 +1,12 @@
+<div class="app-shell">
+  <lib-header
+    [isAuthenticated]="isAuthenticated"
+    [cartItemCount]="cartItemCount"
+    (logoutRequested)="logoutRequested.emit()"
+    (cartToggled)="cartToggled.emit()"
+  />
+  <main class="app-shell-content">
+    <router-outlet />
+  </main>
+  <lib-footer />
+</div>

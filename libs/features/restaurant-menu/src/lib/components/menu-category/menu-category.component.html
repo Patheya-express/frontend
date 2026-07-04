@@ -1,0 +1,12 @@
+<section class="menu-category">
+  <h3>{{ category.name }}</h3>
+  @if (category.description) {
+    <p class="menu-category-description">{{ category.description }}</p>
+  }
+
+  <div class="menu-category-items">
+    @for (item of category.menuItems; track item.id) {
+      <lib-menu-item-card [item]="item" [restaurantId]="restaurantId" [restaurantName]="restaurantName" />
+    }
+  </div>
+</section>

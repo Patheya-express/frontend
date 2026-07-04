@@ -1,0 +1,13 @@
+{
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "name": "core",
+  "sourceRoot": "libs/shared/core/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

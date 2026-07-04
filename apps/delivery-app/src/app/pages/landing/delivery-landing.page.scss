@@ -1,0 +1,90 @@
+:host {
+  display: block;
+}
+
+.landing-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--color-background);
+}
+
+.landing-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-5);
+
+  @media (max-width: 640px) {
+    padding: var(--space-3) var(--space-4);
+  }
+}
+
+.landing-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text);
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-lg);
+  flex-shrink: 0;
+}
+
+.brand-name {
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-lg);
+}
+
+.topbar-login {
+  color: var(--color-text);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-base);
+  text-decoration: none;
+
+  &:hover {
+    color: var(--color-primary);
+  }
+}
+
+.benefits {
+  width: 100%;
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-5);
+
+  @media (max-width: 640px) {
+    padding: var(--space-5) var(--space-4);
+  }
+}
+
+.benefits h2 {
+  margin: 0 0 var(--space-5);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  text-align: center;
+}
+
+.benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}

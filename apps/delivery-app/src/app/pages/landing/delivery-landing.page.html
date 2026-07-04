@@ -1,0 +1,41 @@
+<div class="landing-page">
+  <header class="landing-topbar">
+    <span class="landing-brand">
+      <span class="brand-mark">P</span>
+      <span class="brand-name">Patheya Express Courier</span>
+    </span>
+    <a routerLink="/auth/login" class="topbar-login">Courier Login</a>
+  </header>
+
+  <lib-hero-section
+    eyebrow="For Delivery Partners"
+    title="Patheya Express Courier"
+    subtitle="Deliver with Patheya Express and earn on your own schedule — flexible hours, fast payouts, and a rider app built for the road."
+  />
+
+  <section class="benefits">
+    <h2>Why deliver with us</h2>
+    <div class="benefits-grid">
+      <lib-feature-card
+        title="Work on your schedule"
+        description="Go online whenever you want and choose the deliveries that fit your day."
+      />
+      <lib-feature-card
+        title="Earn with every delivery"
+        description="Transparent per-delivery earnings plus tips, paid out reliably every cycle."
+      />
+      <lib-feature-card
+        title="Built for the road"
+        description="Turn-by-turn navigation and simple order handoffs designed for couriers on the move."
+      />
+    </div>
+  </section>
+
+  <lib-cta-section
+    title="Ready to start earning?"
+    subtitle="Sign up in minutes and start delivering with Patheya Express."
+    [actions]="ctaActions"
+  />
+
+  <lib-footer />
+</div>

@@ -1,0 +1,34 @@
+<div class="order-list-page">
+  <h1>My Orders</h1>
+
+  @if (loading()) {
+    <lib-skeleton [count]="3" />
+  } @else if (error()) {
+    <lib-error-state [message]="error()!" (retry)="retry()" />
+  } @else if (orders().length === 0) {
+    <lib-empty-state
+      title="No orders yet"
+      message="Your placed orders will show up here."
+      actionLabel="Browse restaurants"
+      (refresh)="browseRestaurants()"
+    />
+  } @else {
+    <div class="order-list">
+      @for (order of orders(); track order.id) {
+        <a [routerLink]="['/orders', order.id]" class="order-list-item">
+          <div class="order-list-item-main">
+            <span class="order-list-item-number">{{ order.orderNumber }}</span>
+            @if (placedAt(order.statusHistory); as placedDate) {
+              <span class="order-list-item-date">{{ placedDate | date: 'medium' }}</span>
+            }
+          </div>
+          <div class="order-list-item-meta">
+            <span class="order-list-item-status">{{ formatStatus(order.status) }}</span>
+            <span class="order-list-item-count">{{ order.items.length }} {{ order.items.length === 1 ? 'item' : 'items' }}</span>
+            <span class="order-list-item-total">₹{{ order.totalAmount }}</span>
+          </div>
+        </a>
+      }
+    </div>
+  }
+</div>

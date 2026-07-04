@@ -1,0 +1,36 @@
+<form class="menu-item-form" [formGroup]="form" (ngSubmit)="submit()">
+  <h3 class="menu-item-form-title">{{ item ? 'Edit Item' : 'Add Item' }}</h3>
+
+  <div class="form-field">
+    <label for="item-name">Name</label>
+    <input id="item-name" type="text" formControlName="name" />
+  </div>
+
+  <div class="form-field">
+    <label for="item-description">Description</label>
+    <input id="item-description" type="text" formControlName="description" />
+  </div>
+
+  <div class="form-field">
+    <label for="item-price">Price (₹)</label>
+    <input id="item-price" type="number" min="0" step="0.01" formControlName="basePrice" />
+  </div>
+
+  <div class="form-field-checkboxes">
+    <label class="checkbox-field">
+      <input type="checkbox" formControlName="isVegetarian" />
+      Vegetarian
+    </label>
+    <label class="checkbox-field">
+      <input type="checkbox" formControlName="isVegan" />
+      Vegan
+    </label>
+  </div>
+
+  <div class="menu-item-form-actions">
+    <button type="button" class="menu-item-form-cancel" [disabled]="isProcessing" (click)="cancel()">Cancel</button>
+    <button type="submit" class="menu-item-form-submit" [disabled]="form.invalid || isProcessing">
+      {{ isProcessing ? 'Saving…' : 'Save' }}
+    </button>
+  </div>
+</form>

@@ -1,0 +1,20 @@
+<form class="category-form" [formGroup]="form" (ngSubmit)="submit()">
+  <h3 class="category-form-title">{{ category ? 'Edit Category' : 'Add Category' }}</h3>
+
+  <div class="form-field">
+    <label for="category-name">Name</label>
+    <input id="category-name" type="text" formControlName="name" />
+  </div>
+
+  <div class="form-field">
+    <label for="category-description">Description</label>
+    <input id="category-description" type="text" formControlName="description" />
+  </div>
+
+  <div class="category-form-actions">
+    <button type="button" class="category-form-cancel" [disabled]="isProcessing" (click)="cancel()">Cancel</button>
+    <button type="submit" class="category-form-submit" [disabled]="form.invalid || isProcessing">
+      {{ isProcessing ? 'Saving…' : 'Save' }}
+    </button>
+  </div>
+</form>

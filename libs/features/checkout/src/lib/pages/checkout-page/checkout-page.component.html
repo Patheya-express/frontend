@@ -1,0 +1,24 @@
+<div class="checkout-page">
+  <h1>Checkout</h1>
+
+  @if (isEmpty()) {
+    <lib-empty-state
+      title="Your cart is empty"
+      message="Add items from a restaurant before checking out."
+      actionLabel="Browse restaurants"
+      (refresh)="browseRestaurants()"
+    />
+  } @else {
+    <div class="checkout-layout">
+      <div class="checkout-main">
+        <lib-address-section />
+        <lib-order-summary />
+      </div>
+
+      <div class="checkout-aside">
+        <lib-price-breakdown />
+        <lib-place-order-section />
+      </div>
+    </div>
+  }
+</div>

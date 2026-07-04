@@ -1,0 +1,67 @@
+<form class="auth-form" [formGroup]="form" (ngSubmit)="onSubmit()">
+  @if (errorMessage) {
+    <div class="form-alert" role="alert">{{ errorMessage }}</div>
+  }
+
+  <div class="form-row">
+    <div class="form-field">
+      <label for="register-first-name">First name</label>
+      <input
+        id="register-first-name"
+        type="text"
+        autocomplete="given-name"
+        formControlName="firstName"
+        [class.invalid]="form.controls.firstName.invalid && form.controls.firstName.touched"
+      />
+      @if (form.controls.firstName.invalid && form.controls.firstName.touched) {
+        <span class="form-field-error">First name is required.</span>
+      }
+    </div>
+
+    <div class="form-field">
+      <label for="register-last-name">Last name</label>
+      <input
+        id="register-last-name"
+        type="text"
+        autocomplete="family-name"
+        formControlName="lastName"
+        [class.invalid]="form.controls.lastName.invalid && form.controls.lastName.touched"
+      />
+      @if (form.controls.lastName.invalid && form.controls.lastName.touched) {
+        <span class="form-field-error">Last name is required.</span>
+      }
+    </div>
+  </div>
+
+  <div class="form-field">
+    <label for="register-email">Email</label>
+    <input
+      id="register-email"
+      type="email"
+      autocomplete="email"
+      formControlName="email"
+      [class.invalid]="form.controls.email.invalid && form.controls.email.touched"
+    />
+    @if (form.controls.email.invalid && form.controls.email.touched) {
+      <span class="form-field-error">Enter a valid email address.</span>
+    }
+  </div>
+
+  <div class="form-field">
+    <label for="register-password">Password</label>
+    <input
+      id="register-password"
+      type="password"
+      autocomplete="new-password"
+      formControlName="password"
+      [class.invalid]="form.controls.password.invalid && form.controls.password.touched"
+    />
+    @if (form.controls.password.invalid && form.controls.password.touched) {
+      <span class="form-field-error">Password must be at least 8 characters.</span>
+    }
+  </div>
+
+  <button type="submit" class="form-submit" [disabled]="loading">
+    {{ loading ? 'Creating account…' : 'Create account' }}
+  </button>
+</form>

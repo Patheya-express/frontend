@@ -1,0 +1,13 @@
+<article class="delivery-history-item">
+  <div class="delivery-history-item-heading">
+    <span class="delivery-history-item-order">{{ order.orderNumber }}</span>
+    <span class="delivery-history-item-date">{{ order.deliveredAt | date: 'medium' }}</span>
+  </div>
+
+  <div class="delivery-history-item-address">{{ order.deliveryAddress }}</div>
+
+  <div class="delivery-history-item-meta">
+    <span>Total <strong>₹{{ order.totalAmount }}</strong></span>
+    <span>Delivery fee <strong>₹{{ order.deliveryFee }}</strong></span>
+  </div>
+</article>

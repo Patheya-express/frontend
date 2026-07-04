@@ -1,0 +1,69 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "bundler",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "es2022",
+    "module": "esnext",
+    "lib": ["es2022", "dom"],
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@patheya-express-frontend/api-sdk": [
+        "./libs/shared/api-sdk/src/index.ts"
+      ],
+      "@patheya-express-frontend/auth": ["./libs/shared/auth/src/index.ts"],
+      "@patheya-express-frontend/auth-ui": [
+        "./libs/shared/auth-ui/src/index.ts"
+      ],
+      "@patheya-express-frontend/core": ["./libs/shared/core/src/index.ts"],
+      "@patheya-express-frontend/models": ["./libs/shared/models/src/index.ts"],
+      "@patheya-express-frontend/ui": ["./libs/shared/ui/src/index.ts"],
+      "@patheya-express-frontend/restaurant-discovery": [
+        "./libs/features/restaurant-discovery/src/index.ts"
+      ],
+      "@patheya-express-frontend/restaurant-menu": [
+        "./libs/features/restaurant-menu/src/index.ts"
+      ],
+      "@patheya-express-frontend/cart": ["./libs/features/cart/src/index.ts"],
+      "@patheya-express-frontend/cart-ui": ["./libs/features/cart-ui/src/index.ts"],
+      "@patheya-express-frontend/checkout": ["./libs/features/checkout/src/index.ts"],
+      "@patheya-express-frontend/order-details": [
+        "./libs/features/order-details/src/index.ts"
+      ],
+      "@patheya-express-frontend/restaurant-orders": [
+        "./libs/features/restaurant-orders/src/index.ts"
+      ],
+      "@patheya-express-frontend/restaurant-dashboard": [
+        "./libs/features/restaurant-dashboard/src/index.ts"
+      ],
+      "@patheya-express-frontend/menu-management": [
+        "./libs/features/menu-management/src/index.ts"
+      ],
+      "@patheya-express-frontend/delivery-dashboard": [
+        "./libs/features/delivery-dashboard/src/index.ts"
+      ],
+      "@patheya-express-frontend/delivery-assignments": [
+        "./libs/features/delivery-assignments/src/index.ts"
+      ],
+      "@patheya-express-frontend/delivery-fees": [
+        "./libs/features/delivery-fees/src/index.ts"
+      ]
+    }
+  },
+  "exclude": ["node_modules", "tmp"]
+}

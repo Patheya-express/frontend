@@ -1,0 +1,125 @@
+.assignment-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.assignment-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.assignment-card-heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.assignment-card-restaurant {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.assignment-card-order-number {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.assignment-card-address {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+
+.assignment-card-customer {
+  font-weight: var(--font-weight-semibold);
+}
+
+.assignment-card-phone {
+  color: var(--color-text-muted);
+}
+
+.assignment-card-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.assignment-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+
+  strong {
+    color: var(--color-text);
+  }
+}
+
+.assignment-card-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+}
+
+.assignment-card-navigate {
+  align-self: flex-start;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.assignment-card-actions {
+  display: flex;
+  gap: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+}
+
+.assignment-card-action {
+  flex: 1;
+  border: 1px solid var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+  transition:
+    opacity var(--transition-fast),
+    background var(--transition-fast);
+
+  &.is-danger {
+    border-color: var(--color-border);
+    background: var(--color-surface);
+    color: var(--color-error);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}

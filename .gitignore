@@ -1,0 +1,51 @@
+# See http://help.github.com/ignore-files/ for more about ignoring files.
+
+# compiled output
+dist
+tmp
+out-tsc
+
+# dependencies
+node_modules
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+*.launch
+.settings/
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# misc
+/.sass-cache
+/connect.lock
+/coverage
+/libpeerconnection.log
+npm-debug.log
+yarn-error.log
+testem.log
+/typings
+
+*.log
+Thumbs.db
+
+# System files
+.DS_Store
+
+# Nx / Angular caches
+.angular/cache
+.nx/cache
+.nx/workspace-data
+
+# Stray build logs
+build-output.txt
+build.log
+
+# Claude Code local settings (machine-specific, not shared)
+.claude/settings.local.json

@@ -1,0 +1,12 @@
+.app-footer {
+  padding: var(--space-5) var(--space-5);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+  text-align: center;
+}
+
+p {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-subtle);
+}

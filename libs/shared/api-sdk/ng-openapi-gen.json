@@ -1,0 +1,7 @@
+{
+  "input": "http://localhost:3000/api/docs-json",
+  "output": "src/lib",
+  "indexFile": true,
+  "ignoreUnusedModels": false,
+  "services": true
+}

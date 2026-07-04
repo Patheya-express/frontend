@@ -1,0 +1,79 @@
+{
+  "name": "delivery-app",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "prefix": "app",
+  "sourceRoot": "apps/delivery-app/src",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@angular/build:application",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "defaultConfiguration": "production",
+      "options": {
+        "outputPath": "dist/apps/delivery-app",
+        "browser": "apps/delivery-app/src/main.ts",
+        "tsConfig": "apps/delivery-app/tsconfig.app.json",
+        "inlineStyleLanguage": "scss",
+        "assets": [
+          {
+            "glob": "**/*",
+            "input": "apps/delivery-app/public"
+          }
+        ],
+        "styles": [
+          "apps/delivery-app/src/styles.scss"
+        ]
+      },
+      "configurations": {
+        "production": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "500kb",
+              "maximumError": "1mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "4kb",
+              "maximumError": "8kb"
+            }
+          ],
+          "outputHashing": "all"
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      }
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "@angular/build:dev-server",
+      "defaultConfiguration": "development",
+      "configurations": {
+        "production": {
+          "buildTarget": "delivery-app:build:production"
+        },
+        "development": {
+          "buildTarget": "delivery-app:build:development"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "serve-static": {
+      "continuous": true,
+      "executor": "@nx/web:file-server",
+      "options": {
+        "buildTarget": "delivery-app:build",
+        "staticFilePath": "dist/apps/delivery-app/browser",
+        "spa": true
+      }
+    }
+  }
+}

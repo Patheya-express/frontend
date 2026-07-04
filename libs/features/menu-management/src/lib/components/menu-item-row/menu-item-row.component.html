@@ -1,0 +1,44 @@
+<div class="menu-item-row" [class.is-unavailable]="!item.isAvailable">
+  <div class="menu-item-row-info">
+    <span class="menu-item-row-name">{{ item.name }}</span>
+    <div class="menu-item-row-badges">
+      @if (item.isVegetarian) {
+        <span class="menu-item-row-badge is-veg">Veg</span>
+      }
+      @if (item.isVegan) {
+        <span class="menu-item-row-badge is-vegan">Vegan</span>
+      }
+    </div>
+    @if (item.description) {
+      <span class="menu-item-row-description">{{ item.description }}</span>
+    }
+  </div>
+
+  <span class="menu-item-row-price">₹{{ item.basePrice }}</span>
+
+  <label class="menu-item-row-availability">
+    <input type="checkbox" [checked]="item.isAvailable" [disabled]="isProcessing" (change)="toggleAvailability()" />
+    Available
+  </label>
+
+  <div class="menu-item-row-actions">
+    <button type="button" class="menu-item-row-edit" [disabled]="isProcessing" (click)="editRequested.emit()">
+      Edit
+    </button>
+    <button type="button" class="menu-item-row-delete" [disabled]="isProcessing" (click)="requestDelete()">
+      Delete
+    </button>
+  </div>
+</div>
+
+<lib-confirm-dialog
+  [open]="deleteDialogOpen"
+  title="Delete this item?"
+  [message]="'\'' + item.name + '\' will be permanently removed from the menu.'"
+  confirmLabel="Delete item"
+  cancelLabel="Keep item"
+  tone="danger"
+  [busy]="isProcessing"
+  (confirmed)="confirmDelete()"
+  (cancelled)="cancelDelete()"
+/>

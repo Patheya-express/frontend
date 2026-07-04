@@ -1,0 +1,39 @@
+<div class="restaurant-orders-page">
+  <h1>Incoming Orders</h1>
+
+  @if (actionError(); as message) {
+    <lib-error-state title="Action failed" [message]="message" (retry)="dismissActionError()" />
+  }
+
+  <div class="restaurant-orders-filters">
+    @for (filter of filters; track filter.value) {
+      <button
+        type="button"
+        class="restaurant-orders-filter"
+        [class.is-active]="selectedFilter() === filter.value"
+        (click)="selectFilter(filter.value)"
+      >
+        {{ filter.label }}
+      </button>
+    }
+  </div>
+
+  @if (loading()) {
+    <lib-skeleton [count]="3" />
+  } @else if (error()) {
+    <lib-error-state [message]="error()!" (retry)="retry()" />
+  } @else if (orders().length === 0) {
+    <lib-empty-state
+      title="No orders yet"
+      message="Incoming orders for this restaurant will show up here."
+      actionLabel="Refresh"
+      (refresh)="retry()"
+    />
+  } @else {
+    <div class="restaurant-orders-list">
+      @for (order of orders(); track order.id) {
+        <lib-order-card [order]="order" />
+      }
+    </div>
+  }
+</div>

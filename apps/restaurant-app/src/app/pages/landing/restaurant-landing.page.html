@@ -1,0 +1,41 @@
+<div class="landing-page">
+  <header class="landing-topbar">
+    <span class="landing-brand">
+      <span class="brand-mark">P</span>
+      <span class="brand-name">Patheya Express for Restaurants</span>
+    </span>
+    <a routerLink="/auth/login" class="topbar-login">Partner Login</a>
+  </header>
+
+  <lib-hero-section
+    eyebrow="For Restaurant Partners"
+    title="Patheya Express for Restaurants"
+    subtitle="Bring your menu to thousands of hungry diners, manage orders in real time, and grow your restaurant with a delivery partner built for scale."
+  />
+
+  <section class="benefits">
+    <h2>Why partner with us</h2>
+    <div class="benefits-grid">
+      <lib-feature-card
+        title="Reach more diners"
+        description="Get discovered by thousands of customers already browsing Patheya Express for their next meal."
+      />
+      <lib-feature-card
+        title="Real-time order management"
+        description="Accept, track, and fulfill orders from a single, streamlined dashboard built for busy kitchens."
+      />
+      <lib-feature-card
+        title="Fast, reliable payouts"
+        description="Transparent commissions and on-time payouts, so you can focus on running your restaurant."
+      />
+    </div>
+  </section>
+
+  <lib-cta-section
+    title="Ready to grow your restaurant?"
+    subtitle="Apply in minutes and start reaching new customers today."
+    [actions]="ctaActions"
+  />
+
+  <lib-footer />
+</div>

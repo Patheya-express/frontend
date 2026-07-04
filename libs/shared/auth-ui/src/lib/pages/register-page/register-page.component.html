@@ -1,0 +1,6 @@
+<lib-auth-layout>
+  <lib-auth-card title="Create your account" subtitle="Join Patheya Express to start ordering">
+    <lib-register-form [loading]="loading()" [errorMessage]="error()" (submitted)="onSubmit($event)" />
+    <span auth-card-footer>Already have an account? <a routerLink="/auth/login">Log in</a></span>
+  </lib-auth-card>
+</lib-auth-layout>

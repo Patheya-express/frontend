@@ -1,0 +1,25 @@
+.menu-category {
+  padding: var(--space-5) 0;
+  border-bottom: 1px solid var(--color-border);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+h3 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+.menu-category-description {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.menu-category-items {
+  margin-top: var(--space-2);
+}

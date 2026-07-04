@@ -1,0 +1,88 @@
+:host {
+  display: block;
+  scroll-behavior: smooth;
+}
+
+.page-padding {
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: 0 var(--space-5) var(--space-6);
+
+  @media (max-width: 640px) {
+    padding: 0 var(--space-3) var(--space-5);
+  }
+}
+
+.restaurant-header {
+  position: sticky;
+  // Sits directly beneath the app shell's own sticky header (~61px tall).
+  top: 61px;
+  z-index: 5;
+  display: flex;
+  gap: var(--space-4);
+  align-items: center;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--space-4) var(--space-5);
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+
+  @media (max-width: 640px) {
+    padding: var(--space-3);
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.restaurant-header-image {
+  flex-shrink: 0;
+  width: 96px;
+  height: 96px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-secondary-soft);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+}
+
+.restaurant-header-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-subtle);
+
+  svg {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+.restaurant-header-info {
+  min-width: 0;
+}
+
+h1 {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+}
+
+.restaurant-header-cuisine {
+  margin: 2px 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.restaurant-header-description {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-subtle);
+}

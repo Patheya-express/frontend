@@ -1,0 +1,44 @@
+<div class="menu-management-page">
+  <div class="menu-management-header">
+    <h1>Menu Management</h1>
+    <button type="button" class="add-category-button" (click)="openCreateCategory()">+ Add Category</button>
+  </div>
+
+  @if (actionError(); as message) {
+    <lib-error-state title="Action failed" [message]="message" (retry)="dismissActionError()" />
+  }
+
+  @if (isCreatingCategory) {
+    <lib-category-form (closed)="closeCategoryForm()" />
+  } @else if (editingCategory; as category) {
+    <lib-category-form [category]="category" (closed)="closeCategoryForm()" />
+  }
+
+  @if (itemFormTarget; as target) {
+    <lib-menu-item-form [categoryId]="target.categoryId" [item]="target.item ?? undefined" (closed)="closeItemForm()" />
+  }
+
+  @if (loading()) {
+    <lib-skeleton [count]="3" />
+  } @else if (error()) {
+    <lib-error-state [message]="error()!" (retry)="retry()" />
+  } @else if (categories().length === 0) {
+    <lib-empty-state
+      title="No categories yet"
+      message="Add a category to start building your menu."
+      actionLabel="Add Category"
+      (refresh)="openCreateCategory()"
+    />
+  } @else {
+    <div class="menu-management-categories">
+      @for (category of categories(); track category.id) {
+        <lib-category-card
+          [category]="category"
+          (editRequested)="openEditCategory(category)"
+          (addItemRequested)="openAddItem(category.id)"
+          (editItemRequested)="openEditItem(category, $event)"
+        />
+      }
+    </div>
+  }
+</div>

@@ -1,0 +1,16 @@
+<article class="cart-item">
+  <div class="cart-item-body">
+    <h4>{{ item.name }}</h4>
+    <span class="cart-item-unit-price">₹{{ item.unitPrice }} each</span>
+  </div>
+
+  <div class="cart-item-controls">
+    <div class="cart-item-stepper">
+      <button type="button" class="stepper-btn" aria-label="Decrease quantity" (click)="decrease()">−</button>
+      <span class="stepper-value">{{ item.quantity }}</span>
+      <button type="button" class="stepper-btn" aria-label="Increase quantity" (click)="increase()">+</button>
+    </div>
+    <span class="cart-item-line-total">₹{{ item.unitPrice * item.quantity }}</span>
+    <button type="button" class="cart-item-remove" aria-label="Remove item" (click)="remove()">Remove</button>
+  </div>
+</article>

@@ -1,0 +1,17 @@
+<section class="place-order-section">
+  @if (validationErrors().length > 0) {
+    <ul class="place-order-errors" role="alert">
+      @for (message of validationErrors(); track message) {
+        <li>{{ message }}</li>
+      }
+    </ul>
+  }
+
+  @if (error()) {
+    <p class="place-order-error" role="alert">{{ error() }}</p>
+  }
+
+  <button type="button" class="place-order-btn" [disabled]="placingOrder()" (click)="placeOrder()">
+    {{ placingOrder() ? 'Placing order…' : 'Place Order' }}
+  </button>
+</section>

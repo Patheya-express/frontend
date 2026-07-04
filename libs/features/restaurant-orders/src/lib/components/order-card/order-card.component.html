@@ -1,0 +1,65 @@
+<article class="order-card">
+  <header class="order-card-header">
+    <div class="order-card-heading">
+      <span class="order-card-number">{{ order.orderNumber }}</span>
+      @if (customerName; as name) {
+        <span class="order-card-customer">{{ name }}</span>
+      }
+    </div>
+    <lib-order-status-badge [status]="order.status" />
+  </header>
+
+  <div class="order-card-meta">
+    <span>{{ order.createdAt | date: 'medium' }}</span>
+    <span>{{ totalQuantity }} {{ totalQuantity === 1 ? 'item' : 'items' }}</span>
+    <span class="order-card-total">₹{{ order.totalAmount }}</span>
+  </div>
+
+  @if (dispatchStatus; as status) {
+    <div class="order-card-dispatch">{{ status }}</div>
+  }
+
+  <lib-order-items [items]="order.items" />
+
+  <div class="order-card-address">
+    <span class="order-card-label">Deliver to</span>
+    <span>{{ order.deliveryAddress }}</span>
+  </div>
+
+  @if (order.notes; as notes) {
+    <div class="order-card-notes">
+      <span class="order-card-label">Notes</span>
+      <span>{{ notes }}</span>
+    </div>
+  }
+
+  @if (availableActions.length > 0) {
+    <div class="order-card-actions">
+      @for (actionDef of availableActions; track actionDef.action) {
+        <button
+          type="button"
+          class="order-card-action"
+          [class.is-danger]="actionDef.tone === 'danger'"
+          [disabled]="isProcessing"
+          (click)="handleAction(actionDef)"
+        >
+          {{ isProcessing ? 'Processing…' : actionDef.label }}
+        </button>
+      }
+    </div>
+  }
+</article>
+
+@if (pendingConfirmation; as confirmation) {
+  <lib-confirm-dialog
+    [open]="true"
+    [title]="confirmation.title"
+    [message]="confirmation.message"
+    [confirmLabel]="confirmation.confirmLabel"
+    [cancelLabel]="confirmation.cancelLabel"
+    tone="danger"
+    [busy]="isProcessing"
+    (confirmed)="confirmPendingAction()"
+    (cancelled)="cancelPendingAction()"
+  />
+}

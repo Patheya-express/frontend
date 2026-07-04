@@ -1,0 +1,43 @@
+<article class="category-card">
+  <header class="category-card-header">
+    <div class="category-card-heading">
+      <span class="category-card-name">{{ category.name }}</span>
+      @if (!category.isActive) {
+        <span class="category-card-inactive-badge">Inactive</span>
+      }
+    </div>
+    @if (category.description) {
+      <p class="category-card-description">{{ category.description }}</p>
+    }
+    <div class="category-card-actions">
+      <button type="button" class="category-card-edit" [disabled]="isProcessing" (click)="editRequested.emit()">
+        Edit
+      </button>
+      <button type="button" class="category-card-delete" [disabled]="isProcessing" (click)="requestDelete()">
+        Delete
+      </button>
+    </div>
+  </header>
+
+  <div class="category-card-items">
+    @for (item of category.menuItems; track item.id) {
+      <lib-menu-item-row [item]="item" (editRequested)="editItemRequested.emit(item.id)" />
+    } @empty {
+      <p class="category-card-no-items">No items in this category yet.</p>
+    }
+  </div>
+
+  <button type="button" class="category-card-add-item" (click)="addItemRequested.emit()">+ Add Item</button>
+</article>
+
+<lib-confirm-dialog
+  [open]="deleteDialogOpen"
+  title="Delete this category?"
+  [message]="'\'' + category.name + '\' and all of its items will be permanently removed.'"
+  confirmLabel="Delete category"
+  cancelLabel="Keep category"
+  tone="danger"
+  [busy]="isProcessing"
+  (confirmed)="confirmDelete()"
+  (cancelled)="cancelDelete()"
+/>

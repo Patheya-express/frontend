@@ -1,0 +1,30 @@
+{
+  "name": "api-sdk",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared/api-sdk/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/angular:ng-packagr-lite",
+      "outputs": [
+        "{workspaceRoot}/dist/{projectRoot}"
+      ],
+      "defaultConfiguration": "production",
+      "options": {
+        "project": "libs/shared/api-sdk/ng-package.json",
+        "tsConfig": "libs/shared/api-sdk/tsconfig.lib.json"
+      },
+      "configurations": {
+        "production": {
+          "tsConfig": "libs/shared/api-sdk/tsconfig.lib.prod.json"
+        },
+        "development": {}
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

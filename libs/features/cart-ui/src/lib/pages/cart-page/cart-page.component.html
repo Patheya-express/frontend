@@ -1,0 +1,31 @@
+<div class="cart-page">
+  <h1>Your Cart</h1>
+
+  @if (loading()) {
+    <lib-skeleton [count]="3" />
+  } @else if (error()) {
+    <lib-error-state [message]="error()!" (retry)="retry()" />
+  } @else if (items().length === 0) {
+    <lib-empty-state
+      title="Your cart is empty"
+      message="Add items from a restaurant to get started."
+      actionLabel="Browse restaurants"
+      (refresh)="browseRestaurants()"
+    />
+  } @else {
+    <div class="cart-page-items">
+      @for (item of items(); track item.menuItemId) {
+        <lib-cart-item [item]="item" />
+      }
+    </div>
+
+    <lib-cart-summary />
+
+    <a routerLink="/checkout" class="cart-page-checkout">Proceed to checkout</a>
+
+    <div class="cart-page-actions">
+      <button type="button" class="cart-page-clear" (click)="clearCart()">Clear cart</button>
+      <a routerLink="/" class="cart-page-continue">Continue browsing</a>
+    </div>
+  }
+</div>

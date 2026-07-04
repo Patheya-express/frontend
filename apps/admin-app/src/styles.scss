@@ -1,0 +1,33 @@
+@use '../../../libs/shared/ui/src/theme';
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+  color: var(--color-text);
+  background: var(--color-background);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  font-family: inherit;
+}
+
+button,
+input {
+  font-family: inherit;
+}

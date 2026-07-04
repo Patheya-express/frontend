@@ -1,0 +1,18 @@
+<section class="cta-section">
+  <h2>{{ title }}</h2>
+  @if (subtitle) {
+    <p class="cta-subtitle">{{ subtitle }}</p>
+  }
+  <div class="cta-actions">
+    @for (action of actions; track action.label) {
+      <a
+        [routerLink]="action.routerLink"
+        class="btn"
+        [class.btn-primary]="action.variant === 'primary'"
+        [class.btn-secondary]="action.variant === 'secondary'"
+      >
+        {{ action.label }}
+      </a>
+    }
+  </div>
+</section>

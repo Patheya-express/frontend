@@ -1,0 +1,9 @@
+<ul class="assignment-items">
+  @for (item of items; track item.id) {
+    <li class="assignment-item">
+      <span class="assignment-item-quantity">{{ item.quantity }}x</span>
+      <span class="assignment-item-name">{{ item.menuItemName ?? 'Item' }}</span>
+      <span class="assignment-item-price">₹{{ item.totalPrice }}</span>
+    </li>
+  }
+</ul>

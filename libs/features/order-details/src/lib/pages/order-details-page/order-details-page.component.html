@@ -1,0 +1,36 @@
+<div class="order-details-page">
+  @if (loading()) {
+    <lib-skeleton [count]="3" />
+  } @else if (error()) {
+    <lib-error-state [message]="error()!" (retry)="retry()" />
+  } @else if (order(); as orderValue) {
+    <div class="order-confirmation">
+      <div class="order-confirmation-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="11" stroke="var(--color-success)" stroke-width="1.6" />
+          <path d="M7.5 12.5l3 3 6-6.5" stroke="var(--color-success)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+
+      <h1>Order placed successfully!</h1>
+      <p class="order-confirmation-message">Thank you for your order. We'll get started on it right away.</p>
+
+      <dl class="order-confirmation-details">
+        <div class="order-confirmation-row">
+          <dt>Order ID</dt>
+          <dd>{{ orderValue.orderNumber }}</dd>
+        </div>
+        <div class="order-confirmation-row">
+          <dt>Restaurant</dt>
+          <dd>{{ restaurantName() }}</dd>
+        </div>
+        <div class="order-confirmation-row total">
+          <dt>Order Total</dt>
+          <dd>₹{{ orderValue.totalAmount }}</dd>
+        </div>
+      </dl>
+
+      <a routerLink="/" class="order-confirmation-home">Back to Home</a>
+    </div>
+  }
+</div>
