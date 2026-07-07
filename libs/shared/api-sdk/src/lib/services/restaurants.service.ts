@@ -11,14 +11,24 @@ import { StrictHttpResponse } from '../strict-http-response';
 
 import { PaginatedRestaurantsResponseDto } from '../models/paginated-restaurants-response-dto';
 import { RestaurantResponseDto } from '../models/restaurant-response-dto';
+import { restaurantsControllerApproveRestaurant } from '../fn/restaurants/restaurants-controller-approve-restaurant';
+import { RestaurantsControllerApproveRestaurant$Params } from '../fn/restaurants/restaurants-controller-approve-restaurant';
 import { restaurantsControllerCreateRestaurant } from '../fn/restaurants/restaurants-controller-create-restaurant';
 import { RestaurantsControllerCreateRestaurant$Params } from '../fn/restaurants/restaurants-controller-create-restaurant';
 import { restaurantsControllerFindAll } from '../fn/restaurants/restaurants-controller-find-all';
 import { RestaurantsControllerFindAll$Params } from '../fn/restaurants/restaurants-controller-find-all';
+import { restaurantsControllerGetAllForAdmin } from '../fn/restaurants/restaurants-controller-get-all-for-admin';
+import { RestaurantsControllerGetAllForAdmin$Params } from '../fn/restaurants/restaurants-controller-get-all-for-admin';
 import { restaurantsControllerGetMyRestaurants } from '../fn/restaurants/restaurants-controller-get-my-restaurants';
 import { RestaurantsControllerGetMyRestaurants$Params } from '../fn/restaurants/restaurants-controller-get-my-restaurants';
 import { restaurantsControllerGetRestaurantById } from '../fn/restaurants/restaurants-controller-get-restaurant-by-id';
 import { RestaurantsControllerGetRestaurantById$Params } from '../fn/restaurants/restaurants-controller-get-restaurant-by-id';
+import { restaurantsControllerRejectRestaurant } from '../fn/restaurants/restaurants-controller-reject-restaurant';
+import { RestaurantsControllerRejectRestaurant$Params } from '../fn/restaurants/restaurants-controller-reject-restaurant';
+import { restaurantsControllerRestoreRestaurant } from '../fn/restaurants/restaurants-controller-restore-restaurant';
+import { RestaurantsControllerRestoreRestaurant$Params } from '../fn/restaurants/restaurants-controller-restore-restaurant';
+import { restaurantsControllerSuspendRestaurant } from '../fn/restaurants/restaurants-controller-suspend-restaurant';
+import { RestaurantsControllerSuspendRestaurant$Params } from '../fn/restaurants/restaurants-controller-suspend-restaurant';
 
 @Injectable({ providedIn: 'root' })
 export class RestaurantsService extends BaseService {
@@ -123,6 +133,171 @@ export class RestaurantsService extends BaseService {
   restaurantsControllerGetMyRestaurants(params?: RestaurantsControllerGetMyRestaurants$Params, context?: HttpContext): Promise<Array<RestaurantResponseDto>> {
     const resp = this.restaurantsControllerGetMyRestaurants$Response(params, context);
     return resp.then((r: StrictHttpResponse<Array<RestaurantResponseDto>>): Array<RestaurantResponseDto> => r.body);
+  }
+
+  /** Path part for operation `restaurantsControllerGetAllForAdmin()` */
+  static readonly RestaurantsControllerGetAllForAdminPath = '/api/v1/restaurants/admin';
+
+  /**
+   * Get restaurants (admin).
+   *
+   * Returns a paginated, filterable, platform-wide list of restaurants of any status, including owner information. Distinct from the public listing, which only ever returns approved, active restaurants and never includes owner details.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `restaurantsControllerGetAllForAdmin()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  restaurantsControllerGetAllForAdmin$Response(params?: RestaurantsControllerGetAllForAdmin$Params, context?: HttpContext): Promise<StrictHttpResponse<PaginatedRestaurantsResponseDto>> {
+    const obs = restaurantsControllerGetAllForAdmin(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Get restaurants (admin).
+   *
+   * Returns a paginated, filterable, platform-wide list of restaurants of any status, including owner information. Distinct from the public listing, which only ever returns approved, active restaurants and never includes owner details.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `restaurantsControllerGetAllForAdmin$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  restaurantsControllerGetAllForAdmin(params?: RestaurantsControllerGetAllForAdmin$Params, context?: HttpContext): Promise<PaginatedRestaurantsResponseDto> {
+    const resp = this.restaurantsControllerGetAllForAdmin$Response(params, context);
+    return resp.then((r: StrictHttpResponse<PaginatedRestaurantsResponseDto>): PaginatedRestaurantsResponseDto => r.body);
+  }
+
+  /** Path part for operation `restaurantsControllerApproveRestaurant()` */
+  static readonly RestaurantsControllerApproveRestaurantPath = '/api/v1/restaurants/{id}/approve';
+
+  /**
+   * Approve restaurant.
+   *
+   * Approves a pending restaurant application.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `restaurantsControllerApproveRestaurant()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  restaurantsControllerApproveRestaurant$Response(params: RestaurantsControllerApproveRestaurant$Params, context?: HttpContext): Promise<StrictHttpResponse<RestaurantResponseDto>> {
+    const obs = restaurantsControllerApproveRestaurant(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Approve restaurant.
+   *
+   * Approves a pending restaurant application.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `restaurantsControllerApproveRestaurant$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  restaurantsControllerApproveRestaurant(params: RestaurantsControllerApproveRestaurant$Params, context?: HttpContext): Promise<RestaurantResponseDto> {
+    const resp = this.restaurantsControllerApproveRestaurant$Response(params, context);
+    return resp.then((r: StrictHttpResponse<RestaurantResponseDto>): RestaurantResponseDto => r.body);
+  }
+
+  /** Path part for operation `restaurantsControllerRejectRestaurant()` */
+  static readonly RestaurantsControllerRejectRestaurantPath = '/api/v1/restaurants/{id}/reject';
+
+  /**
+   * Reject restaurant.
+   *
+   * Rejects a pending restaurant application.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `restaurantsControllerRejectRestaurant()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  restaurantsControllerRejectRestaurant$Response(params: RestaurantsControllerRejectRestaurant$Params, context?: HttpContext): Promise<StrictHttpResponse<RestaurantResponseDto>> {
+    const obs = restaurantsControllerRejectRestaurant(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Reject restaurant.
+   *
+   * Rejects a pending restaurant application.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `restaurantsControllerRejectRestaurant$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  restaurantsControllerRejectRestaurant(params: RestaurantsControllerRejectRestaurant$Params, context?: HttpContext): Promise<RestaurantResponseDto> {
+    const resp = this.restaurantsControllerRejectRestaurant$Response(params, context);
+    return resp.then((r: StrictHttpResponse<RestaurantResponseDto>): RestaurantResponseDto => r.body);
+  }
+
+  /** Path part for operation `restaurantsControllerSuspendRestaurant()` */
+  static readonly RestaurantsControllerSuspendRestaurantPath = '/api/v1/restaurants/{id}/suspend';
+
+  /**
+   * Suspend restaurant.
+   *
+   * Suspends an approved restaurant.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `restaurantsControllerSuspendRestaurant()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  restaurantsControllerSuspendRestaurant$Response(params: RestaurantsControllerSuspendRestaurant$Params, context?: HttpContext): Promise<StrictHttpResponse<RestaurantResponseDto>> {
+    const obs = restaurantsControllerSuspendRestaurant(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Suspend restaurant.
+   *
+   * Suspends an approved restaurant.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `restaurantsControllerSuspendRestaurant$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  restaurantsControllerSuspendRestaurant(params: RestaurantsControllerSuspendRestaurant$Params, context?: HttpContext): Promise<RestaurantResponseDto> {
+    const resp = this.restaurantsControllerSuspendRestaurant$Response(params, context);
+    return resp.then((r: StrictHttpResponse<RestaurantResponseDto>): RestaurantResponseDto => r.body);
+  }
+
+  /** Path part for operation `restaurantsControllerRestoreRestaurant()` */
+  static readonly RestaurantsControllerRestoreRestaurantPath = '/api/v1/restaurants/{id}/restore';
+
+  /**
+   * Restore restaurant.
+   *
+   * Restores a suspended restaurant back to approved.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `restaurantsControllerRestoreRestaurant()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  restaurantsControllerRestoreRestaurant$Response(params: RestaurantsControllerRestoreRestaurant$Params, context?: HttpContext): Promise<StrictHttpResponse<RestaurantResponseDto>> {
+    const obs = restaurantsControllerRestoreRestaurant(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Restore restaurant.
+   *
+   * Restores a suspended restaurant back to approved.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `restaurantsControllerRestoreRestaurant$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  restaurantsControllerRestoreRestaurant(params: RestaurantsControllerRestoreRestaurant$Params, context?: HttpContext): Promise<RestaurantResponseDto> {
+    const resp = this.restaurantsControllerRestoreRestaurant$Response(params, context);
+    return resp.then((r: StrictHttpResponse<RestaurantResponseDto>): RestaurantResponseDto => r.body);
   }
 
   /** Path part for operation `restaurantsControllerGetRestaurantById()` */

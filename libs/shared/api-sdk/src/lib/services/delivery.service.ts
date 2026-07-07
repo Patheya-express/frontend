@@ -9,6 +9,14 @@ import { BaseService } from '../base-service';
 import { ApiConfiguration } from '../api-configuration';
 import { StrictHttpResponse } from '../strict-http-response';
 
+import { deliveryControllerApprovePartner } from '../fn/delivery/delivery-controller-approve-partner';
+import { DeliveryControllerApprovePartner$Params } from '../fn/delivery/delivery-controller-approve-partner';
+import { deliveryControllerBlockPartner } from '../fn/delivery/delivery-controller-block-partner';
+import { DeliveryControllerBlockPartner$Params } from '../fn/delivery/delivery-controller-block-partner';
+import { deliveryControllerForceOffline } from '../fn/delivery/delivery-controller-force-offline';
+import { DeliveryControllerForceOffline$Params } from '../fn/delivery/delivery-controller-force-offline';
+import { deliveryControllerGetAllForAdmin } from '../fn/delivery/delivery-controller-get-all-for-admin';
+import { DeliveryControllerGetAllForAdmin$Params } from '../fn/delivery/delivery-controller-get-all-for-admin';
 import { deliveryControllerGetAssignedOrders } from '../fn/delivery/delivery-controller-get-assigned-orders';
 import { DeliveryControllerGetAssignedOrders$Params } from '../fn/delivery/delivery-controller-get-assigned-orders';
 import { deliveryControllerGetMe } from '../fn/delivery/delivery-controller-get-me';
@@ -19,10 +27,20 @@ import { deliveryControllerGoOffline } from '../fn/delivery/delivery-controller-
 import { DeliveryControllerGoOffline$Params } from '../fn/delivery/delivery-controller-go-offline';
 import { deliveryControllerOnboardPartner } from '../fn/delivery/delivery-controller-onboard-partner';
 import { DeliveryControllerOnboardPartner$Params } from '../fn/delivery/delivery-controller-onboard-partner';
+import { deliveryControllerRejectPartner } from '../fn/delivery/delivery-controller-reject-partner';
+import { DeliveryControllerRejectPartner$Params } from '../fn/delivery/delivery-controller-reject-partner';
+import { deliveryControllerRestorePartner } from '../fn/delivery/delivery-controller-restore-partner';
+import { DeliveryControllerRestorePartner$Params } from '../fn/delivery/delivery-controller-restore-partner';
+import { deliveryControllerSuspendPartner } from '../fn/delivery/delivery-controller-suspend-partner';
+import { DeliveryControllerSuspendPartner$Params } from '../fn/delivery/delivery-controller-suspend-partner';
+import { deliveryControllerUnblockPartner } from '../fn/delivery/delivery-controller-unblock-partner';
+import { DeliveryControllerUnblockPartner$Params } from '../fn/delivery/delivery-controller-unblock-partner';
 import { deliveryControllerUpdateDeliveryStatus } from '../fn/delivery/delivery-controller-update-delivery-status';
 import { DeliveryControllerUpdateDeliveryStatus$Params } from '../fn/delivery/delivery-controller-update-delivery-status';
 import { DeliveryPartnerResponseDto } from '../models/delivery-partner-response-dto';
 import { OrderResponseDto } from '../models/order-response-dto';
+import { PaginatedAdminDeliveryPartnersResponseDto } from '../models/paginated-admin-delivery-partners-response-dto';
+import { UserResponseDto } from '../models/user-response-dto';
 
 @Injectable({ providedIn: 'root' })
 export class DeliveryService extends BaseService {
@@ -61,6 +79,39 @@ export class DeliveryService extends BaseService {
   deliveryControllerGetMe(params?: DeliveryControllerGetMe$Params, context?: HttpContext): Promise<DeliveryPartnerResponseDto> {
     const resp = this.deliveryControllerGetMe$Response(params, context);
     return resp.then((r: StrictHttpResponse<DeliveryPartnerResponseDto>): DeliveryPartnerResponseDto => r.body);
+  }
+
+  /** Path part for operation `deliveryControllerGetAllForAdmin()` */
+  static readonly DeliveryControllerGetAllForAdminPath = '/api/v1/delivery/admin';
+
+  /**
+   * Get delivery partners (admin).
+   *
+   * Returns a paginated, filterable, platform-wide list of delivery partners, including live presence, current assignment, and delivery stats.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `deliveryControllerGetAllForAdmin()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  deliveryControllerGetAllForAdmin$Response(params?: DeliveryControllerGetAllForAdmin$Params, context?: HttpContext): Promise<StrictHttpResponse<PaginatedAdminDeliveryPartnersResponseDto>> {
+    const obs = deliveryControllerGetAllForAdmin(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Get delivery partners (admin).
+   *
+   * Returns a paginated, filterable, platform-wide list of delivery partners, including live presence, current assignment, and delivery stats.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `deliveryControllerGetAllForAdmin$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  deliveryControllerGetAllForAdmin(params?: DeliveryControllerGetAllForAdmin$Params, context?: HttpContext): Promise<PaginatedAdminDeliveryPartnersResponseDto> {
+    const resp = this.deliveryControllerGetAllForAdmin$Response(params, context);
+    return resp.then((r: StrictHttpResponse<PaginatedAdminDeliveryPartnersResponseDto>): PaginatedAdminDeliveryPartnersResponseDto => r.body);
   }
 
   /** Path part for operation `deliveryControllerOnboardPartner()` */
@@ -226,6 +277,237 @@ export class DeliveryService extends BaseService {
   deliveryControllerUpdateDeliveryStatus(params: DeliveryControllerUpdateDeliveryStatus$Params, context?: HttpContext): Promise<OrderResponseDto> {
     const resp = this.deliveryControllerUpdateDeliveryStatus$Response(params, context);
     return resp.then((r: StrictHttpResponse<OrderResponseDto>): OrderResponseDto => r.body);
+  }
+
+  /** Path part for operation `deliveryControllerApprovePartner()` */
+  static readonly DeliveryControllerApprovePartnerPath = '/api/v1/delivery/{id}/approve';
+
+  /**
+   * Approve delivery partner.
+   *
+   * Sets isVerified to true. There is no separate pending/rejected state — this is a direct boolean set.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `deliveryControllerApprovePartner()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  deliveryControllerApprovePartner$Response(params: DeliveryControllerApprovePartner$Params, context?: HttpContext): Promise<StrictHttpResponse<DeliveryPartnerResponseDto>> {
+    const obs = deliveryControllerApprovePartner(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Approve delivery partner.
+   *
+   * Sets isVerified to true. There is no separate pending/rejected state — this is a direct boolean set.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `deliveryControllerApprovePartner$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  deliveryControllerApprovePartner(params: DeliveryControllerApprovePartner$Params, context?: HttpContext): Promise<DeliveryPartnerResponseDto> {
+    const resp = this.deliveryControllerApprovePartner$Response(params, context);
+    return resp.then((r: StrictHttpResponse<DeliveryPartnerResponseDto>): DeliveryPartnerResponseDto => r.body);
+  }
+
+  /** Path part for operation `deliveryControllerRejectPartner()` */
+  static readonly DeliveryControllerRejectPartnerPath = '/api/v1/delivery/{id}/reject';
+
+  /**
+   * Reject delivery partner.
+   *
+   * Sets isVerified to false.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `deliveryControllerRejectPartner()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  deliveryControllerRejectPartner$Response(params: DeliveryControllerRejectPartner$Params, context?: HttpContext): Promise<StrictHttpResponse<DeliveryPartnerResponseDto>> {
+    const obs = deliveryControllerRejectPartner(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Reject delivery partner.
+   *
+   * Sets isVerified to false.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `deliveryControllerRejectPartner$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  deliveryControllerRejectPartner(params: DeliveryControllerRejectPartner$Params, context?: HttpContext): Promise<DeliveryPartnerResponseDto> {
+    const resp = this.deliveryControllerRejectPartner$Response(params, context);
+    return resp.then((r: StrictHttpResponse<DeliveryPartnerResponseDto>): DeliveryPartnerResponseDto => r.body);
+  }
+
+  /** Path part for operation `deliveryControllerSuspendPartner()` */
+  static readonly DeliveryControllerSuspendPartnerPath = '/api/v1/delivery/{id}/suspend';
+
+  /**
+   * Suspend delivery partner.
+   *
+   * Operational-level suspension — the partner cannot go available or receive assignments.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `deliveryControllerSuspendPartner()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  deliveryControllerSuspendPartner$Response(params: DeliveryControllerSuspendPartner$Params, context?: HttpContext): Promise<StrictHttpResponse<DeliveryPartnerResponseDto>> {
+    const obs = deliveryControllerSuspendPartner(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Suspend delivery partner.
+   *
+   * Operational-level suspension — the partner cannot go available or receive assignments.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `deliveryControllerSuspendPartner$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  deliveryControllerSuspendPartner(params: DeliveryControllerSuspendPartner$Params, context?: HttpContext): Promise<DeliveryPartnerResponseDto> {
+    const resp = this.deliveryControllerSuspendPartner$Response(params, context);
+    return resp.then((r: StrictHttpResponse<DeliveryPartnerResponseDto>): DeliveryPartnerResponseDto => r.body);
+  }
+
+  /** Path part for operation `deliveryControllerRestorePartner()` */
+  static readonly DeliveryControllerRestorePartnerPath = '/api/v1/delivery/{id}/restore';
+
+  /**
+   * Restore delivery partner.
+   *
+   * Restores a suspended partner back to offline.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `deliveryControllerRestorePartner()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  deliveryControllerRestorePartner$Response(params: DeliveryControllerRestorePartner$Params, context?: HttpContext): Promise<StrictHttpResponse<DeliveryPartnerResponseDto>> {
+    const obs = deliveryControllerRestorePartner(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Restore delivery partner.
+   *
+   * Restores a suspended partner back to offline.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `deliveryControllerRestorePartner$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  deliveryControllerRestorePartner(params: DeliveryControllerRestorePartner$Params, context?: HttpContext): Promise<DeliveryPartnerResponseDto> {
+    const resp = this.deliveryControllerRestorePartner$Response(params, context);
+    return resp.then((r: StrictHttpResponse<DeliveryPartnerResponseDto>): DeliveryPartnerResponseDto => r.body);
+  }
+
+  /** Path part for operation `deliveryControllerForceOffline()` */
+  static readonly DeliveryControllerForceOfflinePath = '/api/v1/delivery/{id}/force-offline';
+
+  /**
+   * Force delivery partner offline.
+   *
+   * Admin-scoped variant of the partner's own go-offline toggle.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `deliveryControllerForceOffline()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  deliveryControllerForceOffline$Response(params: DeliveryControllerForceOffline$Params, context?: HttpContext): Promise<StrictHttpResponse<DeliveryPartnerResponseDto>> {
+    const obs = deliveryControllerForceOffline(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Force delivery partner offline.
+   *
+   * Admin-scoped variant of the partner's own go-offline toggle.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `deliveryControllerForceOffline$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  deliveryControllerForceOffline(params: DeliveryControllerForceOffline$Params, context?: HttpContext): Promise<DeliveryPartnerResponseDto> {
+    const resp = this.deliveryControllerForceOffline$Response(params, context);
+    return resp.then((r: StrictHttpResponse<DeliveryPartnerResponseDto>): DeliveryPartnerResponseDto => r.body);
+  }
+
+  /** Path part for operation `deliveryControllerBlockPartner()` */
+  static readonly DeliveryControllerBlockPartnerPath = '/api/v1/delivery/{id}/block';
+
+  /**
+   * Block delivery partner.
+   *
+   * Account-level block via the underlying user record — the partner cannot log in at all.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `deliveryControllerBlockPartner()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  deliveryControllerBlockPartner$Response(params: DeliveryControllerBlockPartner$Params, context?: HttpContext): Promise<StrictHttpResponse<UserResponseDto>> {
+    const obs = deliveryControllerBlockPartner(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Block delivery partner.
+   *
+   * Account-level block via the underlying user record — the partner cannot log in at all.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `deliveryControllerBlockPartner$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  deliveryControllerBlockPartner(params: DeliveryControllerBlockPartner$Params, context?: HttpContext): Promise<UserResponseDto> {
+    const resp = this.deliveryControllerBlockPartner$Response(params, context);
+    return resp.then((r: StrictHttpResponse<UserResponseDto>): UserResponseDto => r.body);
+  }
+
+  /** Path part for operation `deliveryControllerUnblockPartner()` */
+  static readonly DeliveryControllerUnblockPartnerPath = '/api/v1/delivery/{id}/unblock';
+
+  /**
+   * Unblock delivery partner.
+   *
+   * Restores the underlying user account from blocked (or suspended) back to active.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `deliveryControllerUnblockPartner()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  deliveryControllerUnblockPartner$Response(params: DeliveryControllerUnblockPartner$Params, context?: HttpContext): Promise<StrictHttpResponse<UserResponseDto>> {
+    const obs = deliveryControllerUnblockPartner(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Unblock delivery partner.
+   *
+   * Restores the underlying user account from blocked (or suspended) back to active.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `deliveryControllerUnblockPartner$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  deliveryControllerUnblockPartner(params: DeliveryControllerUnblockPartner$Params, context?: HttpContext): Promise<UserResponseDto> {
+    const resp = this.deliveryControllerUnblockPartner$Response(params, context);
+    return resp.then((r: StrictHttpResponse<UserResponseDto>): UserResponseDto => r.body);
   }
 
 }

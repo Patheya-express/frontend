@@ -1,5 +1,10 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import type { AuthUserDto, LoginDto, RegisterDto } from '@patheya-express-frontend/api-sdk';
+import type {
+  AuthUserDto,
+  LoginDto,
+  RegisterDto,
+  RegisterResponseDto,
+} from '@patheya-express-frontend/api-sdk';
 import { AuthService } from '../services/auth.service';
 import { AuthStorageService } from '../storage/auth-storage.service';
 
@@ -32,11 +37,23 @@ export class AuthStore {
   }
 
   async register(dto: RegisterDto): Promise<boolean> {
+    return this.runRegistration(() => this.authService.register(dto));
+  }
+
+  async registerDeliveryPartner(dto: RegisterDto): Promise<boolean> {
+    return this.runRegistration(() => this.authService.registerDeliveryPartner(dto));
+  }
+
+  async registerRestaurantOwner(dto: RegisterDto): Promise<boolean> {
+    return this.runRegistration(() => this.authService.registerRestaurantOwner(dto));
+  }
+
+  private async runRegistration(register: () => Promise<RegisterResponseDto>): Promise<boolean> {
     this._loading.set(true);
     this._error.set(null);
 
     try {
-      const response = await this.authService.register(dto);
+      const response = await register();
       this.applySession(response.accessToken, response.refreshToken, response.user);
       return true;
     } catch {

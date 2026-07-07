@@ -1,0 +1,64 @@
+.order-status-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.order-status-timeline-step {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.order-status-timeline-marker {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  margin-top: 3px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.order-status-timeline-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.order-status-timeline-label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+}
+
+.order-status-timeline-time {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-subtle);
+}
+
+.order-status-timeline-step.is-completed,
+.order-status-timeline-step.is-current {
+  .order-status-timeline-label {
+    color: var(--color-text);
+  }
+}
+
+.order-status-timeline-step.is-completed .order-status-timeline-marker {
+  border-color: var(--color-success);
+  background: var(--color-success);
+}
+
+.order-status-timeline-step.is-current .order-status-timeline-marker {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+}
+
+.order-status-timeline-cancelled {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-error);
+}

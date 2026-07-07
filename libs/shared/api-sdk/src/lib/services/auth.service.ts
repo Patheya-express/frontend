@@ -21,6 +21,10 @@ import { authControllerRefreshToken } from '../fn/auth/auth-controller-refresh-t
 import { AuthControllerRefreshToken$Params } from '../fn/auth/auth-controller-refresh-token';
 import { authControllerRegister } from '../fn/auth/auth-controller-register';
 import { AuthControllerRegister$Params } from '../fn/auth/auth-controller-register';
+import { authControllerRegisterDeliveryPartner } from '../fn/auth/auth-controller-register-delivery-partner';
+import { AuthControllerRegisterDeliveryPartner$Params } from '../fn/auth/auth-controller-register-delivery-partner';
+import { authControllerRegisterRestaurantOwner } from '../fn/auth/auth-controller-register-restaurant-owner';
+import { AuthControllerRegisterRestaurantOwner$Params } from '../fn/auth/auth-controller-register-restaurant-owner';
 import { AuthUserDto } from '../models/auth-user-dto';
 import { LogoutResponseDto } from '../models/logout-response-dto';
 import { RefreshResponseDto } from '../models/refresh-response-dto';
@@ -62,6 +66,72 @@ export class AuthService extends BaseService {
    */
   authControllerRegister(params: AuthControllerRegister$Params, context?: HttpContext): Promise<RegisterResponseDto> {
     const resp = this.authControllerRegister$Response(params, context);
+    return resp.then((r: StrictHttpResponse<RegisterResponseDto>): RegisterResponseDto => r.body);
+  }
+
+  /** Path part for operation `authControllerRegisterDeliveryPartner()` */
+  static readonly AuthControllerRegisterDeliveryPartnerPath = '/api/v1/auth/register/delivery-partner';
+
+  /**
+   * Register a new delivery partner.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `authControllerRegisterDeliveryPartner()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  authControllerRegisterDeliveryPartner$Response(params: AuthControllerRegisterDeliveryPartner$Params, context?: HttpContext): Promise<StrictHttpResponse<RegisterResponseDto>> {
+    const obs = authControllerRegisterDeliveryPartner(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Register a new delivery partner.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `authControllerRegisterDeliveryPartner$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  authControllerRegisterDeliveryPartner(params: AuthControllerRegisterDeliveryPartner$Params, context?: HttpContext): Promise<RegisterResponseDto> {
+    const resp = this.authControllerRegisterDeliveryPartner$Response(params, context);
+    return resp.then((r: StrictHttpResponse<RegisterResponseDto>): RegisterResponseDto => r.body);
+  }
+
+  /** Path part for operation `authControllerRegisterRestaurantOwner()` */
+  static readonly AuthControllerRegisterRestaurantOwnerPath = '/api/v1/auth/register/restaurant-owner';
+
+  /**
+   * Register a new restaurant owner.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `authControllerRegisterRestaurantOwner()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  authControllerRegisterRestaurantOwner$Response(params: AuthControllerRegisterRestaurantOwner$Params, context?: HttpContext): Promise<StrictHttpResponse<RegisterResponseDto>> {
+    const obs = authControllerRegisterRestaurantOwner(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Register a new restaurant owner.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `authControllerRegisterRestaurantOwner$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  authControllerRegisterRestaurantOwner(params: AuthControllerRegisterRestaurantOwner$Params, context?: HttpContext): Promise<RegisterResponseDto> {
+    const resp = this.authControllerRegisterRestaurantOwner$Response(params, context);
     return resp.then((r: StrictHttpResponse<RegisterResponseDto>): RegisterResponseDto => r.body);
   }
 

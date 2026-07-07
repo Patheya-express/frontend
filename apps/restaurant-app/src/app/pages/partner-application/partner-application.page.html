@@ -3,10 +3,94 @@
     title="Apply as a Restaurant Partner"
     subtitle="Bring your restaurant to Patheya Express and reach more diners."
   >
-    <p class="placeholder-copy">
-      Restaurant partner applications aren't open yet. We're putting the finishing touches on
-      onboarding — check back soon or reach out to our partnerships team to get started early.
-    </p>
+    <form class="auth-form" [formGroup]="form" (ngSubmit)="onSubmit()">
+      @if (errorMessage()) {
+        <div class="form-alert" role="alert">{{ errorMessage() }}</div>
+      }
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="apply-first-name">First name</label>
+          <input
+            id="apply-first-name"
+            type="text"
+            autocomplete="given-name"
+            formControlName="firstName"
+            [class.invalid]="form.controls.firstName.invalid && form.controls.firstName.touched"
+          />
+          @if (form.controls.firstName.invalid && form.controls.firstName.touched) {
+            <span class="form-field-error">First name is required.</span>
+          }
+        </div>
+
+        <div class="form-field">
+          <label for="apply-last-name">Last name</label>
+          <input
+            id="apply-last-name"
+            type="text"
+            autocomplete="family-name"
+            formControlName="lastName"
+            [class.invalid]="form.controls.lastName.invalid && form.controls.lastName.touched"
+          />
+          @if (form.controls.lastName.invalid && form.controls.lastName.touched) {
+            <span class="form-field-error">Last name is required.</span>
+          }
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label for="apply-email">Email</label>
+        <input
+          id="apply-email"
+          type="email"
+          autocomplete="email"
+          formControlName="email"
+          [class.invalid]="form.controls.email.invalid && form.controls.email.touched"
+        />
+        @if (form.controls.email.invalid && form.controls.email.touched) {
+          <span class="form-field-error">Enter a valid email address.</span>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="apply-password">Password</label>
+        <input
+          id="apply-password"
+          type="password"
+          autocomplete="new-password"
+          formControlName="password"
+          [class.invalid]="form.controls.password.invalid && form.controls.password.touched"
+        />
+        @if (form.controls.password.invalid && form.controls.password.touched) {
+          <span class="form-field-error">Password must be at least 8 characters.</span>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="apply-restaurant-name">Restaurant name</label>
+        <input
+          id="apply-restaurant-name"
+          type="text"
+          formControlName="restaurantName"
+          [class.invalid]="form.controls.restaurantName.invalid && form.controls.restaurantName.touched"
+        />
+        @if (form.controls.restaurantName.invalid && form.controls.restaurantName.touched) {
+          <span class="form-field-error">Restaurant name is required.</span>
+        } @else if (slugPreview) {
+          <span class="form-field-hint">patheyaexpress.com/restaurants/{{ slugPreview }}</span>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="apply-phone">Phone (optional)</label>
+        <input id="apply-phone" type="tel" autocomplete="tel" formControlName="phone" />
+      </div>
+
+      <button type="submit" class="form-submit" [disabled]="submitting()">
+        {{ submitting() ? 'Submitting…' : 'Apply as Restaurant Partner' }}
+      </button>
+    </form>
+
     <span auth-card-footer>Already a partner? <a routerLink="/auth/login">Log in</a></span>
   </lib-auth-card>
 </lib-auth-layout>

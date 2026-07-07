@@ -11,6 +11,7 @@ import { StrictHttpResponse } from '../strict-http-response';
 
 import { healthControllerGetHealth } from '../fn/health/health-controller-get-health';
 import { HealthControllerGetHealth$Params } from '../fn/health/health-controller-get-health';
+import { HealthResponseDto } from '../models/health-response-dto';
 
 @Injectable({ providedIn: 'root' })
 export class HealthService extends BaseService {
@@ -22,25 +23,33 @@ export class HealthService extends BaseService {
   static readonly HealthControllerGetHealthPath = '/api/v1/health';
 
   /**
+   * Get platform health status.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `healthControllerGetHealth()` instead.
    *
    * This method doesn't expect any request body.
    */
-  healthControllerGetHealth$Response(params?: HealthControllerGetHealth$Params, context?: HttpContext): Promise<StrictHttpResponse<void>> {
+  healthControllerGetHealth$Response(params?: HealthControllerGetHealth$Params, context?: HttpContext): Promise<StrictHttpResponse<HealthResponseDto>> {
     const obs = healthControllerGetHealth(this.http, this.rootUrl, params, context);
     return firstValueFrom(obs);
   }
 
   /**
+   * Get platform health status.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `healthControllerGetHealth$Response()` instead.
    *
    * This method doesn't expect any request body.
    */
-  healthControllerGetHealth(params?: HealthControllerGetHealth$Params, context?: HttpContext): Promise<void> {
+  healthControllerGetHealth(params?: HealthControllerGetHealth$Params, context?: HttpContext): Promise<HealthResponseDto> {
     const resp = this.healthControllerGetHealth$Response(params, context);
-    return resp.then((r: StrictHttpResponse<void>): void => r.body);
+    return resp.then((r: StrictHttpResponse<HealthResponseDto>): HealthResponseDto => r.body);
   }
 
 }

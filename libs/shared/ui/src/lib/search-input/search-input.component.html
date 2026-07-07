@@ -1,0 +1,7 @@
+<input
+  class="search-input"
+  type="search"
+  [placeholder]="placeholder"
+  [value]="value"
+  (input)="onInput($any($event.target).value)"
+/>

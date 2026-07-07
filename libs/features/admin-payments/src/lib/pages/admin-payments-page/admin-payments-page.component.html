@@ -1,0 +1,199 @@
+<div class="admin-payments-page">
+  <h1>Manage Payments</h1>
+
+  <lib-table-toolbar>
+    <lib-search-input
+      toolbar-search
+      placeholder="Search by order number, customer name, email, or phone"
+      [value]="state().filters.search"
+      (valueChange)="onSearch($event)"
+    />
+
+    <div toolbar-filters class="admin-payments-filters">
+      <select class="admin-payments-filter-select" (change)="onStatusFilterChange($any($event.target).value)">
+        <option value="" [selected]="!state().filters.status">All statuses</option>
+        @for (option of statusOptions; track option.value) {
+          <option [value]="option.value" [selected]="state().filters.status === option.value">
+            {{ option.label }}
+          </option>
+        }
+      </select>
+
+      <select class="admin-payments-filter-select" (change)="onProviderFilterChange($any($event.target).value)">
+        <option value="" [selected]="!state().filters.provider">All providers</option>
+        @for (option of providerOptions; track option.value) {
+          <option [value]="option.value" [selected]="state().filters.provider === option.value">
+            {{ option.label }}
+          </option>
+        }
+      </select>
+
+      <select class="admin-payments-filter-select" (change)="onMethodFilterChange($any($event.target).value)">
+        <option value="" [selected]="!state().filters.method">All methods</option>
+        @for (option of methodOptions; track option.value) {
+          <option [value]="option.value" [selected]="state().filters.method === option.value">
+            {{ option.label }}
+          </option>
+        }
+      </select>
+
+      <label class="admin-payments-date-field">
+        From
+        <input type="date" [value]="state().filters.dateFrom" (change)="onDateFromChange($any($event.target).value)" />
+      </label>
+
+      <label class="admin-payments-date-field">
+        To
+        <input type="date" [value]="state().filters.dateTo" (change)="onDateToChange($any($event.target).value)" />
+      </label>
+    </div>
+  </lib-table-toolbar>
+
+  @if (actionError()) {
+    <div class="admin-payments-action-error" role="alert">{{ actionError() }}</div>
+  }
+
+  @if (loading()) {
+    <lib-skeleton [count]="6" />
+  } @else if (error()) {
+    <lib-error-state [message]="error()!" (retry)="retry()" />
+  } @else if (state().payments.length === 0) {
+    <lib-empty-state title="No payments found" message="Try adjusting your search or filters." actionLabel="Refresh" (refresh)="retry()" />
+  } @else {
+    <lib-data-table [columns]="columns">
+      @for (payment of state().payments; track payment.id) {
+        <tr>
+          <td>{{ payment.id }}</td>
+          <td>{{ payment.order.orderNumber }}</td>
+          <td>{{ customerName(payment) }}</td>
+          <td>{{ formattedAmount(payment.amount) }}</td>
+          <td>{{ providerLabel(payment) }}</td>
+          <td>{{ methodLabel(payment) }}</td>
+          <td><lib-status-chip [label]="statusLabel(payment)" [tone]="statusTone(payment)" /></td>
+          <td>{{ payment.providerPaymentId ?? '—' }}</td>
+          <td>{{ formattedDate(payment.createdAt) }}</td>
+          <td class="admin-payments-row-actions">
+            <button type="button" class="admin-payments-action-link" (click)="viewTransaction(payment)">View Transaction</button>
+            @if (canRefund(payment)) {
+              <button type="button" class="admin-payments-action-link admin-payments-action-danger" [disabled]="isProcessing(payment.id)" (click)="requestRefund(payment)">
+                Refund
+              </button>
+            }
+            <button type="button" class="admin-payments-action-link" (click)="copyPaymentId(payment)">
+              {{ copiedLabel() === 'payment' ? 'Copied!' : 'Copy Payment ID' }}
+            </button>
+            @if (payment.providerPaymentId) {
+              <button type="button" class="admin-payments-action-link" (click)="copyTransactionId(payment)">
+                {{ copiedLabel() === 'transaction' ? 'Copied!' : 'Copy Transaction ID' }}
+              </button>
+            }
+          </td>
+        </tr>
+      }
+    </lib-data-table>
+
+    <lib-pagination
+      [page]="state().pagination.page"
+      [totalPages]="state().pagination.totalPages"
+      [total]="state().pagination.total"
+      (pageChange)="onPageChange($event)"
+    />
+  }
+
+  @if (state().selectedPayment; as selected) {
+    <div class="admin-payments-details-backdrop">
+      <button
+        type="button"
+        class="admin-payments-details-backdrop-dismiss"
+        aria-label="Close details"
+        (click)="closeDetails()"
+      ></button>
+      <div class="admin-payments-details-panel" role="dialog" aria-modal="true" [attr.aria-label]="'Payment ' + selected.id">
+        <h2>Payment {{ selected.id }}</h2>
+
+        <h3>Customer</h3>
+        <dl class="admin-payments-details-list">
+          <dt>Name</dt>
+          <dd>{{ customerName(selected) }}</dd>
+          <dt>Email</dt>
+          <dd>{{ selected.customer.email ?? '—' }}</dd>
+          <dt>Phone</dt>
+          <dd>{{ selected.customer.phone ?? '—' }}</dd>
+        </dl>
+
+        <h3>Order</h3>
+        <dl class="admin-payments-details-list">
+          <dt>Order Number</dt>
+          <dd>{{ selected.order.orderNumber }}</dd>
+          <dt>Order Status</dt>
+          <dd>{{ selected.order.status }}</dd>
+        </dl>
+
+        <h3>Payment</h3>
+        <dl class="admin-payments-details-list">
+          <dt>Amount</dt>
+          <dd>{{ formattedAmount(selected.amount) }}</dd>
+          <dt>Status</dt>
+          <dd><lib-status-chip [label]="statusLabel(selected)" [tone]="statusTone(selected)" /></dd>
+        </dl>
+
+        <h3>Provider Information</h3>
+        <dl class="admin-payments-details-list">
+          <dt>Provider</dt>
+          <dd>{{ providerLabel(selected) }}</dd>
+          <dt>Method</dt>
+          <dd>{{ methodLabel(selected) }}</dd>
+          <dt>Provider Order ID</dt>
+          <dd>{{ selected.providerOrderId ?? '—' }}</dd>
+        </dl>
+
+        <h3 id="admin-payments-transaction-section">Transaction</h3>
+        <dl class="admin-payments-details-list">
+          <dt>Transaction ID</dt>
+          <dd>{{ selected.providerPaymentId ?? '—' }}</dd>
+        </dl>
+
+        <h3>Refund History</h3>
+        @if (selected.refunds.length === 0) {
+          <p class="admin-payments-no-refunds">No refunds have been issued for this payment.</p>
+        } @else {
+          <dl class="admin-payments-details-list">
+            @for (refund of selected.refunds; track refund.id) {
+              <dt>{{ formattedDateTime(refund.createdAt) }}</dt>
+              <dd>{{ formattedAmount(refund.amount) }} — {{ refund.status }}{{ refund.reason ? ' (' + refund.reason + ')' : '' }}</dd>
+            }
+          </dl>
+        }
+
+        <h3>Metadata</h3>
+        <dl class="admin-payments-details-list">
+          <dt>Attempt Number</dt>
+          <dd>{{ selected.attemptNumber }}</dd>
+          <dt>Active Attempt</dt>
+          <dd>{{ selected.isActive ? 'Yes' : 'No' }}</dd>
+          <dt>Provider Order ID</dt>
+          <dd>{{ selected.providerOrderId ?? '—' }}</dd>
+          <dt>Provider Payment ID</dt>
+          <dd>{{ selected.providerPaymentId ?? '—' }}</dd>
+          <dt>Created At</dt>
+          <dd>{{ formattedDateTime(selected.createdAt) }}</dd>
+          <dt>Updated At</dt>
+          <dd>{{ formattedDateTime(selected.updatedAt) }}</dd>
+        </dl>
+
+        <button type="button" class="admin-payments-details-close" (click)="closeDetails()">Close</button>
+      </div>
+    </div>
+  }
+
+  <lib-confirm-dialog
+    [open]="!!pendingRefund()"
+    title="Refund this payment?"
+    [message]="pendingRefund() ? (formattedAmount(pendingRefund()!.amount) + ' will be refunded through the original payment method.') : ''"
+    confirmLabel="Refund"
+    tone="danger"
+    [busy]="isPendingBusy()"
+    (confirmed)="confirmRefund()"
+    (cancelled)="cancelRefund()"
+  />
+</div>

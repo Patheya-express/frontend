@@ -1,1 +1,5 @@
-<router-outlet />
+@if (isAuthenticated()) {
+  <lib-partner-shell [brandName]="brandName" [navLinks]="navLinks" (logoutRequested)="onLogout()" />
+} @else {
+  <router-outlet />
+}

@@ -23,6 +23,14 @@ export class AuthFacade {
     return this.store.register(dto);
   }
 
+  registerDeliveryPartner(dto: RegisterDto): Promise<boolean> {
+    return this.store.registerDeliveryPartner(dto);
+  }
+
+  registerRestaurantOwner(dto: RegisterDto): Promise<boolean> {
+    return this.store.registerRestaurantOwner(dto);
+  }
+
   login(dto: LoginDto): Promise<boolean> {
     return this.store.login(dto);
   }

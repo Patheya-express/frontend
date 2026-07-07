@@ -1,0 +1,141 @@
+<div class="admin-audit-page">
+  <h1>Audit Logs</h1>
+
+  <lib-table-toolbar>
+    <lib-search-input
+      toolbar-search
+      placeholder="Search by entity, entity ID, or actor name/email"
+      [value]="state().filters.search"
+      (valueChange)="onSearch($event)"
+    />
+
+    <div toolbar-filters class="admin-audit-filters">
+      <select class="admin-audit-filter-select" (change)="onActionFilterChange($any($event.target).value)">
+        <option value="" [selected]="!state().filters.action">All actions</option>
+        @for (option of actionOptions; track option.value) {
+          <option [value]="option.value" [selected]="state().filters.action === option.value">
+            {{ option.label }}
+          </option>
+        }
+      </select>
+
+      <input
+        type="text"
+        class="admin-audit-text-filter"
+        placeholder="Entity type"
+        [value]="state().filters.entityType"
+        (change)="onEntityTypeFilterChange($any($event.target).value)"
+      />
+
+      <input
+        type="text"
+        class="admin-audit-text-filter"
+        placeholder="User ID"
+        [value]="state().filters.userId"
+        (change)="onUserFilterChange($any($event.target).value)"
+      />
+
+      <label class="admin-audit-date-field">
+        From
+        <input type="date" [value]="state().filters.dateFrom" (change)="onDateFromChange($any($event.target).value)" />
+      </label>
+
+      <label class="admin-audit-date-field">
+        To
+        <input type="date" [value]="state().filters.dateTo" (change)="onDateToChange($any($event.target).value)" />
+      </label>
+    </div>
+  </lib-table-toolbar>
+
+  @if (loading()) {
+    <lib-skeleton [count]="6" />
+  } @else if (error()) {
+    <lib-error-state [message]="error()!" (retry)="retry()" />
+  } @else if (state().logs.length === 0) {
+    <lib-empty-state title="No audit logs found" message="Try adjusting your search or filters." actionLabel="Refresh" (refresh)="retry()" />
+  } @else {
+    <lib-data-table [columns]="columns">
+      @for (log of state().logs; track log.id) {
+        <tr>
+          <td>{{ formattedDateTime(log.createdAt) }}</td>
+          <td>{{ actorName(log) }}</td>
+          <td>{{ actionLabel(log) }}</td>
+          <td>{{ log.entityType }}</td>
+          <td>{{ log.entityId ?? '—' }}</td>
+          <td>{{ log.ipAddress ?? '—' }}</td>
+          <td><lib-status-chip label="Success" tone="success" /></td>
+          <td class="admin-audit-row-actions">
+            <button type="button" class="admin-audit-action-link" (click)="viewDetails(log)">View Details</button>
+          </td>
+        </tr>
+      }
+    </lib-data-table>
+
+    <lib-pagination
+      [page]="state().pagination.page"
+      [totalPages]="state().pagination.totalPages"
+      [total]="state().pagination.total"
+      (pageChange)="onPageChange($event)"
+    />
+  }
+
+  @if (state().selectedLog; as selected) {
+    <div class="admin-audit-details-backdrop">
+      <button
+        type="button"
+        class="admin-audit-details-backdrop-dismiss"
+        aria-label="Close details"
+        (click)="closeDetails()"
+      ></button>
+      <div class="admin-audit-details-panel" role="dialog" aria-modal="true" [attr.aria-label]="'Audit log ' + selected.id">
+        <h2>Audit Log {{ selected.id }}</h2>
+
+        <h3>Actor</h3>
+        <dl class="admin-audit-details-list">
+          <dt>Name</dt>
+          <dd>{{ actorName(selected) }}</dd>
+          <dt>Email</dt>
+          <dd>{{ selected.actor?.email ?? '—' }}</dd>
+          <dt>Role</dt>
+          <dd>{{ selected.actor?.role ?? '—' }}</dd>
+        </dl>
+
+        <h3>Action</h3>
+        <dl class="admin-audit-details-list">
+          <dt>Action</dt>
+          <dd>{{ actionLabel(selected) }}</dd>
+        </dl>
+
+        <h3>Entity</h3>
+        <dl class="admin-audit-details-list">
+          <dt>Entity Type</dt>
+          <dd>{{ selected.entityType }}</dd>
+          <dt>Entity ID</dt>
+          <dd>{{ selected.entityId ?? '—' }}</dd>
+        </dl>
+
+        <h3>Before</h3>
+        <pre class="admin-audit-json">{{ formattedJson(selected.oldValues) }}</pre>
+
+        <h3>After</h3>
+        <pre class="admin-audit-json">{{ formattedJson(selected.newValues) }}</pre>
+
+        <h3>Metadata</h3>
+        <dl class="admin-audit-details-list">
+          <dt>IP Address</dt>
+          <dd>{{ selected.ipAddress ?? '—' }}</dd>
+          <dt>User Agent</dt>
+          <dd>{{ selected.userAgent ?? '—' }}</dd>
+        </dl>
+
+        <h3>Timestamp</h3>
+        <dl class="admin-audit-details-list">
+          <dt>Created At</dt>
+          <dd>{{ formattedDateTime(selected.createdAt) }}</dd>
+        </dl>
+
+        <button type="button" class="admin-audit-details-close" (click)="closeDetails()">Close</button>
+      </div>
+    </div>
+  }
+</div>

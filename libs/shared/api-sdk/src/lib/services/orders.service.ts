@@ -12,12 +12,18 @@ import { StrictHttpResponse } from '../strict-http-response';
 import { OrderResponseDto } from '../models/order-response-dto';
 import { ordersControllerAcceptOrder } from '../fn/orders/orders-controller-accept-order';
 import { OrdersControllerAcceptOrder$Params } from '../fn/orders/orders-controller-accept-order';
+import { ordersControllerAdminCancelOrder } from '../fn/orders/orders-controller-admin-cancel-order';
+import { OrdersControllerAdminCancelOrder$Params } from '../fn/orders/orders-controller-admin-cancel-order';
 import { ordersControllerAssignDeliveryPartner } from '../fn/orders/orders-controller-assign-delivery-partner';
 import { OrdersControllerAssignDeliveryPartner$Params } from '../fn/orders/orders-controller-assign-delivery-partner';
 import { ordersControllerCancelOrder } from '../fn/orders/orders-controller-cancel-order';
 import { OrdersControllerCancelOrder$Params } from '../fn/orders/orders-controller-cancel-order';
 import { ordersControllerDelivered } from '../fn/orders/orders-controller-delivered';
 import { OrdersControllerDelivered$Params } from '../fn/orders/orders-controller-delivered';
+import { ordersControllerForceCompleteOrder } from '../fn/orders/orders-controller-force-complete-order';
+import { OrdersControllerForceCompleteOrder$Params } from '../fn/orders/orders-controller-force-complete-order';
+import { ordersControllerGetAllForAdmin } from '../fn/orders/orders-controller-get-all-for-admin';
+import { OrdersControllerGetAllForAdmin$Params } from '../fn/orders/orders-controller-get-all-for-admin';
 import { ordersControllerGetCustomerOrders } from '../fn/orders/orders-controller-get-customer-orders';
 import { OrdersControllerGetCustomerOrders$Params } from '../fn/orders/orders-controller-get-customer-orders';
 import { ordersControllerGetOrderById } from '../fn/orders/orders-controller-get-order-by-id';
@@ -34,11 +40,14 @@ import { ordersControllerPrepareOrder } from '../fn/orders/orders-controller-pre
 import { OrdersControllerPrepareOrder$Params } from '../fn/orders/orders-controller-prepare-order';
 import { ordersControllerReadyOrder } from '../fn/orders/orders-controller-ready-order';
 import { OrdersControllerReadyOrder$Params } from '../fn/orders/orders-controller-ready-order';
+import { ordersControllerRefundOrder } from '../fn/orders/orders-controller-refund-order';
+import { OrdersControllerRefundOrder$Params } from '../fn/orders/orders-controller-refund-order';
 import { ordersControllerRejectOrder } from '../fn/orders/orders-controller-reject-order';
 import { OrdersControllerRejectOrder$Params } from '../fn/orders/orders-controller-reject-order';
 import { ordersControllerUpdateOrderStatus } from '../fn/orders/orders-controller-update-order-status';
 import { OrdersControllerUpdateOrderStatus$Params } from '../fn/orders/orders-controller-update-order-status';
 import { OrderStatusHistoryResponseDto } from '../models/order-status-history-response-dto';
+import { PaginatedAdminOrdersResponseDto } from '../models/paginated-admin-orders-response-dto';
 
 @Injectable({ providedIn: 'root' })
 export class OrdersService extends BaseService {
@@ -143,6 +152,39 @@ export class OrdersService extends BaseService {
   ordersControllerGetRestaurantOrders(params: OrdersControllerGetRestaurantOrders$Params, context?: HttpContext): Promise<Array<OrderResponseDto>> {
     const resp = this.ordersControllerGetRestaurantOrders$Response(params, context);
     return resp.then((r: StrictHttpResponse<Array<OrderResponseDto>>): Array<OrderResponseDto> => r.body);
+  }
+
+  /** Path part for operation `ordersControllerGetAllForAdmin()` */
+  static readonly OrdersControllerGetAllForAdminPath = '/api/v1/orders/admin';
+
+  /**
+   * Get orders (admin).
+   *
+   * Returns a paginated, filterable, platform-wide list of orders, including customer, restaurant, delivery partner, and payment summaries.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `ordersControllerGetAllForAdmin()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  ordersControllerGetAllForAdmin$Response(params?: OrdersControllerGetAllForAdmin$Params, context?: HttpContext): Promise<StrictHttpResponse<PaginatedAdminOrdersResponseDto>> {
+    const obs = ordersControllerGetAllForAdmin(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Get orders (admin).
+   *
+   * Returns a paginated, filterable, platform-wide list of orders, including customer, restaurant, delivery partner, and payment summaries.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `ordersControllerGetAllForAdmin$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  ordersControllerGetAllForAdmin(params?: OrdersControllerGetAllForAdmin$Params, context?: HttpContext): Promise<PaginatedAdminOrdersResponseDto> {
+    const resp = this.ordersControllerGetAllForAdmin$Response(params, context);
+    return resp.then((r: StrictHttpResponse<PaginatedAdminOrdersResponseDto>): PaginatedAdminOrdersResponseDto => r.body);
   }
 
   /** Path part for operation `ordersControllerUpdateOrderStatus()` */
@@ -479,9 +521,9 @@ export class OrdersService extends BaseService {
   static readonly OrdersControllerAssignDeliveryPartnerPath = '/api/v1/orders/{id}/assign-delivery-partner';
 
   /**
-   * Assign delivery partner.
+   * Assign or reassign delivery partner.
    *
-   *
+   * Admin-only. Validates the target user is a real delivery partner and the order is not in a terminal status.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `ordersControllerAssignDeliveryPartner()` instead.
@@ -494,9 +536,9 @@ export class OrdersService extends BaseService {
   }
 
   /**
-   * Assign delivery partner.
+   * Assign or reassign delivery partner.
    *
-   *
+   * Admin-only. Validates the target user is a real delivery partner and the order is not in a terminal status.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `ordersControllerAssignDeliveryPartner$Response()` instead.
@@ -505,6 +547,105 @@ export class OrdersService extends BaseService {
    */
   ordersControllerAssignDeliveryPartner(params: OrdersControllerAssignDeliveryPartner$Params, context?: HttpContext): Promise<OrderResponseDto> {
     const resp = this.ordersControllerAssignDeliveryPartner$Response(params, context);
+    return resp.then((r: StrictHttpResponse<OrderResponseDto>): OrderResponseDto => r.body);
+  }
+
+  /** Path part for operation `ordersControllerAdminCancelOrder()` */
+  static readonly OrdersControllerAdminCancelOrderPath = '/api/v1/orders/{id}/admin-cancel';
+
+  /**
+   * Cancel order (admin).
+   *
+   * Admin-only. Cancels an order from any non-terminal status, unlike the customer/restaurant-facing cancel endpoint.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `ordersControllerAdminCancelOrder()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  ordersControllerAdminCancelOrder$Response(params: OrdersControllerAdminCancelOrder$Params, context?: HttpContext): Promise<StrictHttpResponse<OrderResponseDto>> {
+    const obs = ordersControllerAdminCancelOrder(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Cancel order (admin).
+   *
+   * Admin-only. Cancels an order from any non-terminal status, unlike the customer/restaurant-facing cancel endpoint.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `ordersControllerAdminCancelOrder$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  ordersControllerAdminCancelOrder(params: OrdersControllerAdminCancelOrder$Params, context?: HttpContext): Promise<OrderResponseDto> {
+    const resp = this.ordersControllerAdminCancelOrder$Response(params, context);
+    return resp.then((r: StrictHttpResponse<OrderResponseDto>): OrderResponseDto => r.body);
+  }
+
+  /** Path part for operation `ordersControllerForceCompleteOrder()` */
+  static readonly OrdersControllerForceCompleteOrderPath = '/api/v1/orders/{id}/force-complete';
+
+  /**
+   * Force complete order.
+   *
+   * Admin-only. Marks an order delivered directly, skipping the normal status pipeline.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `ordersControllerForceCompleteOrder()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  ordersControllerForceCompleteOrder$Response(params: OrdersControllerForceCompleteOrder$Params, context?: HttpContext): Promise<StrictHttpResponse<OrderResponseDto>> {
+    const obs = ordersControllerForceCompleteOrder(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Force complete order.
+   *
+   * Admin-only. Marks an order delivered directly, skipping the normal status pipeline.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `ordersControllerForceCompleteOrder$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  ordersControllerForceCompleteOrder(params: OrdersControllerForceCompleteOrder$Params, context?: HttpContext): Promise<OrderResponseDto> {
+    const resp = this.ordersControllerForceCompleteOrder$Response(params, context);
+    return resp.then((r: StrictHttpResponse<OrderResponseDto>): OrderResponseDto => r.body);
+  }
+
+  /** Path part for operation `ordersControllerRefundOrder()` */
+  static readonly OrdersControllerRefundOrderPath = '/api/v1/orders/{id}/refund';
+
+  /**
+   * Refund order.
+   *
+   * Admin-only. Resolves the order's active payment and refunds it via the payment provider.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `ordersControllerRefundOrder()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  ordersControllerRefundOrder$Response(params: OrdersControllerRefundOrder$Params, context?: HttpContext): Promise<StrictHttpResponse<OrderResponseDto>> {
+    const obs = ordersControllerRefundOrder(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Refund order.
+   *
+   * Admin-only. Resolves the order's active payment and refunds it via the payment provider.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `ordersControllerRefundOrder$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  ordersControllerRefundOrder(params: OrdersControllerRefundOrder$Params, context?: HttpContext): Promise<OrderResponseDto> {
+    const resp = this.ordersControllerRefundOrder$Response(params, context);
     return resp.then((r: StrictHttpResponse<OrderResponseDto>): OrderResponseDto => r.body);
   }
 

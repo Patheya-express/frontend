@@ -1,0 +1,188 @@
+<div class="admin-notifications-page">
+  <h1>Notifications</h1>
+
+  <lib-table-toolbar>
+    <lib-search-input
+      toolbar-search
+      placeholder="Search by subject or body"
+      [value]="state().filters.search"
+      (valueChange)="onSearch($event)"
+    />
+
+    <div toolbar-filters class="admin-notifications-filters">
+      <select class="admin-notifications-filter-select" (change)="onTypeFilterChange($any($event.target).value)">
+        <option value="" [selected]="!state().filters.type">All types</option>
+        @for (option of typeOptions; track option.value) {
+          <option [value]="option.value" [selected]="state().filters.type === option.value">
+            {{ option.label }}
+          </option>
+        }
+      </select>
+
+      <select class="admin-notifications-filter-select" (change)="onChannelFilterChange($any($event.target).value)">
+        <option value="" [selected]="!state().filters.channel">All channels</option>
+        @for (option of channelOptions; track option.value) {
+          <option [value]="option.value" [selected]="state().filters.channel === option.value">
+            {{ option.label }}
+          </option>
+        }
+      </select>
+
+      <select class="admin-notifications-filter-select" (change)="onStatusFilterChange($any($event.target).value)">
+        <option value="" [selected]="!state().filters.status">All statuses</option>
+        @for (option of statusOptions; track option.value) {
+          <option [value]="option.value" [selected]="state().filters.status === option.value">
+            {{ option.label }}
+          </option>
+        }
+      </select>
+
+      <input
+        type="text"
+        class="admin-notifications-text-filter"
+        placeholder="Recipient name, email, or phone"
+        [value]="state().filters.recipient"
+        (change)="onRecipientFilter($any($event.target).value)"
+      />
+
+      <label class="admin-notifications-date-field">
+        From
+        <input type="date" [value]="state().filters.dateFrom" (change)="onDateFromChange($any($event.target).value)" />
+      </label>
+
+      <label class="admin-notifications-date-field">
+        To
+        <input type="date" [value]="state().filters.dateTo" (change)="onDateToChange($any($event.target).value)" />
+      </label>
+    </div>
+  </lib-table-toolbar>
+
+  @if (loading()) {
+    <lib-skeleton [count]="6" />
+  } @else if (error()) {
+    <lib-error-state [message]="error()!" (retry)="retry()" />
+  } @else if (state().notifications.length === 0) {
+    <lib-empty-state title="No notifications found" message="Try adjusting your search or filters." actionLabel="Refresh" (refresh)="retry()" />
+  } @else {
+    <lib-data-table [columns]="columns">
+      @for (notification of state().notifications; track notification.id) {
+        <tr>
+          <td>{{ formattedDate(notification.createdAt) }}</td>
+          <td>{{ typeLabel(notification) }}</td>
+          <td>{{ channelLabel(notification) }}</td>
+          <td>{{ recipientName(notification) }}</td>
+          <td>{{ notification.title }}</td>
+          <td><lib-status-chip [label]="statusLabel(notification)" [tone]="statusTone(notification)" /></td>
+          <td>{{ notification.attempts }}</td>
+          <td class="admin-notifications-row-actions">
+            <button type="button" class="admin-notifications-action-link" (click)="viewNotification(notification)">View Details</button>
+            @if (canRetry(notification)) {
+              <button
+                type="button"
+                class="admin-notifications-action-link"
+                [disabled]="loading()"
+                (click)="requestRetry(notification)"
+              >
+                Retry
+              </button>
+            }
+          </td>
+        </tr>
+      }
+    </lib-data-table>
+
+    <lib-pagination
+      [page]="state().pagination.page"
+      [totalPages]="state().pagination.totalPages"
+      [total]="state().pagination.total"
+      (pageChange)="onPageChange($event)"
+    />
+  }
+
+  @if (state().selectedNotification; as selected) {
+    <div class="admin-notifications-details-backdrop">
+      <button
+        type="button"
+        class="admin-notifications-details-backdrop-dismiss"
+        aria-label="Close details"
+        (click)="closeDetails()"
+      ></button>
+      <div class="admin-notifications-details-panel" role="dialog" aria-modal="true" [attr.aria-label]="selected.title">
+        <h2>{{ selected.title }}</h2>
+
+        <h3>Notification</h3>
+        <dl class="admin-notifications-details-list">
+          <dt>Type</dt>
+          <dd>{{ typeLabel(selected) }}</dd>
+          <dt>Channel</dt>
+          <dd>{{ channelLabel(selected) }}</dd>
+        </dl>
+
+        <h3>Recipient</h3>
+        <dl class="admin-notifications-details-list">
+          <dt>Name</dt>
+          <dd>{{ recipientName(selected) }}</dd>
+          <dt>Email</dt>
+          <dd>{{ selected.recipient.email ?? '—' }}</dd>
+          <dt>Phone</dt>
+          <dd>{{ selected.recipient.phone ?? '—' }}</dd>
+        </dl>
+
+        <h3>Content</h3>
+        <dl class="admin-notifications-details-list">
+          <dt>Subject</dt>
+          <dd>{{ selected.title }}</dd>
+          <dt>Body</dt>
+          <dd>{{ selected.message }}</dd>
+        </dl>
+
+        <h3>Delivery</h3>
+        <dl class="admin-notifications-details-list">
+          <dt>Status</dt>
+          <dd><lib-status-chip [label]="statusLabel(selected)" [tone]="statusTone(selected)" /></dd>
+          <dt>Attempts</dt>
+          <dd>{{ selected.attempts }}</dd>
+          @if (selected.errorMessage) {
+            <dt>Error Message</dt>
+            <dd>{{ selected.errorMessage }}</dd>
+          }
+        </dl>
+
+        <h3>Delivery Timeline</h3>
+        <ul class="admin-notifications-timeline-list">
+          @for (entry of deliveryTimeline(selected); track entry.label) {
+            <li>
+              <span class="admin-notifications-timeline-label">{{ entry.label }}</span>
+              <span class="admin-notifications-timeline-date">{{ formattedDate(entry.timestamp) }}</span>
+            </li>
+          }
+        </ul>
+
+        @if (formattedMetadata(selected); as metadata) {
+          <h3>Metadata</h3>
+          <pre class="admin-notifications-json">{{ metadata }}</pre>
+        }
+
+        <h3>Timestamps</h3>
+        <dl class="admin-notifications-details-list">
+          <dt>Created</dt>
+          <dd>{{ formattedDate(selected.createdAt) }}</dd>
+          <dt>Updated</dt>
+          <dd>{{ formattedDate(selected.updatedAt) }}</dd>
+        </dl>
+
+        <button type="button" class="admin-notifications-details-close" (click)="closeDetails()">Close</button>
+      </div>
+    </div>
+  }
+
+  <lib-confirm-dialog
+    [open]="!!pendingRetryId()"
+    title="Retry this notification?"
+    message="Delivery will be re-enqueued. The outcome is resolved asynchronously — refresh the list to see the updated status."
+    confirmLabel="Retry"
+    [busy]="loading()"
+    (confirmed)="confirmRetry()"
+    (cancelled)="cancelRetry()"
+  />
+</div>

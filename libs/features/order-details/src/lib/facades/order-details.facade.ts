@@ -10,7 +10,17 @@ export class OrderDetailsFacade {
   readonly loading = this.store.loading;
   readonly error = this.store.error;
 
-  loadOrder(orderId: string): Promise<void> {
+  /** Starts loading the order and begins background polling until it reaches a terminal status. */
+  initialize(orderId: string): void {
+    this.store.startPolling(orderId);
+  }
+
+  /** Stops background polling. Call on page destroy. */
+  dispose(): void {
+    this.store.stopPolling();
+  }
+
+  retry(orderId: string): Promise<void> {
     return this.store.loadOrder(orderId);
   }
 }

@@ -43,7 +43,8 @@ export class LoginPageComponent {
 
     if (success) {
       const redirectTo = this.route.snapshot.queryParamMap.get('redirectTo');
-      await this.router.navigateByUrl(redirectTo ?? '/');
+      const homePath = (this.route.snapshot.data['homePath'] as string | undefined) ?? '/';
+      await this.router.navigateByUrl(redirectTo ?? homePath);
     }
   }
 }

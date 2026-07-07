@@ -1,0 +1,17 @@
+@if (isCancelled()) {
+  <div class="order-status-timeline-cancelled">This order was cancelled.</div>
+} @else {
+  <ol class="order-status-timeline">
+    @for (step of steps(); track step.status) {
+      <li class="order-status-timeline-step" [class]="'is-' + step.state">
+        <span class="order-status-timeline-marker" aria-hidden="true"></span>
+        <div class="order-status-timeline-body">
+          <span class="order-status-timeline-label">{{ step.label }}</span>
+          @if (step.timestamp) {
+            <span class="order-status-timeline-time">{{ step.timestamp | date: 'short' }}</span>
+          }
+        </div>
+      </li>
+    }
+  </ol>
+}

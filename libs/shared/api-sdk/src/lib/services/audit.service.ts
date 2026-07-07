@@ -9,8 +9,12 @@ import { BaseService } from '../base-service';
 import { ApiConfiguration } from '../api-configuration';
 import { StrictHttpResponse } from '../strict-http-response';
 
+import { AdminAuditLogResponseDto } from '../models/admin-audit-log-response-dto';
+import { auditControllerGetAllForAdmin } from '../fn/audit/audit-controller-get-all-for-admin';
+import { AuditControllerGetAllForAdmin$Params } from '../fn/audit/audit-controller-get-all-for-admin';
 import { auditControllerGetLogs } from '../fn/audit/audit-controller-get-logs';
 import { AuditControllerGetLogs$Params } from '../fn/audit/audit-controller-get-logs';
+import { PaginatedAdminAuditLogsResponseDto } from '../models/paginated-admin-audit-logs-response-dto';
 
 @Injectable({ providedIn: 'root' })
 export class AuditService extends BaseService {
@@ -22,33 +26,66 @@ export class AuditService extends BaseService {
   static readonly AuditControllerGetLogsPath = '/api/v1/audit';
 
   /**
-   * Get audit logs.
+   * Get audit logs (legacy).
    *
-   * Returns paginated audit logs ordered by newest first.
+   * Returns paginated audit logs ordered by newest first. Superseded by GET /audit/admin, which adds filtering; kept for backward compatibility and secured identically.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `auditControllerGetLogs()` instead.
    *
    * This method doesn't expect any request body.
    */
-  auditControllerGetLogs$Response(params?: AuditControllerGetLogs$Params, context?: HttpContext): Promise<StrictHttpResponse<void>> {
+  auditControllerGetLogs$Response(params?: AuditControllerGetLogs$Params, context?: HttpContext): Promise<StrictHttpResponse<Array<AdminAuditLogResponseDto>>> {
     const obs = auditControllerGetLogs(this.http, this.rootUrl, params, context);
     return firstValueFrom(obs);
   }
 
   /**
-   * Get audit logs.
+   * Get audit logs (legacy).
    *
-   * Returns paginated audit logs ordered by newest first.
+   * Returns paginated audit logs ordered by newest first. Superseded by GET /audit/admin, which adds filtering; kept for backward compatibility and secured identically.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `auditControllerGetLogs$Response()` instead.
    *
    * This method doesn't expect any request body.
    */
-  auditControllerGetLogs(params?: AuditControllerGetLogs$Params, context?: HttpContext): Promise<void> {
+  auditControllerGetLogs(params?: AuditControllerGetLogs$Params, context?: HttpContext): Promise<Array<AdminAuditLogResponseDto>> {
     const resp = this.auditControllerGetLogs$Response(params, context);
-    return resp.then((r: StrictHttpResponse<void>): void => r.body);
+    return resp.then((r: StrictHttpResponse<Array<AdminAuditLogResponseDto>>): Array<AdminAuditLogResponseDto> => r.body);
+  }
+
+  /** Path part for operation `auditControllerGetAllForAdmin()` */
+  static readonly AuditControllerGetAllForAdminPath = '/api/v1/audit/admin';
+
+  /**
+   * Get audit logs (admin).
+   *
+   * Returns a paginated, filterable, platform-wide list of audit logs, including actor, entity, and before/after values.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `auditControllerGetAllForAdmin()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  auditControllerGetAllForAdmin$Response(params?: AuditControllerGetAllForAdmin$Params, context?: HttpContext): Promise<StrictHttpResponse<PaginatedAdminAuditLogsResponseDto>> {
+    const obs = auditControllerGetAllForAdmin(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Get audit logs (admin).
+   *
+   * Returns a paginated, filterable, platform-wide list of audit logs, including actor, entity, and before/after values.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `auditControllerGetAllForAdmin$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  auditControllerGetAllForAdmin(params?: AuditControllerGetAllForAdmin$Params, context?: HttpContext): Promise<PaginatedAdminAuditLogsResponseDto> {
+    const resp = this.auditControllerGetAllForAdmin$Response(params, context);
+    return resp.then((r: StrictHttpResponse<PaginatedAdminAuditLogsResponseDto>): PaginatedAdminAuditLogsResponseDto => r.body);
   }
 
 }

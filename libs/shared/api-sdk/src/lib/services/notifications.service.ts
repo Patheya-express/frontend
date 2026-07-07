@@ -9,13 +9,21 @@ import { BaseService } from '../base-service';
 import { ApiConfiguration } from '../api-configuration';
 import { StrictHttpResponse } from '../strict-http-response';
 
+import { AdminNotificationResponseDto } from '../models/admin-notification-response-dto';
 import { NotificationResponseDto } from '../models/notification-response-dto';
+import { notificationsControllerGetAllForAdmin } from '../fn/notifications/notifications-controller-get-all-for-admin';
+import { NotificationsControllerGetAllForAdmin$Params } from '../fn/notifications/notifications-controller-get-all-for-admin';
+import { notificationsControllerGetByIdForAdmin } from '../fn/notifications/notifications-controller-get-by-id-for-admin';
+import { NotificationsControllerGetByIdForAdmin$Params } from '../fn/notifications/notifications-controller-get-by-id-for-admin';
 import { notificationsControllerGetMyNotifications } from '../fn/notifications/notifications-controller-get-my-notifications';
 import { NotificationsControllerGetMyNotifications$Params } from '../fn/notifications/notifications-controller-get-my-notifications';
 import { notificationsControllerMarkAsRead } from '../fn/notifications/notifications-controller-mark-as-read';
 import { NotificationsControllerMarkAsRead$Params } from '../fn/notifications/notifications-controller-mark-as-read';
 import { notificationsControllerRegisterPushToken } from '../fn/notifications/notifications-controller-register-push-token';
 import { NotificationsControllerRegisterPushToken$Params } from '../fn/notifications/notifications-controller-register-push-token';
+import { notificationsControllerRetryNotification } from '../fn/notifications/notifications-controller-retry-notification';
+import { NotificationsControllerRetryNotification$Params } from '../fn/notifications/notifications-controller-retry-notification';
+import { PaginatedAdminNotificationsResponseDto } from '../models/paginated-admin-notifications-response-dto';
 import { PushTokenResponseDto } from '../models/push-token-response-dto';
 
 @Injectable({ providedIn: 'root' })
@@ -121,6 +129,105 @@ export class NotificationsService extends BaseService {
   notificationsControllerRegisterPushToken(params: NotificationsControllerRegisterPushToken$Params, context?: HttpContext): Promise<PushTokenResponseDto> {
     const resp = this.notificationsControllerRegisterPushToken$Response(params, context);
     return resp.then((r: StrictHttpResponse<PushTokenResponseDto>): PushTokenResponseDto => r.body);
+  }
+
+  /** Path part for operation `notificationsControllerGetAllForAdmin()` */
+  static readonly NotificationsControllerGetAllForAdminPath = '/api/v1/notifications/admin';
+
+  /**
+   * Get notifications (admin).
+   *
+   * Returns a paginated, filterable, platform-wide list of notifications, including recipient details and delivery status.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `notificationsControllerGetAllForAdmin()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  notificationsControllerGetAllForAdmin$Response(params?: NotificationsControllerGetAllForAdmin$Params, context?: HttpContext): Promise<StrictHttpResponse<PaginatedAdminNotificationsResponseDto>> {
+    const obs = notificationsControllerGetAllForAdmin(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Get notifications (admin).
+   *
+   * Returns a paginated, filterable, platform-wide list of notifications, including recipient details and delivery status.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `notificationsControllerGetAllForAdmin$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  notificationsControllerGetAllForAdmin(params?: NotificationsControllerGetAllForAdmin$Params, context?: HttpContext): Promise<PaginatedAdminNotificationsResponseDto> {
+    const resp = this.notificationsControllerGetAllForAdmin$Response(params, context);
+    return resp.then((r: StrictHttpResponse<PaginatedAdminNotificationsResponseDto>): PaginatedAdminNotificationsResponseDto => r.body);
+  }
+
+  /** Path part for operation `notificationsControllerGetByIdForAdmin()` */
+  static readonly NotificationsControllerGetByIdForAdminPath = '/api/v1/notifications/admin/{id}';
+
+  /**
+   * Get notification by ID (admin).
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `notificationsControllerGetByIdForAdmin()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  notificationsControllerGetByIdForAdmin$Response(params: NotificationsControllerGetByIdForAdmin$Params, context?: HttpContext): Promise<StrictHttpResponse<AdminNotificationResponseDto>> {
+    const obs = notificationsControllerGetByIdForAdmin(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Get notification by ID (admin).
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `notificationsControllerGetByIdForAdmin$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  notificationsControllerGetByIdForAdmin(params: NotificationsControllerGetByIdForAdmin$Params, context?: HttpContext): Promise<AdminNotificationResponseDto> {
+    const resp = this.notificationsControllerGetByIdForAdmin$Response(params, context);
+    return resp.then((r: StrictHttpResponse<AdminNotificationResponseDto>): AdminNotificationResponseDto => r.body);
+  }
+
+  /** Path part for operation `notificationsControllerRetryNotification()` */
+  static readonly NotificationsControllerRetryNotificationPath = '/api/v1/notifications/admin/{id}/retry';
+
+  /**
+   * Retry a failed notification (admin).
+   *
+   * Re-enqueues delivery for a notification currently in FAILED status. Provider-agnostic — the outcome is resolved by the queue processor, not by this endpoint.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `notificationsControllerRetryNotification()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  notificationsControllerRetryNotification$Response(params: NotificationsControllerRetryNotification$Params, context?: HttpContext): Promise<StrictHttpResponse<AdminNotificationResponseDto>> {
+    const obs = notificationsControllerRetryNotification(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Retry a failed notification (admin).
+   *
+   * Re-enqueues delivery for a notification currently in FAILED status. Provider-agnostic — the outcome is resolved by the queue processor, not by this endpoint.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `notificationsControllerRetryNotification$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  notificationsControllerRetryNotification(params: NotificationsControllerRetryNotification$Params, context?: HttpContext): Promise<AdminNotificationResponseDto> {
+    const resp = this.notificationsControllerRetryNotification$Response(params, context);
+    return resp.then((r: StrictHttpResponse<AdminNotificationResponseDto>): AdminNotificationResponseDto => r.body);
   }
 
 }

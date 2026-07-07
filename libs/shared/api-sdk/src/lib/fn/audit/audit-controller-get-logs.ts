@@ -7,21 +7,22 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
+import { AdminAuditLogResponseDto } from '../../models/admin-audit-log-response-dto';
 
 export interface AuditControllerGetLogs$Params {
 
 /**
  * Number of records per page
  */
-  limit?: any;
+  limit?: number;
 
 /**
  * Page number
  */
-  page?: any;
+  page?: number;
 }
 
-export function auditControllerGetLogs(http: HttpClient, rootUrl: string, params?: AuditControllerGetLogs$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
+export function auditControllerGetLogs(http: HttpClient, rootUrl: string, params?: AuditControllerGetLogs$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<AdminAuditLogResponseDto>>> {
   const rb = new RequestBuilder(rootUrl, auditControllerGetLogs.PATH, 'get');
   if (params) {
     rb.query('limit', params.limit, {});
@@ -29,11 +30,11 @@ export function auditControllerGetLogs(http: HttpClient, rootUrl: string, params
   }
 
   return http.request(
-    rb.build({ responseType: 'text', accept: '*/*', context })
+    rb.build({ responseType: 'json', accept: 'application/json', context })
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return (r as HttpResponse<any>).clone({ body: undefined }) as StrictHttpResponse<void>;
+      return r as StrictHttpResponse<Array<AdminAuditLogResponseDto>>;
     })
   );
 }

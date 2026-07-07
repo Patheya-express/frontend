@@ -9,11 +9,18 @@ import { BaseService } from '../base-service';
 import { ApiConfiguration } from '../api-configuration';
 import { StrictHttpResponse } from '../strict-http-response';
 
+import { PaginatedUsersResponseDto } from '../models/paginated-users-response-dto';
 import { UserResponseDto } from '../models/user-response-dto';
+import { usersControllerActivateUser } from '../fn/users/users-controller-activate-user';
+import { UsersControllerActivateUser$Params } from '../fn/users/users-controller-activate-user';
 import { usersControllerGetAllUsers } from '../fn/users/users-controller-get-all-users';
 import { UsersControllerGetAllUsers$Params } from '../fn/users/users-controller-get-all-users';
 import { usersControllerGetProfile } from '../fn/users/users-controller-get-profile';
 import { UsersControllerGetProfile$Params } from '../fn/users/users-controller-get-profile';
+import { usersControllerRestoreUser } from '../fn/users/users-controller-restore-user';
+import { UsersControllerRestoreUser$Params } from '../fn/users/users-controller-restore-user';
+import { usersControllerSuspendUser } from '../fn/users/users-controller-suspend-user';
+import { UsersControllerSuspendUser$Params } from '../fn/users/users-controller-suspend-user';
 import { usersControllerUpdateProfile } from '../fn/users/users-controller-update-profile';
 import { UsersControllerUpdateProfile$Params } from '../fn/users/users-controller-update-profile';
 
@@ -95,14 +102,14 @@ export class UsersService extends BaseService {
   /**
    * Get all users.
    *
-   *
+   * Returns a paginated, filterable list of platform users.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `usersControllerGetAllUsers()` instead.
    *
    * This method doesn't expect any request body.
    */
-  usersControllerGetAllUsers$Response(params?: UsersControllerGetAllUsers$Params, context?: HttpContext): Promise<StrictHttpResponse<Array<UserResponseDto>>> {
+  usersControllerGetAllUsers$Response(params?: UsersControllerGetAllUsers$Params, context?: HttpContext): Promise<StrictHttpResponse<PaginatedUsersResponseDto>> {
     const obs = usersControllerGetAllUsers(this.http, this.rootUrl, params, context);
     return firstValueFrom(obs);
   }
@@ -110,16 +117,115 @@ export class UsersService extends BaseService {
   /**
    * Get all users.
    *
-   *
+   * Returns a paginated, filterable list of platform users.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `usersControllerGetAllUsers$Response()` instead.
    *
    * This method doesn't expect any request body.
    */
-  usersControllerGetAllUsers(params?: UsersControllerGetAllUsers$Params, context?: HttpContext): Promise<Array<UserResponseDto>> {
+  usersControllerGetAllUsers(params?: UsersControllerGetAllUsers$Params, context?: HttpContext): Promise<PaginatedUsersResponseDto> {
     const resp = this.usersControllerGetAllUsers$Response(params, context);
-    return resp.then((r: StrictHttpResponse<Array<UserResponseDto>>): Array<UserResponseDto> => r.body);
+    return resp.then((r: StrictHttpResponse<PaginatedUsersResponseDto>): PaginatedUsersResponseDto => r.body);
+  }
+
+  /** Path part for operation `usersControllerActivateUser()` */
+  static readonly UsersControllerActivateUserPath = '/api/v1/users/{id}/activate';
+
+  /**
+   * Activate user.
+   *
+   * Activates an inactive user account.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `usersControllerActivateUser()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  usersControllerActivateUser$Response(params: UsersControllerActivateUser$Params, context?: HttpContext): Promise<StrictHttpResponse<UserResponseDto>> {
+    const obs = usersControllerActivateUser(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Activate user.
+   *
+   * Activates an inactive user account.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `usersControllerActivateUser$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  usersControllerActivateUser(params: UsersControllerActivateUser$Params, context?: HttpContext): Promise<UserResponseDto> {
+    const resp = this.usersControllerActivateUser$Response(params, context);
+    return resp.then((r: StrictHttpResponse<UserResponseDto>): UserResponseDto => r.body);
+  }
+
+  /** Path part for operation `usersControllerSuspendUser()` */
+  static readonly UsersControllerSuspendUserPath = '/api/v1/users/{id}/suspend';
+
+  /**
+   * Suspend user.
+   *
+   * Suspends an active user account.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `usersControllerSuspendUser()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  usersControllerSuspendUser$Response(params: UsersControllerSuspendUser$Params, context?: HttpContext): Promise<StrictHttpResponse<UserResponseDto>> {
+    const obs = usersControllerSuspendUser(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Suspend user.
+   *
+   * Suspends an active user account.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `usersControllerSuspendUser$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  usersControllerSuspendUser(params: UsersControllerSuspendUser$Params, context?: HttpContext): Promise<UserResponseDto> {
+    const resp = this.usersControllerSuspendUser$Response(params, context);
+    return resp.then((r: StrictHttpResponse<UserResponseDto>): UserResponseDto => r.body);
+  }
+
+  /** Path part for operation `usersControllerRestoreUser()` */
+  static readonly UsersControllerRestoreUserPath = '/api/v1/users/{id}/restore';
+
+  /**
+   * Restore user.
+   *
+   * Restores a suspended or blocked user account back to active.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `usersControllerRestoreUser()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  usersControllerRestoreUser$Response(params: UsersControllerRestoreUser$Params, context?: HttpContext): Promise<StrictHttpResponse<UserResponseDto>> {
+    const obs = usersControllerRestoreUser(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Restore user.
+   *
+   * Restores a suspended or blocked user account back to active.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `usersControllerRestoreUser$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  usersControllerRestoreUser(params: UsersControllerRestoreUser$Params, context?: HttpContext): Promise<UserResponseDto> {
+    const resp = this.usersControllerRestoreUser$Response(params, context);
+    return resp.then((r: StrictHttpResponse<UserResponseDto>): UserResponseDto => r.body);
   }
 
 }

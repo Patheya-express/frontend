@@ -7,6 +7,7 @@ export interface UserResponseDto {
   firstName: string;
   id: string;
   lastName?: string;
+  phone?: string;
   provider: 'EMAIL' | 'GOOGLE' | 'APPLE' | 'PHONE';
   role: 'CUSTOMER' | 'RESTAURANT_OWNER' | 'RESTAURANT_MANAGER' | 'DELIVERY_PARTNER' | 'SUPPORT_AGENT' | 'ADMIN' | 'SUPER_ADMIN';
   status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'BLOCKED';

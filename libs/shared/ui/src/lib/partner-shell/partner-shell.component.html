@@ -1,0 +1,17 @@
+<div class="partner-shell">
+  <header class="partner-header">
+    <span class="partner-header-brand">{{ brandName }}</span>
+
+    <nav class="partner-header-nav">
+      @for (link of navLinks; track link.path) {
+        <a [routerLink]="link.path" routerLinkActive="is-active" class="partner-header-nav-link">{{ link.label }}</a>
+      }
+    </nav>
+
+    <button type="button" class="partner-header-logout" (click)="logoutRequested.emit()">Log out</button>
+  </header>
+
+  <main class="partner-shell-content">
+    <router-outlet />
+  </main>
+</div>

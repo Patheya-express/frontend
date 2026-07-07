@@ -4,33 +4,43 @@
   } @else if (error()) {
     <lib-error-state [message]="error()!" (retry)="retry()" />
   } @else if (order(); as orderValue) {
-    <div class="order-confirmation">
-      <div class="order-confirmation-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="11" stroke="var(--color-success)" stroke-width="1.6" />
-          <path d="M7.5 12.5l3 3 6-6.5" stroke="var(--color-success)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-      </div>
-
-      <h1>Order placed successfully!</h1>
-      <p class="order-confirmation-message">Thank you for your order. We'll get started on it right away.</p>
-
-      <dl class="order-confirmation-details">
-        <div class="order-confirmation-row">
-          <dt>Order ID</dt>
-          <dd>{{ orderValue.orderNumber }}</dd>
+    <div class="order-tracking">
+      <header class="order-tracking-header">
+        <div class="order-tracking-heading">
+          <span class="order-tracking-number">{{ orderValue.orderNumber }}</span>
+          <span class="order-tracking-restaurant">{{ restaurantName() }}</span>
         </div>
-        <div class="order-confirmation-row">
-          <dt>Restaurant</dt>
-          <dd>{{ restaurantName() }}</dd>
-        </div>
-        <div class="order-confirmation-row total">
-          <dt>Order Total</dt>
-          <dd>₹{{ orderValue.totalAmount }}</dd>
-        </div>
-      </dl>
+        <lib-order-status-badge [status]="orderValue.status" />
+      </header>
 
-      <a routerLink="/" class="order-confirmation-home">Back to Home</a>
+      <section class="order-tracking-section">
+        <h2>Order status</h2>
+        <lib-order-status-timeline [currentStatus]="orderValue.status" [statusHistory]="orderValue.statusHistory" />
+      </section>
+
+      <section class="order-tracking-section">
+        <h2>Order summary</h2>
+        <ul class="order-tracking-items">
+          @for (item of orderValue.items; track item.id) {
+            <li class="order-tracking-item">
+              <span>{{ item.quantity }}x {{ item.menuItemName ?? 'Item' }}</span>
+              <span>₹{{ item.totalPrice }}</span>
+            </li>
+          }
+        </ul>
+
+        <div class="order-tracking-address">
+          <span class="order-tracking-label">Delivery address</span>
+          <span>{{ orderValue.deliveryAddress }}</span>
+        </div>
+
+        <div class="order-tracking-total">
+          <span>Order Total</span>
+          <strong>₹{{ orderValue.totalAmount }}</strong>
+        </div>
+      </section>
+
+      <a routerLink="/" class="order-tracking-home">Back to Home</a>
     </div>
   }
 </div>

@@ -3,10 +3,103 @@
     title="Join as a Delivery Partner"
     subtitle="Deliver with Patheya Express and earn on your own schedule."
   >
-    <p class="placeholder-copy">
-      Delivery partner onboarding isn't open yet. We're finalizing the sign-up experience —
-      check back soon or reach out to our courier operations team to get started early.
-    </p>
+    <form class="auth-form" [formGroup]="form" (ngSubmit)="onSubmit()">
+      @if (errorMessage()) {
+        <div class="form-alert" role="alert">{{ errorMessage() }}</div>
+      }
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="onboard-first-name">First name</label>
+          <input
+            id="onboard-first-name"
+            type="text"
+            autocomplete="given-name"
+            formControlName="firstName"
+            [class.invalid]="form.controls.firstName.invalid && form.controls.firstName.touched"
+          />
+          @if (form.controls.firstName.invalid && form.controls.firstName.touched) {
+            <span class="form-field-error">First name is required.</span>
+          }
+        </div>
+
+        <div class="form-field">
+          <label for="onboard-last-name">Last name</label>
+          <input
+            id="onboard-last-name"
+            type="text"
+            autocomplete="family-name"
+            formControlName="lastName"
+            [class.invalid]="form.controls.lastName.invalid && form.controls.lastName.touched"
+          />
+          @if (form.controls.lastName.invalid && form.controls.lastName.touched) {
+            <span class="form-field-error">Last name is required.</span>
+          }
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label for="onboard-email">Email</label>
+        <input
+          id="onboard-email"
+          type="email"
+          autocomplete="email"
+          formControlName="email"
+          [class.invalid]="form.controls.email.invalid && form.controls.email.touched"
+        />
+        @if (form.controls.email.invalid && form.controls.email.touched) {
+          <span class="form-field-error">Enter a valid email address.</span>
+        }
+      </div>
+
+      <div class="form-field">
+        <label for="onboard-password">Password</label>
+        <input
+          id="onboard-password"
+          type="password"
+          autocomplete="new-password"
+          formControlName="password"
+          [class.invalid]="form.controls.password.invalid && form.controls.password.touched"
+        />
+        @if (form.controls.password.invalid && form.controls.password.touched) {
+          <span class="form-field-error">Password must be at least 8 characters.</span>
+        }
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="onboard-vehicle-type">Vehicle type</label>
+          <select id="onboard-vehicle-type" formControlName="vehicleType">
+            @for (type of vehicleTypes; track type) {
+              <option [value]="type">{{ type }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label for="onboard-vehicle-number">Vehicle number</label>
+          <input
+            id="onboard-vehicle-number"
+            type="text"
+            formControlName="vehicleNumber"
+            [class.invalid]="form.controls.vehicleNumber.invalid && form.controls.vehicleNumber.touched"
+          />
+          @if (form.controls.vehicleNumber.invalid && form.controls.vehicleNumber.touched) {
+            <span class="form-field-error">Vehicle number is required.</span>
+          }
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label for="onboard-license-number">Driving license number (optional)</label>
+        <input id="onboard-license-number" type="text" formControlName="licenseNumber" />
+      </div>
+
+      <button type="submit" class="form-submit" [disabled]="submitting()">
+        {{ submitting() ? 'Submitting…' : 'Join as Delivery Partner' }}
+      </button>
+    </form>
+
     <span auth-card-footer>Already a courier? <a routerLink="/auth/login">Log in</a></span>
   </lib-auth-card>
 </lib-auth-layout>

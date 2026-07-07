@@ -32,6 +32,7 @@ export const routes: Routes = [
     data: {
       brandName: 'Patheya Express for Restaurants',
       registerCta: { label: 'Apply as Restaurant Partner', path: '/partner/apply' },
+      homePath: '/dashboard',
     },
     loadComponent: () =>
       import('@patheya-express-frontend/auth-ui').then((m) => m.LoginPageComponent),
@@ -39,6 +40,7 @@ export const routes: Routes = [
   {
     path: 'partner/apply',
     canActivate: [guestGuard],
+    data: { homePath: '/dashboard' },
     loadComponent: () =>
       import('./pages/partner-application/partner-application.page').then(
         (m) => m.PartnerApplicationPageComponent,

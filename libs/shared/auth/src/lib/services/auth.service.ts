@@ -30,6 +30,16 @@ export class AuthService {
     return unwrap(response);
   }
 
+  async registerDeliveryPartner(dto: RegisterDto): Promise<RegisterResponseDto> {
+    const response = await this.authService.authControllerRegisterDeliveryPartner({ body: dto });
+    return unwrap(response);
+  }
+
+  async registerRestaurantOwner(dto: RegisterDto): Promise<RegisterResponseDto> {
+    const response = await this.authService.authControllerRegisterRestaurantOwner({ body: dto });
+    return unwrap(response);
+  }
+
   async login(dto: LoginDto): Promise<RegisterResponseDto> {
     const response = await this.authService.authControllerLogin({ body: dto });
     return unwrap(response);

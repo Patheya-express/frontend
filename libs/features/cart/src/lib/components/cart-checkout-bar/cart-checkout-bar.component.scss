@@ -1,0 +1,44 @@
+.checkout-bar {
+  position: fixed;
+  left: 50%;
+  bottom: var(--space-5);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-5);
+  width: min(480px, calc(100vw - var(--space-6)));
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-5);
+  background: var(--color-text);
+  color: var(--color-text-on-primary);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-lg);
+  z-index: 80;
+}
+
+.checkout-bar-summary {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+}
+
+.checkout-bar-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: none;
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-5);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+
+  &:hover {
+    background: var(--color-primary-hover);
+  }
+}

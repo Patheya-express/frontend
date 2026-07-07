@@ -7,16 +7,22 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { UserResponseDto } from '../../models/user-response-dto';
+import { PaginatedUsersResponseDto } from '../../models/paginated-users-response-dto';
 
 export interface UsersControllerGetAllUsers$Params {
-  limit?: any;
-  page?: any;
+  status?: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'BLOCKED';
+  role?: 'CUSTOMER' | 'RESTAURANT_OWNER' | 'RESTAURANT_MANAGER' | 'DELIVERY_PARTNER' | 'SUPPORT_AGENT' | 'ADMIN' | 'SUPER_ADMIN';
+  search?: any;
+  limit?: number;
+  page?: number;
 }
 
-export function usersControllerGetAllUsers(http: HttpClient, rootUrl: string, params?: UsersControllerGetAllUsers$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<UserResponseDto>>> {
+export function usersControllerGetAllUsers(http: HttpClient, rootUrl: string, params?: UsersControllerGetAllUsers$Params, context?: HttpContext): Observable<StrictHttpResponse<PaginatedUsersResponseDto>> {
   const rb = new RequestBuilder(rootUrl, usersControllerGetAllUsers.PATH, 'get');
   if (params) {
+    rb.query('status', params.status, {});
+    rb.query('role', params.role, {});
+    rb.query('search', params.search, {});
     rb.query('limit', params.limit, {});
     rb.query('page', params.page, {});
   }
@@ -26,7 +32,7 @@ export function usersControllerGetAllUsers(http: HttpClient, rootUrl: string, pa
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<Array<UserResponseDto>>;
+      return r as StrictHttpResponse<PaginatedUsersResponseDto>;
     })
   );
 }

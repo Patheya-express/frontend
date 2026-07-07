@@ -32,6 +32,7 @@ export const routes: Routes = [
     data: {
       brandName: 'Patheya Express Courier',
       registerCta: { label: 'Join as Delivery Partner', path: '/partner/join' },
+      homePath: '/dashboard',
     },
     loadComponent: () =>
       import('@patheya-express-frontend/auth-ui').then((m) => m.LoginPageComponent),
@@ -39,6 +40,7 @@ export const routes: Routes = [
   {
     path: 'partner/join',
     canActivate: [guestGuard],
+    data: { homePath: '/dashboard' },
     loadComponent: () =>
       import('./pages/partner-onboarding/partner-onboarding.page').then(
         (m) => m.PartnerOnboardingPageComponent,

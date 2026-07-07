@@ -1,18 +1,19 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnDestroy, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { ErrorStateComponent, SkeletonComponent } from '@patheya-express-frontend/ui';
+import { ErrorStateComponent, OrderStatusBadgeComponent, SkeletonComponent } from '@patheya-express-frontend/ui';
 import { OrderDetailsFacade } from '../../facades/order-details.facade';
+import { OrderStatusTimelineComponent } from '../../components/order-status-timeline/order-status-timeline.component';
 
 @Component({
   selector: 'lib-order-details-page',
   standalone: true,
-  imports: [RouterLink, SkeletonComponent, ErrorStateComponent],
+  imports: [RouterLink, SkeletonComponent, ErrorStateComponent, OrderStatusBadgeComponent, OrderStatusTimelineComponent],
   templateUrl: './order-details-page.component.html',
   styleUrl: './order-details-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class OrderDetailsPageComponent implements OnInit {
+export class OrderDetailsPageComponent implements OnInit, OnDestroy {
   private readonly facade = inject(OrderDetailsFacade);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
@@ -29,14 +30,18 @@ export class OrderDetailsPageComponent implements OnInit {
       const id = params.get('orderId');
       if (id) {
         this.orderId = id;
-        void this.facade.loadOrder(id);
+        this.facade.initialize(id);
       }
     });
   }
 
+  ngOnDestroy(): void {
+    this.facade.dispose();
+  }
+
   protected retry(): void {
     if (this.orderId) {
-      void this.facade.loadOrder(this.orderId);
+      void this.facade.retry(this.orderId);
     }
   }
 }

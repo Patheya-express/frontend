@@ -10,9 +10,12 @@ import { ApiConfiguration } from '../api-configuration';
 import { StrictHttpResponse } from '../strict-http-response';
 
 import { CreatePaymentResponseDto } from '../models/create-payment-response-dto';
+import { PaginatedAdminPaymentsResponseDto } from '../models/paginated-admin-payments-response-dto';
 import { PaymentResponseDto } from '../models/payment-response-dto';
 import { paymentsControllerCreatePayment } from '../fn/payments/payments-controller-create-payment';
 import { PaymentsControllerCreatePayment$Params } from '../fn/payments/payments-controller-create-payment';
+import { paymentsControllerGetAllForAdmin } from '../fn/payments/payments-controller-get-all-for-admin';
+import { PaymentsControllerGetAllForAdmin$Params } from '../fn/payments/payments-controller-get-all-for-admin';
 import { paymentsControllerProcessWebhook } from '../fn/payments/payments-controller-process-webhook';
 import { PaymentsControllerProcessWebhook$Params } from '../fn/payments/payments-controller-process-webhook';
 import { paymentsControllerRefundPayment } from '../fn/payments/payments-controller-refund-payment';
@@ -26,6 +29,39 @@ import { WebhookAckResponseDto } from '../models/webhook-ack-response-dto';
 export class PaymentsService extends BaseService {
   constructor(config: ApiConfiguration, http: HttpClient) {
     super(config, http);
+  }
+
+  /** Path part for operation `paymentsControllerGetAllForAdmin()` */
+  static readonly PaymentsControllerGetAllForAdminPath = '/api/v1/payments/admin';
+
+  /**
+   * Get payments (admin).
+   *
+   * Returns a paginated, filterable, platform-wide list of payments, including order, customer, and refund history.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `paymentsControllerGetAllForAdmin()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  paymentsControllerGetAllForAdmin$Response(params?: PaymentsControllerGetAllForAdmin$Params, context?: HttpContext): Promise<StrictHttpResponse<PaginatedAdminPaymentsResponseDto>> {
+    const obs = paymentsControllerGetAllForAdmin(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Get payments (admin).
+   *
+   * Returns a paginated, filterable, platform-wide list of payments, including order, customer, and refund history.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `paymentsControllerGetAllForAdmin$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  paymentsControllerGetAllForAdmin(params?: PaymentsControllerGetAllForAdmin$Params, context?: HttpContext): Promise<PaginatedAdminPaymentsResponseDto> {
+    const resp = this.paymentsControllerGetAllForAdmin$Response(params, context);
+    return resp.then((r: StrictHttpResponse<PaginatedAdminPaymentsResponseDto>): PaginatedAdminPaymentsResponseDto => r.body);
   }
 
   /** Path part for operation `paymentsControllerCreatePayment()` */

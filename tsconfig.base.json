@@ -62,6 +62,30 @@
       ],
       "@patheya-express-frontend/delivery-fees": [
         "./libs/features/delivery-fees/src/index.ts"
+      ],
+      "@patheya-express-frontend/admin-dashboard": [
+        "./libs/features/admin-dashboard/src/index.ts"
+      ],
+      "@patheya-express-frontend/admin-users": [
+        "./libs/features/admin-users/src/index.ts"
+      ],
+      "@patheya-express-frontend/admin-restaurants": [
+        "./libs/features/admin-restaurants/src/index.ts"
+      ],
+      "@patheya-express-frontend/admin-orders": [
+        "./libs/features/admin-orders/src/index.ts"
+      ],
+      "@patheya-express-frontend/admin-delivery": [
+        "./libs/features/admin-delivery/src/index.ts"
+      ],
+      "@patheya-express-frontend/admin-payments": [
+        "./libs/features/admin-payments/src/index.ts"
+      ],
+      "@patheya-express-frontend/admin-audit": [
+        "./libs/features/admin-audit/src/index.ts"
+      ],
+      "@patheya-express-frontend/admin-notifications": [
+        "./libs/features/admin-notifications/src/index.ts"
       ]
     }
   },

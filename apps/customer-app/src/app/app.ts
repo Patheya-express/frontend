@@ -2,12 +2,17 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { Router } from '@angular/router';
 import { AppShellComponent } from '@patheya-express-frontend/ui';
 import { AuthFacade } from '@patheya-express-frontend/auth';
-import { CartConflictDialogComponent, CartDrawerComponent, CartFacade } from '@patheya-express-frontend/cart';
+import {
+  CartCheckoutBarComponent,
+  CartConflictDialogComponent,
+  CartDrawerComponent,
+  CartFacade,
+} from '@patheya-express-frontend/cart';
 
 @Component({
   standalone: true,
   selector: 'app-root',
-  imports: [AppShellComponent, CartDrawerComponent, CartConflictDialogComponent],
+  imports: [AppShellComponent, CartDrawerComponent, CartConflictDialogComponent, CartCheckoutBarComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -5,3 +5,4 @@ export * from './lib/components/cart-item/cart-item.component';
 export * from './lib/components/cart-summary/cart-summary.component';
 export * from './lib/components/cart-drawer/cart-drawer.component';
 export * from './lib/components/cart-conflict-dialog/cart-conflict-dialog.component';
+export * from './lib/components/cart-checkout-bar/cart-checkout-bar.component';

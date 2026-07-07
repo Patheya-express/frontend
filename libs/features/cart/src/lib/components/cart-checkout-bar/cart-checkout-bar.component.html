@@ -1,0 +1,8 @@
+@if (visible()) {
+  <div class="checkout-bar">
+    <span class="checkout-bar-summary">
+      {{ totalItems() }} {{ totalItems() === 1 ? 'item' : 'items' }} · ₹{{ subtotal() }}
+    </span>
+    <a routerLink="/checkout" class="checkout-bar-action">Proceed to Checkout</a>
+  </div>
+}
