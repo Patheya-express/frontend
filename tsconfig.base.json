@@ -36,14 +36,36 @@
       "@patheya-express-frontend/restaurant-discovery": [
         "./libs/features/restaurant-discovery/src/index.ts"
       ],
+      "@patheya-express-frontend/customer-home": [
+        "./libs/features/customer-home/src/index.ts"
+      ],
       "@patheya-express-frontend/restaurant-menu": [
         "./libs/features/restaurant-menu/src/index.ts"
       ],
       "@patheya-express-frontend/cart": ["./libs/features/cart/src/index.ts"],
       "@patheya-express-frontend/cart-ui": ["./libs/features/cart-ui/src/index.ts"],
       "@patheya-express-frontend/checkout": ["./libs/features/checkout/src/index.ts"],
+      "@patheya-express-frontend/addresses": ["./libs/features/addresses/src/index.ts"],
       "@patheya-express-frontend/order-details": [
         "./libs/features/order-details/src/index.ts"
+      ],
+      "@patheya-express-frontend/customer-profile": [
+        "./libs/features/customer-profile/src/index.ts"
+      ],
+      "@patheya-express-frontend/customer-profile-ui": [
+        "./libs/features/customer-profile-ui/src/index.ts"
+      ],
+      "@patheya-express-frontend/favorites": [
+        "./libs/features/favorites/src/index.ts"
+      ],
+      "@patheya-express-frontend/customer-notifications": [
+        "./libs/features/customer-notifications/src/index.ts"
+      ],
+      "@patheya-express-frontend/customer-notifications-ui": [
+        "./libs/features/customer-notifications-ui/src/index.ts"
+      ],
+      "@patheya-express-frontend/customer-offers": [
+        "./libs/features/customer-offers/src/index.ts"
       ],
       "@patheya-express-frontend/restaurant-orders": [
         "./libs/features/restaurant-orders/src/index.ts"

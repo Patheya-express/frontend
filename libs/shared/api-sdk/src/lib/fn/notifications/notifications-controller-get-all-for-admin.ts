@@ -19,7 +19,7 @@ export interface NotificationsControllerGetAllForAdmin$Params {
   recipient?: any;
   status?: 'PENDING' | 'SENT' | 'FAILED' | 'READ';
   channel?: 'PUSH' | 'EMAIL' | 'SMS' | 'WHATSAPP' | 'IN_APP';
-  type?: 'ORDER_PLACED' | 'ORDER_STATUS_CHANGED' | 'DELIVERY_PARTNER_ASSIGNED' | 'GENERAL';
+  type?: 'ORDER_PLACED' | 'ORDER_STATUS_CHANGED' | 'DELIVERY_PARTNER_ASSIGNED' | 'OFFER' | 'GENERAL';
 
 /**
  * Matches subject/body text

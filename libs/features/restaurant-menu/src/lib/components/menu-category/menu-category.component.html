@@ -6,7 +6,7 @@
 
   <div class="menu-category-items">
     @for (item of category.menuItems; track item.id) {
-      <lib-menu-item-card [item]="item" [restaurantId]="restaurantId" [restaurantName]="restaurantName" />
+      <lib-menu-item-card [item]="item" [restaurantName]="restaurantName" />
     }
   </div>
 </section>

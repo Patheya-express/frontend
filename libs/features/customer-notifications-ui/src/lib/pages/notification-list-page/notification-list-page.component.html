@@ -1,0 +1,102 @@
+<div class="notification-list-page">
+  <header class="notification-list-header">
+    <h1>Notifications</h1>
+    @if (facade.unreadCount() > 0) {
+      <button type="button" class="mark-all-read-btn" (click)="markAllAsRead()">
+        Mark all read
+      </button>
+    }
+  </header>
+
+  <div class="notification-list-filters">
+    <lib-search-input placeholder="Search notifications" [value]="facade.search()" (valueChange)="onSearch($event)" />
+
+    <select
+      class="notification-type-select"
+      [value]="facade.typeFilter() ?? ''"
+      (change)="onTypeChange($any($event.target).value)"
+      aria-label="Filter by notification type"
+    >
+      @for (option of typeOptions; track option.value) {
+        <option [value]="option.value">{{ option.label }}</option>
+      }
+    </select>
+
+    <label class="unread-only-toggle">
+      <input type="checkbox" [checked]="facade.unreadOnly()" (change)="onUnreadOnlyToggle($any($event.target).checked)" />
+      Unread only
+    </label>
+
+    <div class="date-range-fields">
+      <input
+        type="date"
+        class="date-field"
+        [value]="facade.dateFrom() ?? ''"
+        (change)="onDateFromChange($any($event.target).value)"
+        aria-label="From date"
+      />
+      <span aria-hidden="true">–</span>
+      <input
+        type="date"
+        class="date-field"
+        [value]="facade.dateTo() ?? ''"
+        (change)="onDateToChange($any($event.target).value)"
+        aria-label="To date"
+      />
+    </div>
+
+    <button type="button" class="clear-filters-btn" (click)="clearFilters()">Clear</button>
+  </div>
+
+  @if (facade.loading() && facade.notifications().length === 0) {
+    <lib-skeleton [count]="5" />
+  } @else if (facade.error()) {
+    <lib-error-state [message]="facade.error()!" (retry)="retry()" />
+  } @else if (facade.notifications().length === 0) {
+    <lib-empty-state
+      title="No notifications yet"
+      message="Order updates, offers, and other alerts will show up here."
+      actionLabel="Refresh"
+      (refresh)="retry()"
+    />
+  } @else {
+    <ul class="notification-list">
+      @for (notification of facade.notifications(); track notification.id) {
+        <li
+          class="notification-item"
+          [class.unread]="isUnread(notification)"
+          (click)="open(notification)"
+          (keydown.enter)="open(notification)"
+          tabindex="0"
+          role="button"
+        >
+          @if (isUnread(notification)) {
+            <span class="notification-unread-dot" aria-hidden="true"></span>
+          }
+          <div class="notification-item-body">
+            <span class="notification-item-title">{{ notification.title }}</span>
+            <p class="notification-item-message">{{ notification.message }}</p>
+            <span class="notification-item-date">{{ notification.createdAt | date: 'medium' }}</span>
+          </div>
+          @if (isUnread(notification)) {
+            <button
+              type="button"
+              class="notification-mark-read-btn"
+              (click)="markAsRead($event, notification)"
+              aria-label="Mark as read"
+            >
+              Mark read
+            </button>
+          }
+        </li>
+      }
+    </ul>
+
+    <lib-pagination
+      [page]="facade.page()"
+      [totalPages]="facade.totalPages()"
+      [total]="facade.total()"
+      (pageChange)="onPageChange($event)"
+    />
+  }
+</div>

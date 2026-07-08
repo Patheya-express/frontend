@@ -12,4 +12,25 @@ export interface UpdateProfileDto {
    * User last name
    */
   lastName?: string;
+
+  /**
+   * Whether the user has opted in to marketing communications
+   */
+  marketingOptIn?: boolean;
+
+  /**
+   * User phone number
+   */
+  phone?: string;
+
+  /**
+   * Preferred language (ISO 639-1 code)
+   */
+  preferredLanguage?: string;
+  themePreference?: 'LIGHT' | 'DARK' | 'SYSTEM';
+
+  /**
+   * IANA timezone identifier
+   */
+  timezone?: string;
 }

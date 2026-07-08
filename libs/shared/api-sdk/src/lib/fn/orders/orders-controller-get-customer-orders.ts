@@ -7,14 +7,38 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { OrderResponseDto } from '../../models/order-response-dto';
+import { PaginatedOrdersResponseDto } from '../../models/paginated-orders-response-dto';
 
 export interface OrdersControllerGetCustomerOrders$Params {
+  page?: number;
+  limit?: number;
+
+/**
+ * Matches order number or restaurant name
+ */
+  search?: string;
+  status?: 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'READY_FOR_PICKUP' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'CANCELLED';
+
+/**
+ * ISO date — orders placed on or after this date
+ */
+  dateFrom?: string;
+
+/**
+ * ISO date — orders placed on or before this date
+ */
+  dateTo?: string;
 }
 
-export function ordersControllerGetCustomerOrders(http: HttpClient, rootUrl: string, params?: OrdersControllerGetCustomerOrders$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<OrderResponseDto>>> {
+export function ordersControllerGetCustomerOrders(http: HttpClient, rootUrl: string, params?: OrdersControllerGetCustomerOrders$Params, context?: HttpContext): Observable<StrictHttpResponse<PaginatedOrdersResponseDto>> {
   const rb = new RequestBuilder(rootUrl, ordersControllerGetCustomerOrders.PATH, 'get');
   if (params) {
+    rb.query('page', params.page, {});
+    rb.query('limit', params.limit, {});
+    rb.query('search', params.search, {});
+    rb.query('status', params.status, {});
+    rb.query('dateFrom', params.dateFrom, {});
+    rb.query('dateTo', params.dateTo, {});
   }
 
   return http.request(
@@ -22,7 +46,7 @@ export function ordersControllerGetCustomerOrders(http: HttpClient, rootUrl: str
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<Array<OrderResponseDto>>;
+      return r as StrictHttpResponse<PaginatedOrdersResponseDto>;
     })
   );
 }

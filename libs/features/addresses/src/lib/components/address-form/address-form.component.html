@@ -1,0 +1,81 @@
+<form class="address-form" (submit)="$event.preventDefault(); submit()">
+  <div class="label-group" role="group" aria-label="Address label">
+    @for (option of labels; track option) {
+      <button
+        type="button"
+        class="label-chip"
+        [class.active]="label() === option"
+        (click)="selectLabel(option)"
+      >
+        {{ option === 'HOME' ? 'Home' : option === 'WORK' ? 'Work' : 'Other' }}
+      </button>
+    }
+  </div>
+
+  @if (label() === 'OTHER') {
+    <label class="field">
+      <span>Label name</span>
+      <input type="text" [value]="customLabel()" (input)="customLabel.set($any($event.target).value)" placeholder="e.g. Mom's place" />
+    </label>
+  }
+
+  <label class="field">
+    <span>Address line 1 *</span>
+    <input type="text" [value]="addressLine1()" (input)="addressLine1.set($any($event.target).value)" placeholder="House no, street" required />
+  </label>
+
+  <label class="field">
+    <span>Address line 2</span>
+    <input type="text" [value]="addressLine2()" (input)="addressLine2.set($any($event.target).value)" placeholder="Apartment, floor (optional)" />
+  </label>
+
+  <div class="field-row">
+    <label class="field">
+      <span>City *</span>
+      <input type="text" [value]="city()" (input)="city.set($any($event.target).value)" required />
+    </label>
+    <label class="field">
+      <span>State *</span>
+      <input type="text" [value]="state()" (input)="state.set($any($event.target).value)" required />
+    </label>
+    <label class="field">
+      <span>Postal code *</span>
+      <input type="text" [value]="postalCode()" (input)="postalCode.set($any($event.target).value)" required />
+    </label>
+  </div>
+
+  <label class="field">
+    <span>Landmark</span>
+    <input type="text" [value]="landmark()" (input)="landmark.set($any($event.target).value)" placeholder="Nearby landmark (optional)" />
+  </label>
+
+  <label class="field">
+    <span>Delivery instructions</span>
+    <textarea rows="2" [value]="deliveryInstructions()" (input)="deliveryInstructions.set($any($event.target).value)" placeholder="e.g. Leave at the door"></textarea>
+  </label>
+
+  <div class="location-row">
+    <button type="button" class="location-btn" [disabled]="locating()" (click)="useCurrentLocation()">
+      {{ locating() ? 'Detecting…' : '📍 Use current location' }}
+    </button>
+    @if (latitude() !== undefined && longitude() !== undefined) {
+      <span class="location-confirmed">Location captured</span>
+    }
+  </div>
+
+  <label class="default-checkbox">
+    <input type="checkbox" [checked]="isDefault()" (change)="isDefault.set($any($event.target).checked)" />
+    <span>Set as default address</span>
+  </label>
+
+  @if (formError()) {
+    <p class="form-error" role="alert">{{ formError() }}</p>
+  }
+
+  <div class="form-actions">
+    <button type="button" class="btn btn-secondary" (click)="cancel()">Cancel</button>
+    <button type="submit" class="btn btn-primary" [disabled]="saving()">
+      {{ saving() ? 'Saving…' : address ? 'Save changes' : 'Save address' }}
+    </button>
+  </div>
+</form>

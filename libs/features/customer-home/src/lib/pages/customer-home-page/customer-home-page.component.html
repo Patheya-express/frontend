@@ -1,0 +1,112 @@
+<div class="customer-home-page">
+  @if (facade.loading()) {
+    <lib-skeleton [count]="4" />
+  } @else if (facade.error()) {
+    <lib-error-state [message]="facade.error()!" (retry)="retry()" />
+  } @else {
+    @if (facade.home().banners.length > 0) {
+      <div class="customer-home-banners">
+        @for (banner of facade.home().banners; track banner.id) {
+          <a class="customer-home-banner" [class.no-image]="!banner.imageUrl" [routerLink]="['/offers', banner.id]">
+            @if (bannerImageUrl(banner.imageUrl); as imageUrl) {
+              <img [src]="imageUrl" [alt]="banner.title" loading="lazy" />
+            }
+            <div class="customer-home-banner-text">
+              <h3>{{ banner.title }}</h3>
+              @if (banner.description) {
+                <p>{{ banner.description }}</p>
+              }
+            </div>
+          </a>
+        }
+      </div>
+    }
+
+    @if (offersFacade.featured().length > 0) {
+      <lib-offer-carousel title="Featured Offers" [offers]="offersFacade.featured()" />
+    }
+
+    @if (facade.home().cuisines.length > 0) {
+      <div class="customer-home-cuisines">
+        @for (cuisine of facade.home().cuisines; track cuisine.id) {
+          <a class="customer-home-cuisine-chip" [routerLink]="['/restaurants']" [queryParams]="{ cuisine: cuisine.name }">
+            {{ cuisine.name }}
+          </a>
+        }
+      </div>
+    }
+
+    @if (facade.isEmpty()) {
+      <lib-empty-state
+        title="Nothing to show yet"
+        message="Try enabling location access, or browse all restaurants."
+        actionLabel="Browse restaurants"
+        (refresh)="retry()"
+      />
+    }
+
+    @if (facade.home().featuredRestaurants.length > 0) {
+      <section class="customer-home-shelf">
+        <div class="customer-home-shelf-header">
+          <h2>Featured</h2>
+        </div>
+        <div class="customer-home-shelf-row">
+          @for (restaurant of facade.home().featuredRestaurants; track restaurant.id) {
+            <div class="customer-home-shelf-item">
+              <lib-restaurant-card [restaurant]="restaurant" />
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    @if (facade.hasLocation() && facade.home().nearbyRestaurants.length > 0) {
+      <section class="customer-home-shelf">
+        <div class="customer-home-shelf-header">
+          <h2>Near You</h2>
+        </div>
+        <div class="customer-home-shelf-row">
+          @for (restaurant of facade.home().nearbyRestaurants; track restaurant.id) {
+            <div class="customer-home-shelf-item">
+              <lib-restaurant-card [restaurant]="restaurant" />
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    @if (facade.home().popularRestaurants.length > 0) {
+      <section class="customer-home-shelf">
+        <div class="customer-home-shelf-header">
+          <h2>Popular Right Now</h2>
+        </div>
+        <div class="customer-home-shelf-row">
+          @for (restaurant of facade.home().popularRestaurants; track restaurant.id) {
+            <div class="customer-home-shelf-item">
+              <lib-restaurant-card [restaurant]="restaurant" />
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    @if (facade.hasLocation() && facade.home().recommendedRestaurants.length > 0) {
+      <section class="customer-home-shelf">
+        <div class="customer-home-shelf-header">
+          <h2>Recommended For You</h2>
+        </div>
+        <div class="customer-home-shelf-row">
+          @for (restaurant of facade.home().recommendedRestaurants; track restaurant.id) {
+            <div class="customer-home-shelf-item">
+              <lib-restaurant-card [restaurant]="restaurant" />
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <div class="customer-home-browse-all">
+      <a routerLink="/restaurants">Browse all restaurants →</a>
+    </div>
+  }
+</div>

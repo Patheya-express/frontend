@@ -1,0 +1,53 @@
+.address-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.picker-error {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-danger, #c0392b);
+}
+
+.picker-loading {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-subtle);
+}
+
+.address-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.add-address-btn {
+  align-self: flex-start;
+  border: 1px dashed var(--color-border);
+  background: none;
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--color-primary);
+  }
+}
+
+.address-form-panel {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  background: var(--color-background);
+
+  h3 {
+    margin: 0 0 var(--space-3);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+  }
+}

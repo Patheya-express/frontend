@@ -48,6 +48,7 @@ import { ordersControllerUpdateOrderStatus } from '../fn/orders/orders-controlle
 import { OrdersControllerUpdateOrderStatus$Params } from '../fn/orders/orders-controller-update-order-status';
 import { OrderStatusHistoryResponseDto } from '../models/order-status-history-response-dto';
 import { PaginatedAdminOrdersResponseDto } from '../models/paginated-admin-orders-response-dto';
+import { PaginatedOrdersResponseDto } from '../models/paginated-orders-response-dto';
 
 @Injectable({ providedIn: 'root' })
 export class OrdersService extends BaseService {
@@ -92,33 +93,33 @@ export class OrdersService extends BaseService {
   static readonly OrdersControllerGetCustomerOrdersPath = '/api/v1/orders/me';
 
   /**
-   * Get customer orders.
+   * Get my order history.
    *
-   *
+   * Returns a paginated, filterable, searchable list of the current customer's own orders.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `ordersControllerGetCustomerOrders()` instead.
    *
    * This method doesn't expect any request body.
    */
-  ordersControllerGetCustomerOrders$Response(params?: OrdersControllerGetCustomerOrders$Params, context?: HttpContext): Promise<StrictHttpResponse<Array<OrderResponseDto>>> {
+  ordersControllerGetCustomerOrders$Response(params?: OrdersControllerGetCustomerOrders$Params, context?: HttpContext): Promise<StrictHttpResponse<PaginatedOrdersResponseDto>> {
     const obs = ordersControllerGetCustomerOrders(this.http, this.rootUrl, params, context);
     return firstValueFrom(obs);
   }
 
   /**
-   * Get customer orders.
+   * Get my order history.
    *
-   *
+   * Returns a paginated, filterable, searchable list of the current customer's own orders.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `ordersControllerGetCustomerOrders$Response()` instead.
    *
    * This method doesn't expect any request body.
    */
-  ordersControllerGetCustomerOrders(params?: OrdersControllerGetCustomerOrders$Params, context?: HttpContext): Promise<Array<OrderResponseDto>> {
+  ordersControllerGetCustomerOrders(params?: OrdersControllerGetCustomerOrders$Params, context?: HttpContext): Promise<PaginatedOrdersResponseDto> {
     const resp = this.ordersControllerGetCustomerOrders$Response(params, context);
-    return resp.then((r: StrictHttpResponse<Array<OrderResponseDto>>): Array<OrderResponseDto> => r.body);
+    return resp.then((r: StrictHttpResponse<PaginatedOrdersResponseDto>): PaginatedOrdersResponseDto => r.body);
   }
 
   /** Path part for operation `ordersControllerGetRestaurantOrders()` */
@@ -127,7 +128,7 @@ export class OrdersService extends BaseService {
   /**
    * Get restaurant orders.
    *
-   *
+   * Restricted to the restaurant's own owner/manager, or an admin.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `ordersControllerGetRestaurantOrders()` instead.
@@ -142,7 +143,7 @@ export class OrdersService extends BaseService {
   /**
    * Get restaurant orders.
    *
-   *
+   * Restricted to the restaurant's own owner/manager, or an admin.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `ordersControllerGetRestaurantOrders$Response()` instead.

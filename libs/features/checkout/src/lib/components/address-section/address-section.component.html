@@ -1,12 +1,4 @@
 <section class="address-section">
   <h2>Delivery Address</h2>
-  <label for="checkout-address" class="address-label">Where should we deliver your order?</label>
-  <textarea
-    id="checkout-address"
-    class="address-input"
-    rows="3"
-    placeholder="Enter your full delivery address"
-    [value]="address()"
-    (input)="onAddressChange($event)"
-  ></textarea>
+  <lib-address-picker />
 </section>

@@ -1,0 +1,42 @@
+<article
+  class="address-card"
+  [class.selected]="selected"
+  [class.selectable]="selectable"
+  [attr.role]="selectable ? 'radio' : null"
+  [attr.aria-checked]="selectable ? selected : null"
+  [attr.tabindex]="selectable ? 0 : null"
+  (click)="onSelect()"
+  (keydown.enter)="onSelect()"
+  (keydown.space)="onSelect()"
+>
+  <div class="address-card-header">
+    @if (selectable) {
+      <span class="address-radio" [class.checked]="selected" aria-hidden="true"></span>
+    }
+    <span class="address-label-chip">{{ displayLabel() }}</span>
+    @if (address.isDefault) {
+      <span class="default-badge">Default</span>
+    }
+  </div>
+
+  <p class="address-lines">
+    {{ address.addressLine1 }}{{ address.addressLine2 ? ', ' + address.addressLine2 : '' }},
+    {{ address.city }}, {{ address.state }} {{ address.postalCode }}
+  </p>
+
+  @if (address.landmark) {
+    <p class="address-landmark">Landmark: {{ address.landmark }}</p>
+  }
+
+  @if (address.deliveryInstructions) {
+    <p class="address-instructions">{{ address.deliveryInstructions }}</p>
+  }
+
+  <div class="address-actions">
+    @if (!address.isDefault) {
+      <button type="button" (click)="$event.stopPropagation(); setDefault.emit(address.id)">Set as default</button>
+    }
+    <button type="button" (click)="$event.stopPropagation(); edit.emit(address.id)">Edit</button>
+    <button type="button" class="danger" (click)="$event.stopPropagation(); remove.emit(address.id)">Delete</button>
+  </div>
+</article>

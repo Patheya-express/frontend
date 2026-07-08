@@ -10,21 +10,32 @@ import { ApiConfiguration } from '../api-configuration';
 import { StrictHttpResponse } from '../strict-http-response';
 
 import { AdminNotificationResponseDto } from '../models/admin-notification-response-dto';
+import { MarkAllReadResponseDto } from '../models/mark-all-read-response-dto';
 import { NotificationResponseDto } from '../models/notification-response-dto';
 import { notificationsControllerGetAllForAdmin } from '../fn/notifications/notifications-controller-get-all-for-admin';
 import { NotificationsControllerGetAllForAdmin$Params } from '../fn/notifications/notifications-controller-get-all-for-admin';
 import { notificationsControllerGetByIdForAdmin } from '../fn/notifications/notifications-controller-get-by-id-for-admin';
 import { NotificationsControllerGetByIdForAdmin$Params } from '../fn/notifications/notifications-controller-get-by-id-for-admin';
+import { notificationsControllerGetMyNotificationById } from '../fn/notifications/notifications-controller-get-my-notification-by-id';
+import { NotificationsControllerGetMyNotificationById$Params } from '../fn/notifications/notifications-controller-get-my-notification-by-id';
 import { notificationsControllerGetMyNotifications } from '../fn/notifications/notifications-controller-get-my-notifications';
 import { NotificationsControllerGetMyNotifications$Params } from '../fn/notifications/notifications-controller-get-my-notifications';
+import { notificationsControllerGetMyUnreadCount } from '../fn/notifications/notifications-controller-get-my-unread-count';
+import { NotificationsControllerGetMyUnreadCount$Params } from '../fn/notifications/notifications-controller-get-my-unread-count';
+import { notificationsControllerMarkAllMyNotificationsAsRead } from '../fn/notifications/notifications-controller-mark-all-my-notifications-as-read';
+import { NotificationsControllerMarkAllMyNotificationsAsRead$Params } from '../fn/notifications/notifications-controller-mark-all-my-notifications-as-read';
 import { notificationsControllerMarkAsRead } from '../fn/notifications/notifications-controller-mark-as-read';
 import { NotificationsControllerMarkAsRead$Params } from '../fn/notifications/notifications-controller-mark-as-read';
+import { notificationsControllerMarkMyNotificationAsRead } from '../fn/notifications/notifications-controller-mark-my-notification-as-read';
+import { NotificationsControllerMarkMyNotificationAsRead$Params } from '../fn/notifications/notifications-controller-mark-my-notification-as-read';
 import { notificationsControllerRegisterPushToken } from '../fn/notifications/notifications-controller-register-push-token';
 import { NotificationsControllerRegisterPushToken$Params } from '../fn/notifications/notifications-controller-register-push-token';
 import { notificationsControllerRetryNotification } from '../fn/notifications/notifications-controller-retry-notification';
 import { NotificationsControllerRetryNotification$Params } from '../fn/notifications/notifications-controller-retry-notification';
 import { PaginatedAdminNotificationsResponseDto } from '../models/paginated-admin-notifications-response-dto';
+import { PaginatedNotificationsResponseDto } from '../models/paginated-notifications-response-dto';
 import { PushTokenResponseDto } from '../models/push-token-response-dto';
+import { UnreadCountResponseDto } from '../models/unread-count-response-dto';
 
 @Injectable({ providedIn: 'root' })
 export class NotificationsService extends BaseService {
@@ -38,14 +49,14 @@ export class NotificationsService extends BaseService {
   /**
    * Get my notifications.
    *
-   * Returns notifications belonging to the authenticated user.
+   * Paginated, filterable list of notifications belonging to the authenticated user, newest first.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `notificationsControllerGetMyNotifications()` instead.
    *
    * This method doesn't expect any request body.
    */
-  notificationsControllerGetMyNotifications$Response(params?: NotificationsControllerGetMyNotifications$Params, context?: HttpContext): Promise<StrictHttpResponse<Array<NotificationResponseDto>>> {
+  notificationsControllerGetMyNotifications$Response(params?: NotificationsControllerGetMyNotifications$Params, context?: HttpContext): Promise<StrictHttpResponse<PaginatedNotificationsResponseDto>> {
     const obs = notificationsControllerGetMyNotifications(this.http, this.rootUrl, params, context);
     return firstValueFrom(obs);
   }
@@ -53,23 +64,155 @@ export class NotificationsService extends BaseService {
   /**
    * Get my notifications.
    *
-   * Returns notifications belonging to the authenticated user.
+   * Paginated, filterable list of notifications belonging to the authenticated user, newest first.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `notificationsControllerGetMyNotifications$Response()` instead.
    *
    * This method doesn't expect any request body.
    */
-  notificationsControllerGetMyNotifications(params?: NotificationsControllerGetMyNotifications$Params, context?: HttpContext): Promise<Array<NotificationResponseDto>> {
+  notificationsControllerGetMyNotifications(params?: NotificationsControllerGetMyNotifications$Params, context?: HttpContext): Promise<PaginatedNotificationsResponseDto> {
     const resp = this.notificationsControllerGetMyNotifications$Response(params, context);
-    return resp.then((r: StrictHttpResponse<Array<NotificationResponseDto>>): Array<NotificationResponseDto> => r.body);
+    return resp.then((r: StrictHttpResponse<PaginatedNotificationsResponseDto>): PaginatedNotificationsResponseDto => r.body);
+  }
+
+  /** Path part for operation `notificationsControllerGetMyUnreadCount()` */
+  static readonly NotificationsControllerGetMyUnreadCountPath = '/api/v1/notifications/me/unread-count';
+
+  /**
+   * Get my unread notification count.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `notificationsControllerGetMyUnreadCount()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  notificationsControllerGetMyUnreadCount$Response(params?: NotificationsControllerGetMyUnreadCount$Params, context?: HttpContext): Promise<StrictHttpResponse<UnreadCountResponseDto>> {
+    const obs = notificationsControllerGetMyUnreadCount(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Get my unread notification count.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `notificationsControllerGetMyUnreadCount$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  notificationsControllerGetMyUnreadCount(params?: NotificationsControllerGetMyUnreadCount$Params, context?: HttpContext): Promise<UnreadCountResponseDto> {
+    const resp = this.notificationsControllerGetMyUnreadCount$Response(params, context);
+    return resp.then((r: StrictHttpResponse<UnreadCountResponseDto>): UnreadCountResponseDto => r.body);
+  }
+
+  /** Path part for operation `notificationsControllerMarkAllMyNotificationsAsRead()` */
+  static readonly NotificationsControllerMarkAllMyNotificationsAsReadPath = '/api/v1/notifications/me/read-all';
+
+  /**
+   * Mark all my notifications as read.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `notificationsControllerMarkAllMyNotificationsAsRead()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  notificationsControllerMarkAllMyNotificationsAsRead$Response(params?: NotificationsControllerMarkAllMyNotificationsAsRead$Params, context?: HttpContext): Promise<StrictHttpResponse<MarkAllReadResponseDto>> {
+    const obs = notificationsControllerMarkAllMyNotificationsAsRead(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Mark all my notifications as read.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `notificationsControllerMarkAllMyNotificationsAsRead$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  notificationsControllerMarkAllMyNotificationsAsRead(params?: NotificationsControllerMarkAllMyNotificationsAsRead$Params, context?: HttpContext): Promise<MarkAllReadResponseDto> {
+    const resp = this.notificationsControllerMarkAllMyNotificationsAsRead$Response(params, context);
+    return resp.then((r: StrictHttpResponse<MarkAllReadResponseDto>): MarkAllReadResponseDto => r.body);
+  }
+
+  /** Path part for operation `notificationsControllerGetMyNotificationById()` */
+  static readonly NotificationsControllerGetMyNotificationByIdPath = '/api/v1/notifications/me/{id}';
+
+  /**
+   * Get one of my notifications by ID.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `notificationsControllerGetMyNotificationById()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  notificationsControllerGetMyNotificationById$Response(params: NotificationsControllerGetMyNotificationById$Params, context?: HttpContext): Promise<StrictHttpResponse<NotificationResponseDto>> {
+    const obs = notificationsControllerGetMyNotificationById(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Get one of my notifications by ID.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `notificationsControllerGetMyNotificationById$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  notificationsControllerGetMyNotificationById(params: NotificationsControllerGetMyNotificationById$Params, context?: HttpContext): Promise<NotificationResponseDto> {
+    const resp = this.notificationsControllerGetMyNotificationById$Response(params, context);
+    return resp.then((r: StrictHttpResponse<NotificationResponseDto>): NotificationResponseDto => r.body);
+  }
+
+  /** Path part for operation `notificationsControllerMarkMyNotificationAsRead()` */
+  static readonly NotificationsControllerMarkMyNotificationAsReadPath = '/api/v1/notifications/me/{id}/read';
+
+  /**
+   * Mark one of my notifications as read.
+   *
+   * Ownership-scoped — only the notification's own recipient can mark it as read. Distinct from the legacy PATCH /notifications/:id/read, which is unscoped and left unchanged.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `notificationsControllerMarkMyNotificationAsRead()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  notificationsControllerMarkMyNotificationAsRead$Response(params: NotificationsControllerMarkMyNotificationAsRead$Params, context?: HttpContext): Promise<StrictHttpResponse<NotificationResponseDto>> {
+    const obs = notificationsControllerMarkMyNotificationAsRead(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Mark one of my notifications as read.
+   *
+   * Ownership-scoped — only the notification's own recipient can mark it as read. Distinct from the legacy PATCH /notifications/:id/read, which is unscoped and left unchanged.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `notificationsControllerMarkMyNotificationAsRead$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  notificationsControllerMarkMyNotificationAsRead(params: NotificationsControllerMarkMyNotificationAsRead$Params, context?: HttpContext): Promise<NotificationResponseDto> {
+    const resp = this.notificationsControllerMarkMyNotificationAsRead$Response(params, context);
+    return resp.then((r: StrictHttpResponse<NotificationResponseDto>): NotificationResponseDto => r.body);
   }
 
   /** Path part for operation `notificationsControllerMarkAsRead()` */
   static readonly NotificationsControllerMarkAsReadPath = '/api/v1/notifications/{id}/read';
 
   /**
-   * Mark notification as read.
+   * Mark notification as read (legacy).
    *
    *
    *
@@ -84,7 +227,7 @@ export class NotificationsService extends BaseService {
   }
 
   /**
-   * Mark notification as read.
+   * Mark notification as read (legacy).
    *
    *
    *

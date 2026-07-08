@@ -5,6 +5,7 @@ export interface CreateMenuItemDto {
   basePrice: number;
   categoryId: string;
   description?: string;
+  imageUrl?: string;
   isVegan?: boolean;
   isVegetarian?: boolean;
   name: string;

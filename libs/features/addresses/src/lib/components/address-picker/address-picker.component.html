@@ -1,0 +1,33 @@
+<div class="address-picker">
+  @if (error()) {
+    <p class="picker-error" role="alert">{{ error() }}</p>
+  }
+
+  @if (loading() && addresses().length === 0) {
+    <p class="picker-loading">Loading your saved addresses…</p>
+  } @else {
+    @if (addresses().length > 0) {
+      <div class="address-list">
+        @for (address of addresses(); track address.id) {
+          <lib-address-card
+            [address]="address"
+            [selected]="selectedAddressId() === address.id"
+            (addressSelected)="select($event)"
+            (edit)="startEdit($event)"
+            (remove)="remove($event)"
+            (setDefault)="setDefault($event)"
+          />
+        }
+      </div>
+    }
+
+    @if (!showAddForm()) {
+      <button type="button" class="add-address-btn" (click)="startAdd()">+ Add new address</button>
+    } @else {
+      <div class="address-form-panel">
+        <h3>{{ editingAddress() ? 'Edit address' : 'Add new address' }}</h3>
+        <lib-address-form [address]="editingAddress()" (saved)="onSaved($event)" (cancelled)="onCancelled()" />
+      </div>
+    }
+  }
+</div>

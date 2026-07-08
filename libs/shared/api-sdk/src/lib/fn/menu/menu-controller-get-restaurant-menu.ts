@@ -11,12 +11,18 @@ import { MenuCategoryResponseDto } from '../../models/menu-category-response-dto
 
 export interface MenuControllerGetRestaurantMenu$Params {
   restaurantId: string;
+
+/**
+ * Matches menu item name within the restaurant
+ */
+  search?: string;
 }
 
 export function menuControllerGetRestaurantMenu(http: HttpClient, rootUrl: string, params: MenuControllerGetRestaurantMenu$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<MenuCategoryResponseDto>>> {
   const rb = new RequestBuilder(rootUrl, menuControllerGetRestaurantMenu.PATH, 'get');
   if (params) {
     rb.path('restaurantId', params.restaurantId, {});
+    rb.query('search', params.search, {});
   }
 
   return http.request(

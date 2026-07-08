@@ -5,7 +5,7 @@
   }
 
   <div class="order-summary-items">
-    @for (item of orderSummary().items; track item.menuItemId) {
+    @for (item of orderSummary().items; track item.id) {
       <lib-cart-item [item]="item" />
     }
   </div>

@@ -14,7 +14,7 @@
     />
   } @else {
     <div class="cart-page-items">
-      @for (item of items(); track item.menuItemId) {
+      @for (item of items(); track item.id) {
         <lib-cart-item [item]="item" />
       }
     </div>

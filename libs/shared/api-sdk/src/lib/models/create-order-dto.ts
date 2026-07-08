@@ -3,9 +3,19 @@
 
 import { CreateOrderItemDto } from '../models/create-order-item-dto';
 export interface CreateOrderDto {
+
+  /**
+   * ID of a saved address. Either this or deliveryAddress must be provided.
+   */
+  addressId?: string;
   branchId?: string;
-  deliveryAddress: string;
+
+  /**
+   * Free-text delivery address. Ignored if addressId is provided.
+   */
+  deliveryAddress?: string;
   items: Array<CreateOrderItemDto>;
   notes?: string;
+  paymentMode?: 'ONLINE' | 'COD';
   restaurantId: string;
 }

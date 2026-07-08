@@ -23,7 +23,17 @@ export const appConfig: ApplicationConfig = {
         return config;
       },
     },
-    provideAppInitializer(() => inject(AuthFacade).initialize()),
-    provideAppInitializer(() => inject(CartFacade).restore()),
+    // Cart is now backend-authenticated (GET /cart requires a JWT), so it must only be restored
+    // once we know a session exists — otherwise every guest page load 401s against it.
+    provideAppInitializer(() => {
+      const authFacade = inject(AuthFacade);
+      authFacade.initialize();
+
+      if (authFacade.isAuthenticated()) {
+        return inject(CartFacade).restore();
+      }
+
+      return undefined;
+    }),
   ]
 };

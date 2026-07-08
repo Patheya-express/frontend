@@ -1,0 +1,86 @@
+.address-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  transition: border-color var(--transition-fast);
+
+  &.selectable {
+    cursor: pointer;
+  }
+
+  &.selected {
+    border-color: var(--color-primary);
+  }
+}
+
+.address-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.address-radio {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  flex-shrink: 0;
+
+  &.checked {
+    border-color: var(--color-primary);
+    background: radial-gradient(circle, var(--color-primary) 45%, transparent 50%);
+  }
+}
+
+.address-label-chip {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.default-badge {
+  font-size: var(--font-size-xs);
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-full, 999px);
+  padding: 1px var(--space-2);
+}
+
+.address-lines {
+  margin: 0 0 var(--space-1);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  line-height: var(--line-height-base);
+}
+
+.address-landmark,
+.address-instructions {
+  margin: 0 0 var(--space-1);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-subtle);
+}
+
+.address-actions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+
+  button {
+    border: none;
+    background: none;
+    padding: 0;
+    font-size: var(--font-size-xs);
+    color: var(--color-primary);
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline;
+    }
+
+    &.danger {
+      color: var(--color-danger, #c0392b);
+    }
+  }
+}

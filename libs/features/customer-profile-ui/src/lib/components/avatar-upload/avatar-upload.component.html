@@ -1,0 +1,27 @@
+<div class="avatar-upload">
+  <div class="avatar-circle">
+    @if (resolvedAvatarUrl(); as url) {
+      <img [src]="url" alt="Your profile photo" />
+    } @else {
+      <span class="avatar-initials" aria-hidden="true">{{ initials() }}</span>
+    }
+  </div>
+
+  <button
+    type="button"
+    class="avatar-upload-btn"
+    [disabled]="uploading"
+    (click)="openFilePicker()"
+  >
+    {{ uploading ? 'Uploading…' : 'Change photo' }}
+  </button>
+
+  <input
+    #fileInput
+    type="file"
+    accept="image/png,image/jpeg,image/webp"
+    class="avatar-file-input"
+    aria-label="Upload profile photo"
+    (change)="onFileChange($event)"
+  />
+</div>

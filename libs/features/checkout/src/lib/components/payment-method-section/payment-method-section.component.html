@@ -1,0 +1,29 @@
+<section class="payment-method-section">
+  <h2>Payment Method</h2>
+
+  <div class="payment-options" role="radiogroup" aria-label="Payment method">
+    <button
+      type="button"
+      class="payment-option"
+      role="radio"
+      [attr.aria-checked]="paymentMode() === 'ONLINE'"
+      [class.active]="paymentMode() === 'ONLINE'"
+      (click)="select('ONLINE')"
+    >
+      <span class="payment-option-title">Pay Online</span>
+      <span class="payment-option-subtitle">UPI, Card, Netbanking, Wallet via Razorpay</span>
+    </button>
+
+    <button
+      type="button"
+      class="payment-option"
+      role="radio"
+      [attr.aria-checked]="paymentMode() === 'COD'"
+      [class.active]="paymentMode() === 'COD'"
+      (click)="select('COD')"
+    >
+      <span class="payment-option-title">Cash on Delivery</span>
+      <span class="payment-option-subtitle">Pay in cash when your order arrives</span>
+    </button>
+  </div>
+</section>

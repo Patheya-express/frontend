@@ -169,7 +169,7 @@ export class PaymentsService extends BaseService {
   /**
    * Razorpay webhook.
    *
-   * Receives asynchronous payment status events from Razorpay. Payload shape is defined by Razorpay and is not validated against a fixed contract.
+   * Receives asynchronous payment status events from Razorpay. Payload shape is defined by Razorpay and is not validated against a fixed contract. The request signature is verified against the raw body before processing.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `paymentsControllerProcessWebhook()` instead.
@@ -184,7 +184,7 @@ export class PaymentsService extends BaseService {
   /**
    * Razorpay webhook.
    *
-   * Receives asynchronous payment status events from Razorpay. Payload shape is defined by Razorpay and is not validated against a fixed contract.
+   * Receives asynchronous payment status events from Razorpay. Payload shape is defined by Razorpay and is not validated against a fixed contract. The request signature is verified against the raw body before processing.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `paymentsControllerProcessWebhook$Response()` instead.

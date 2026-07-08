@@ -28,8 +28,8 @@ export class RestaurantMenuService {
     return unwrap(response);
   }
 
-  async getMenu(restaurantId: string): Promise<MenuCategoryResponseDto[]> {
-    const response = await this.menuService.menuControllerGetRestaurantMenu({ restaurantId });
+  async getMenu(restaurantId: string, search?: string): Promise<MenuCategoryResponseDto[]> {
+    const response = await this.menuService.menuControllerGetRestaurantMenu({ restaurantId, search });
     return unwrap(response);
   }
 }

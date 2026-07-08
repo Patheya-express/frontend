@@ -7,7 +7,7 @@ export interface PaymentResponseDto {
   createdAt: string;
   id: string;
   isActive: boolean;
-  method?: 'UPI' | 'CARD' | 'NETBANKING' | 'WALLET';
+  method?: 'UPI' | 'CARD' | 'NETBANKING' | 'WALLET' | 'COD';
   orderId: string;
   provider: 'RAZORPAY' | 'STRIPE';
   providerOrderId?: string;

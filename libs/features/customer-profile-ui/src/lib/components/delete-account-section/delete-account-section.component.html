@@ -1,0 +1,22 @@
+<div class="delete-account-section">
+  <h2>Delete account</h2>
+  <p>
+    This permanently deactivates your account. You will be signed out and will no longer be able
+    to log in with this email or phone number.
+  </p>
+
+  <button type="button" class="delete-account-btn" (click)="requestDelete()">
+    Delete my account
+  </button>
+</div>
+
+<lib-confirm-dialog
+  [open]="confirming()"
+  title="Delete your account?"
+  message="This can't be undone. You'll be signed out immediately."
+  confirmLabel="Delete account"
+  tone="danger"
+  [busy]="deleting()"
+  (confirmed)="confirmDelete()"
+  (cancelled)="cancelDelete()"
+/>

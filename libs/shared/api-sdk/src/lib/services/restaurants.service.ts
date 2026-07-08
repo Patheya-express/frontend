@@ -10,6 +10,8 @@ import { ApiConfiguration } from '../api-configuration';
 import { StrictHttpResponse } from '../strict-http-response';
 
 import { PaginatedRestaurantsResponseDto } from '../models/paginated-restaurants-response-dto';
+import { PaginatedRestaurantSummariesResponseDto } from '../models/paginated-restaurant-summaries-response-dto';
+import { PaginatedReviewsResponseDto } from '../models/paginated-reviews-response-dto';
 import { RestaurantResponseDto } from '../models/restaurant-response-dto';
 import { restaurantsControllerApproveRestaurant } from '../fn/restaurants/restaurants-controller-approve-restaurant';
 import { RestaurantsControllerApproveRestaurant$Params } from '../fn/restaurants/restaurants-controller-approve-restaurant';
@@ -29,6 +31,19 @@ import { restaurantsControllerRestoreRestaurant } from '../fn/restaurants/restau
 import { RestaurantsControllerRestoreRestaurant$Params } from '../fn/restaurants/restaurants-controller-restore-restaurant';
 import { restaurantsControllerSuspendRestaurant } from '../fn/restaurants/restaurants-controller-suspend-restaurant';
 import { RestaurantsControllerSuspendRestaurant$Params } from '../fn/restaurants/restaurants-controller-suspend-restaurant';
+import { restaurantsControllerUploadBanner } from '../fn/restaurants/restaurants-controller-upload-banner';
+import { RestaurantsControllerUploadBanner$Params } from '../fn/restaurants/restaurants-controller-upload-banner';
+import { restaurantsControllerUploadLogo } from '../fn/restaurants/restaurants-controller-upload-logo';
+import { RestaurantsControllerUploadLogo$Params } from '../fn/restaurants/restaurants-controller-upload-logo';
+import { ReviewResponseDto } from '../models/review-response-dto';
+import { reviewsControllerCreateReview } from '../fn/restaurants/reviews-controller-create-review';
+import { ReviewsControllerCreateReview$Params } from '../fn/restaurants/reviews-controller-create-review';
+import { reviewsControllerDeleteReview } from '../fn/restaurants/reviews-controller-delete-review';
+import { ReviewsControllerDeleteReview$Params } from '../fn/restaurants/reviews-controller-delete-review';
+import { reviewsControllerGetMyReview } from '../fn/restaurants/reviews-controller-get-my-review';
+import { ReviewsControllerGetMyReview$Params } from '../fn/restaurants/reviews-controller-get-my-review';
+import { reviewsControllerGetReviews } from '../fn/restaurants/reviews-controller-get-reviews';
+import { ReviewsControllerGetReviews$Params } from '../fn/restaurants/reviews-controller-get-reviews';
 
 @Injectable({ providedIn: 'root' })
 export class RestaurantsService extends BaseService {
@@ -49,7 +64,7 @@ export class RestaurantsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  restaurantsControllerFindAll$Response(params?: RestaurantsControllerFindAll$Params, context?: HttpContext): Promise<StrictHttpResponse<PaginatedRestaurantsResponseDto>> {
+  restaurantsControllerFindAll$Response(params?: RestaurantsControllerFindAll$Params, context?: HttpContext): Promise<StrictHttpResponse<PaginatedRestaurantSummariesResponseDto>> {
     const obs = restaurantsControllerFindAll(this.http, this.rootUrl, params, context);
     return firstValueFrom(obs);
   }
@@ -64,9 +79,9 @@ export class RestaurantsService extends BaseService {
    *
    * This method doesn't expect any request body.
    */
-  restaurantsControllerFindAll(params?: RestaurantsControllerFindAll$Params, context?: HttpContext): Promise<PaginatedRestaurantsResponseDto> {
+  restaurantsControllerFindAll(params?: RestaurantsControllerFindAll$Params, context?: HttpContext): Promise<PaginatedRestaurantSummariesResponseDto> {
     const resp = this.restaurantsControllerFindAll$Response(params, context);
-    return resp.then((r: StrictHttpResponse<PaginatedRestaurantsResponseDto>): PaginatedRestaurantsResponseDto => r.body);
+    return resp.then((r: StrictHttpResponse<PaginatedRestaurantSummariesResponseDto>): PaginatedRestaurantSummariesResponseDto => r.body);
   }
 
   /** Path part for operation `restaurantsControllerCreateRestaurant()` */
@@ -306,7 +321,7 @@ export class RestaurantsService extends BaseService {
   /**
    * Get restaurant by ID.
    *
-   *
+   * Public — no authentication required, so anonymous customers can browse restaurant detail pages.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `restaurantsControllerGetRestaurantById()` instead.
@@ -321,7 +336,7 @@ export class RestaurantsService extends BaseService {
   /**
    * Get restaurant by ID.
    *
-   *
+   * Public — no authentication required, so anonymous customers can browse restaurant detail pages.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `restaurantsControllerGetRestaurantById$Response()` instead.
@@ -331,6 +346,204 @@ export class RestaurantsService extends BaseService {
   restaurantsControllerGetRestaurantById(params: RestaurantsControllerGetRestaurantById$Params, context?: HttpContext): Promise<RestaurantResponseDto> {
     const resp = this.restaurantsControllerGetRestaurantById$Response(params, context);
     return resp.then((r: StrictHttpResponse<RestaurantResponseDto>): RestaurantResponseDto => r.body);
+  }
+
+  /** Path part for operation `restaurantsControllerUploadLogo()` */
+  static readonly RestaurantsControllerUploadLogoPath = '/api/v1/restaurants/{id}/logo';
+
+  /**
+   * Upload restaurant logo.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `restaurantsControllerUploadLogo()` instead.
+   *
+   * This method sends `multipart/form-data` and handles request body of type `multipart/form-data`.
+   */
+  restaurantsControllerUploadLogo$Response(params: RestaurantsControllerUploadLogo$Params, context?: HttpContext): Promise<StrictHttpResponse<RestaurantResponseDto>> {
+    const obs = restaurantsControllerUploadLogo(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Upload restaurant logo.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `restaurantsControllerUploadLogo$Response()` instead.
+   *
+   * This method sends `multipart/form-data` and handles request body of type `multipart/form-data`.
+   */
+  restaurantsControllerUploadLogo(params: RestaurantsControllerUploadLogo$Params, context?: HttpContext): Promise<RestaurantResponseDto> {
+    const resp = this.restaurantsControllerUploadLogo$Response(params, context);
+    return resp.then((r: StrictHttpResponse<RestaurantResponseDto>): RestaurantResponseDto => r.body);
+  }
+
+  /** Path part for operation `restaurantsControllerUploadBanner()` */
+  static readonly RestaurantsControllerUploadBannerPath = '/api/v1/restaurants/{id}/banner';
+
+  /**
+   * Upload restaurant banner.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `restaurantsControllerUploadBanner()` instead.
+   *
+   * This method sends `multipart/form-data` and handles request body of type `multipart/form-data`.
+   */
+  restaurantsControllerUploadBanner$Response(params: RestaurantsControllerUploadBanner$Params, context?: HttpContext): Promise<StrictHttpResponse<RestaurantResponseDto>> {
+    const obs = restaurantsControllerUploadBanner(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Upload restaurant banner.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `restaurantsControllerUploadBanner$Response()` instead.
+   *
+   * This method sends `multipart/form-data` and handles request body of type `multipart/form-data`.
+   */
+  restaurantsControllerUploadBanner(params: RestaurantsControllerUploadBanner$Params, context?: HttpContext): Promise<RestaurantResponseDto> {
+    const resp = this.restaurantsControllerUploadBanner$Response(params, context);
+    return resp.then((r: StrictHttpResponse<RestaurantResponseDto>): RestaurantResponseDto => r.body);
+  }
+
+  /** Path part for operation `reviewsControllerGetReviews()` */
+  static readonly ReviewsControllerGetReviewsPath = '/api/v1/restaurants/{id}/reviews';
+
+  /**
+   * List reviews for a restaurant.
+   *
+   * Public — paginated, newest first.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `reviewsControllerGetReviews()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  reviewsControllerGetReviews$Response(params: ReviewsControllerGetReviews$Params, context?: HttpContext): Promise<StrictHttpResponse<PaginatedReviewsResponseDto>> {
+    const obs = reviewsControllerGetReviews(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * List reviews for a restaurant.
+   *
+   * Public — paginated, newest first.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `reviewsControllerGetReviews$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  reviewsControllerGetReviews(params: ReviewsControllerGetReviews$Params, context?: HttpContext): Promise<PaginatedReviewsResponseDto> {
+    const resp = this.reviewsControllerGetReviews$Response(params, context);
+    return resp.then((r: StrictHttpResponse<PaginatedReviewsResponseDto>): PaginatedReviewsResponseDto => r.body);
+  }
+
+  /** Path part for operation `reviewsControllerCreateReview()` */
+  static readonly ReviewsControllerCreateReviewPath = '/api/v1/restaurants/{id}/reviews';
+
+  /**
+   * Rate a restaurant.
+   *
+   * Submits (or updates) the current customer's rating and review for a restaurant, and recomputes the restaurant's aggregated rating. Requires at least one DELIVERED order from this restaurant.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `reviewsControllerCreateReview()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  reviewsControllerCreateReview$Response(params: ReviewsControllerCreateReview$Params, context?: HttpContext): Promise<StrictHttpResponse<ReviewResponseDto>> {
+    const obs = reviewsControllerCreateReview(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Rate a restaurant.
+   *
+   * Submits (or updates) the current customer's rating and review for a restaurant, and recomputes the restaurant's aggregated rating. Requires at least one DELIVERED order from this restaurant.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `reviewsControllerCreateReview$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  reviewsControllerCreateReview(params: ReviewsControllerCreateReview$Params, context?: HttpContext): Promise<ReviewResponseDto> {
+    const resp = this.reviewsControllerCreateReview$Response(params, context);
+    return resp.then((r: StrictHttpResponse<ReviewResponseDto>): ReviewResponseDto => r.body);
+  }
+
+  /** Path part for operation `reviewsControllerDeleteReview()` */
+  static readonly ReviewsControllerDeleteReviewPath = '/api/v1/restaurants/{id}/reviews';
+
+  /**
+   * Delete my review for a restaurant.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `reviewsControllerDeleteReview()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  reviewsControllerDeleteReview$Response(params: ReviewsControllerDeleteReview$Params, context?: HttpContext): Promise<StrictHttpResponse<void>> {
+    const obs = reviewsControllerDeleteReview(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Delete my review for a restaurant.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `reviewsControllerDeleteReview$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  reviewsControllerDeleteReview(params: ReviewsControllerDeleteReview$Params, context?: HttpContext): Promise<void> {
+    const resp = this.reviewsControllerDeleteReview$Response(params, context);
+    return resp.then((r: StrictHttpResponse<void>): void => r.body);
+  }
+
+  /** Path part for operation `reviewsControllerGetMyReview()` */
+  static readonly ReviewsControllerGetMyReviewPath = '/api/v1/restaurants/{id}/reviews/me';
+
+  /**
+   * Get my review for a restaurant.
+   *
+   * Returns null if the current customer has not reviewed this restaurant.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `reviewsControllerGetMyReview()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  reviewsControllerGetMyReview$Response(params: ReviewsControllerGetMyReview$Params, context?: HttpContext): Promise<StrictHttpResponse<ReviewResponseDto>> {
+    const obs = reviewsControllerGetMyReview(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Get my review for a restaurant.
+   *
+   * Returns null if the current customer has not reviewed this restaurant.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `reviewsControllerGetMyReview$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  reviewsControllerGetMyReview(params: ReviewsControllerGetMyReview$Params, context?: HttpContext): Promise<ReviewResponseDto> {
+    const resp = this.reviewsControllerGetMyReview$Response(params, context);
+    return resp.then((r: StrictHttpResponse<ReviewResponseDto>): ReviewResponseDto => r.body);
   }
 
 }

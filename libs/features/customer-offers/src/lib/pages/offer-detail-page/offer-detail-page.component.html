@@ -1,0 +1,40 @@
+<div class="offer-detail-page">
+  <a class="offer-detail-back" routerLink="/offers">&larr; Back to offers</a>
+
+  @if (facade.selectedOfferLoading()) {
+    <lib-skeleton [count]="1" />
+  } @else if (facade.selectedOfferError()) {
+    <lib-error-state [message]="facade.selectedOfferError()!" (retry)="retry()" />
+  } @else if (facade.selectedOffer(); as offer) {
+    <article class="offer-detail-card">
+      <div class="offer-detail-image">
+        @if (imageUrl; as url) {
+          <img [src]="url" [alt]="offer.title" />
+        }
+        @if (typeLabel) {
+          <span class="offer-detail-type">{{ typeLabel }}</span>
+        }
+      </div>
+
+      <div class="offer-detail-body">
+        <h1>{{ offer.title }}</h1>
+
+        @if (offer.description) {
+          <p class="offer-detail-description">{{ offer.description }}</p>
+        }
+
+        @if (expirationLabel) {
+          <p class="offer-detail-expiration" [class.expiring-soon]="isExpiringSoon">{{ expirationLabel }}</p>
+        }
+
+        @if (offer.restaurantName) {
+          <button type="button" class="offer-detail-restaurant-link" (click)="goToRestaurant()">
+            View {{ offer.restaurantName }}
+          </button>
+        }
+      </div>
+    </article>
+  } @else {
+    <lib-empty-state title="Offer not found" message="This offer may have expired or been removed." />
+  }
+</div>

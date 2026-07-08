@@ -9,20 +9,32 @@ import { BaseService } from '../base-service';
 import { ApiConfiguration } from '../api-configuration';
 import { StrictHttpResponse } from '../strict-http-response';
 
+import { NotificationPreferencesResponseDto } from '../models/notification-preferences-response-dto';
 import { PaginatedUsersResponseDto } from '../models/paginated-users-response-dto';
+import { SuccessResponseDto } from '../models/success-response-dto';
 import { UserResponseDto } from '../models/user-response-dto';
 import { usersControllerActivateUser } from '../fn/users/users-controller-activate-user';
 import { UsersControllerActivateUser$Params } from '../fn/users/users-controller-activate-user';
+import { usersControllerChangePassword } from '../fn/users/users-controller-change-password';
+import { UsersControllerChangePassword$Params } from '../fn/users/users-controller-change-password';
+import { usersControllerDeleteAccount } from '../fn/users/users-controller-delete-account';
+import { UsersControllerDeleteAccount$Params } from '../fn/users/users-controller-delete-account';
 import { usersControllerGetAllUsers } from '../fn/users/users-controller-get-all-users';
 import { UsersControllerGetAllUsers$Params } from '../fn/users/users-controller-get-all-users';
+import { usersControllerGetPreferences } from '../fn/users/users-controller-get-preferences';
+import { UsersControllerGetPreferences$Params } from '../fn/users/users-controller-get-preferences';
 import { usersControllerGetProfile } from '../fn/users/users-controller-get-profile';
 import { UsersControllerGetProfile$Params } from '../fn/users/users-controller-get-profile';
 import { usersControllerRestoreUser } from '../fn/users/users-controller-restore-user';
 import { UsersControllerRestoreUser$Params } from '../fn/users/users-controller-restore-user';
 import { usersControllerSuspendUser } from '../fn/users/users-controller-suspend-user';
 import { UsersControllerSuspendUser$Params } from '../fn/users/users-controller-suspend-user';
+import { usersControllerUpdatePreferences } from '../fn/users/users-controller-update-preferences';
+import { UsersControllerUpdatePreferences$Params } from '../fn/users/users-controller-update-preferences';
 import { usersControllerUpdateProfile } from '../fn/users/users-controller-update-profile';
 import { UsersControllerUpdateProfile$Params } from '../fn/users/users-controller-update-profile';
+import { usersControllerUploadAvatar } from '../fn/users/users-controller-upload-avatar';
+import { UsersControllerUploadAvatar$Params } from '../fn/users/users-controller-upload-avatar';
 
 @Injectable({ providedIn: 'root' })
 export class UsersService extends BaseService {
@@ -63,6 +75,39 @@ export class UsersService extends BaseService {
     return resp.then((r: StrictHttpResponse<UserResponseDto>): UserResponseDto => r.body);
   }
 
+  /** Path part for operation `usersControllerDeleteAccount()` */
+  static readonly UsersControllerDeleteAccountPath = '/api/v1/users/me';
+
+  /**
+   * Delete current user account.
+   *
+   * Soft deletes the account (never a hard delete), revokes all active refresh tokens, and records an audit log entry.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `usersControllerDeleteAccount()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  usersControllerDeleteAccount$Response(params?: UsersControllerDeleteAccount$Params, context?: HttpContext): Promise<StrictHttpResponse<SuccessResponseDto>> {
+    const obs = usersControllerDeleteAccount(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Delete current user account.
+   *
+   * Soft deletes the account (never a hard delete), revokes all active refresh tokens, and records an audit log entry.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `usersControllerDeleteAccount$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  usersControllerDeleteAccount(params?: UsersControllerDeleteAccount$Params, context?: HttpContext): Promise<SuccessResponseDto> {
+    const resp = this.usersControllerDeleteAccount$Response(params, context);
+    return resp.then((r: StrictHttpResponse<SuccessResponseDto>): SuccessResponseDto => r.body);
+  }
+
   /** Path part for operation `usersControllerUpdateProfile()` */
   static readonly UsersControllerUpdateProfilePath = '/api/v1/users/me';
 
@@ -94,6 +139,138 @@ export class UsersService extends BaseService {
   usersControllerUpdateProfile(params: UsersControllerUpdateProfile$Params, context?: HttpContext): Promise<UserResponseDto> {
     const resp = this.usersControllerUpdateProfile$Response(params, context);
     return resp.then((r: StrictHttpResponse<UserResponseDto>): UserResponseDto => r.body);
+  }
+
+  /** Path part for operation `usersControllerChangePassword()` */
+  static readonly UsersControllerChangePasswordPath = '/api/v1/users/me/password';
+
+  /**
+   * Change current user password.
+   *
+   * Requires the current password. The new password must meet the strong-password policy. Existing JWT access tokens remain valid until they expire; refresh tokens are not revoked.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `usersControllerChangePassword()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  usersControllerChangePassword$Response(params: UsersControllerChangePassword$Params, context?: HttpContext): Promise<StrictHttpResponse<SuccessResponseDto>> {
+    const obs = usersControllerChangePassword(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Change current user password.
+   *
+   * Requires the current password. The new password must meet the strong-password policy. Existing JWT access tokens remain valid until they expire; refresh tokens are not revoked.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `usersControllerChangePassword$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  usersControllerChangePassword(params: UsersControllerChangePassword$Params, context?: HttpContext): Promise<SuccessResponseDto> {
+    const resp = this.usersControllerChangePassword$Response(params, context);
+    return resp.then((r: StrictHttpResponse<SuccessResponseDto>): SuccessResponseDto => r.body);
+  }
+
+  /** Path part for operation `usersControllerUploadAvatar()` */
+  static readonly UsersControllerUploadAvatarPath = '/api/v1/users/me/avatar';
+
+  /**
+   * Upload current user avatar.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `usersControllerUploadAvatar()` instead.
+   *
+   * This method sends `multipart/form-data` and handles request body of type `multipart/form-data`.
+   */
+  usersControllerUploadAvatar$Response(params: UsersControllerUploadAvatar$Params, context?: HttpContext): Promise<StrictHttpResponse<UserResponseDto>> {
+    const obs = usersControllerUploadAvatar(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Upload current user avatar.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `usersControllerUploadAvatar$Response()` instead.
+   *
+   * This method sends `multipart/form-data` and handles request body of type `multipart/form-data`.
+   */
+  usersControllerUploadAvatar(params: UsersControllerUploadAvatar$Params, context?: HttpContext): Promise<UserResponseDto> {
+    const resp = this.usersControllerUploadAvatar$Response(params, context);
+    return resp.then((r: StrictHttpResponse<UserResponseDto>): UserResponseDto => r.body);
+  }
+
+  /** Path part for operation `usersControllerGetPreferences()` */
+  static readonly UsersControllerGetPreferencesPath = '/api/v1/users/me/preferences';
+
+  /**
+   * Get current user notification preferences.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `usersControllerGetPreferences()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  usersControllerGetPreferences$Response(params?: UsersControllerGetPreferences$Params, context?: HttpContext): Promise<StrictHttpResponse<NotificationPreferencesResponseDto>> {
+    const obs = usersControllerGetPreferences(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Get current user notification preferences.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `usersControllerGetPreferences$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  usersControllerGetPreferences(params?: UsersControllerGetPreferences$Params, context?: HttpContext): Promise<NotificationPreferencesResponseDto> {
+    const resp = this.usersControllerGetPreferences$Response(params, context);
+    return resp.then((r: StrictHttpResponse<NotificationPreferencesResponseDto>): NotificationPreferencesResponseDto => r.body);
+  }
+
+  /** Path part for operation `usersControllerUpdatePreferences()` */
+  static readonly UsersControllerUpdatePreferencesPath = '/api/v1/users/me/preferences';
+
+  /**
+   * Update current user notification preferences.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `usersControllerUpdatePreferences()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  usersControllerUpdatePreferences$Response(params: UsersControllerUpdatePreferences$Params, context?: HttpContext): Promise<StrictHttpResponse<NotificationPreferencesResponseDto>> {
+    const obs = usersControllerUpdatePreferences(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Update current user notification preferences.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `usersControllerUpdatePreferences$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  usersControllerUpdatePreferences(params: UsersControllerUpdatePreferences$Params, context?: HttpContext): Promise<NotificationPreferencesResponseDto> {
+    const resp = this.usersControllerUpdatePreferences$Response(params, context);
+    return resp.then((r: StrictHttpResponse<NotificationPreferencesResponseDto>): NotificationPreferencesResponseDto => r.body);
   }
 
   /** Path part for operation `usersControllerGetAllUsers()` */

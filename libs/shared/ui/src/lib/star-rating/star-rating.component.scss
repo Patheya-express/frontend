@@ -1,0 +1,62 @@
+.star-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.star {
+  position: relative;
+  display: inline-flex;
+  width: 18px;
+  height: 18px;
+
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.size-sm .star {
+  width: 14px;
+  height: 14px;
+}
+
+.size-lg .star {
+  width: 26px;
+  height: 26px;
+}
+
+.star-outline {
+  fill: none;
+  stroke: var(--color-border);
+  stroke-width: 1.5;
+}
+
+.star-filled {
+  position: absolute;
+  inset: 0;
+  fill: #f5a623;
+}
+
+.star-button {
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+
+  svg {
+    fill: none;
+    stroke: var(--color-border);
+    stroke-width: 1.5;
+    transition: fill var(--transition-fast), stroke var(--transition-fast);
+  }
+
+  svg.filled {
+    fill: #f5a623;
+    stroke: #f5a623;
+  }
+}
+
+.editable .star-button:hover svg {
+  stroke: #f5a623;
+}

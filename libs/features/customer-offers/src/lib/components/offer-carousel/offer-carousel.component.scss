@@ -1,0 +1,27 @@
+// min-width: 0 lets this sit as a flex/grid child elsewhere without its scrolling row's
+// full content width stretching the parent instead of scrolling within itself.
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.offer-carousel-title {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.offer-carousel-row {
+  display: flex;
+  gap: var(--space-4);
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+  scroll-snap-type: x proximity;
+}
+
+.offer-carousel-item {
+  flex: 0 0 auto;
+  width: 260px;
+  scroll-snap-align: start;
+}

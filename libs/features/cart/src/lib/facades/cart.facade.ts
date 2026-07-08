@@ -10,6 +10,8 @@ export class CartFacade {
   readonly error = this.store.error;
   readonly subtotal = this.store.subtotal;
   readonly totalItems = this.store.totalItems;
+  readonly restaurantId = this.store.restaurantId;
+  readonly restaurantName = this.store.restaurantName;
   readonly pendingConflict = this.store.pendingConflict;
 
   restore(): Promise<void> {
@@ -20,6 +22,10 @@ export class CartFacade {
     return this.store.addItem(request);
   }
 
+  tryAddItem(request: AddToCartRequest): Promise<boolean> {
+    return this.store.tryAddItem(request);
+  }
+
   confirmReplaceCart(): Promise<void> {
     return this.store.confirmReplaceCart();
   }
@@ -28,16 +34,16 @@ export class CartFacade {
     this.store.cancelPendingAdd();
   }
 
-  increaseQuantity(menuItemId: string): Promise<void> {
-    return this.store.increaseQuantity(menuItemId);
+  increaseQuantity(cartItemId: string): Promise<void> {
+    return this.store.increaseQuantity(cartItemId);
   }
 
-  decreaseQuantity(menuItemId: string): Promise<void> {
-    return this.store.decreaseQuantity(menuItemId);
+  decreaseQuantity(cartItemId: string): Promise<void> {
+    return this.store.decreaseQuantity(cartItemId);
   }
 
-  removeItem(menuItemId: string): Promise<void> {
-    return this.store.removeItem(menuItemId);
+  removeItem(cartItemId: string): Promise<void> {
+    return this.store.removeItem(cartItemId);
   }
 
   clear(): Promise<void> {

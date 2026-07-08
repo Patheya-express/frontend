@@ -1,0 +1,14 @@
+@if (offers.length > 0) {
+  <section class="offer-carousel">
+    @if (title) {
+      <h2 class="offer-carousel-title">{{ title }}</h2>
+    }
+    <div class="offer-carousel-row">
+      @for (offer of offers; track offer.id) {
+        <div class="offer-carousel-item">
+          <lib-offer-card [offer]="offer" size="sm" />
+        </div>
+      }
+    </div>
+  </section>
+}

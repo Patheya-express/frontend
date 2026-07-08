@@ -10,6 +10,7 @@ import { RequestBuilder } from '../../request-builder';
 import { WebhookAckResponseDto } from '../../models/webhook-ack-response-dto';
 
 export interface PaymentsControllerProcessWebhook$Params {
+  'x-razorpay-signature': string;
   
     /**
      * Raw Razorpay webhook event payload
@@ -20,6 +21,7 @@ export interface PaymentsControllerProcessWebhook$Params {
 export function paymentsControllerProcessWebhook(http: HttpClient, rootUrl: string, params: PaymentsControllerProcessWebhook$Params, context?: HttpContext): Observable<StrictHttpResponse<WebhookAckResponseDto>> {
   const rb = new RequestBuilder(rootUrl, paymentsControllerProcessWebhook.PATH, 'post');
   if (params) {
+    rb.header('x-razorpay-signature', params['x-razorpay-signature'], {});
     rb.body(params.body, 'application/json');
   }
 

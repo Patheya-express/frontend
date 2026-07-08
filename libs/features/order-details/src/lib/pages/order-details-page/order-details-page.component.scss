@@ -49,6 +49,93 @@
   }
 }
 
+.order-tracking-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  h2 {
+    margin: 0 0 var(--space-4);
+  }
+}
+
+.realtime-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-subtle);
+  margin-bottom: var(--space-4);
+}
+
+.realtime-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-text-subtle);
+}
+
+.realtime-indicator.live {
+  --realtime-color: var(--color-success, #2e7d32);
+  color: var(--realtime-color);
+
+  .realtime-dot {
+    background: var(--realtime-color);
+  }
+}
+
+.order-tracking-eta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+  font-size: var(--font-size-sm);
+}
+
+.order-tracking-eta-value {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+}
+
+.order-tracking-eta-distance,
+.order-tracking-eta-pending {
+  color: var(--color-text-subtle);
+}
+
+.order-tracking-eta-pending {
+  margin: var(--space-3) 0 0;
+  font-size: var(--font-size-sm);
+}
+
+.order-tracking-partner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+}
+
+.order-tracking-partner-name {
+  font-weight: var(--font-weight-semibold);
+}
+
+.order-tracking-partner-vehicle,
+.order-tracking-item-variant,
+.order-tracking-item-addons {
+  color: var(--color-text-subtle);
+  font-size: var(--font-size-xs);
+}
+
+.order-tracking-partner-phone {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: var(--font-weight-medium);
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
 .order-tracking-items {
   display: flex;
   flex-direction: column;
@@ -60,13 +147,20 @@
 
 .order-tracking-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   font-size: var(--font-size-sm);
   color: var(--color-text);
 }
 
-.order-tracking-address {
+.order-tracking-item-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.order-tracking-address,
+.order-tracking-payment {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -74,6 +168,28 @@
   border-top: 1px solid var(--color-border);
   font-size: var(--font-size-sm);
   color: var(--color-text);
+}
+
+.retry-payment-btn {
+  width: 100%;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-3);
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
 }
 
 .order-tracking-label {

@@ -1,0 +1,129 @@
+<div class="favorites-page">
+  <header class="favorites-header">
+    <h1>My Favorites</h1>
+  </header>
+
+  <div class="favorites-tabs" role="tablist">
+    <button
+      type="button"
+      role="tab"
+      class="favorites-tab"
+      [class.active]="tab() === 'restaurants'"
+      [attr.aria-selected]="tab() === 'restaurants'"
+      (click)="setTab('restaurants')"
+    >
+      Restaurants
+    </button>
+    <button
+      type="button"
+      role="tab"
+      class="favorites-tab"
+      [class.active]="tab() === 'dishes'"
+      [attr.aria-selected]="tab() === 'dishes'"
+      (click)="setTab('dishes')"
+    >
+      Dishes
+    </button>
+  </div>
+
+  @if (tab() === 'restaurants') {
+    @if (facade.restaurantsLoading() && facade.restaurants().length === 0) {
+      <lib-skeleton [count]="4" />
+    } @else if (facade.restaurantsError()) {
+      <lib-error-state [message]="facade.restaurantsError()!" (retry)="retryRestaurants()" />
+    } @else if (facade.restaurants().length === 0) {
+      <lib-empty-state
+        title="No favorite restaurants yet"
+        message="Tap the heart on any restaurant to save it here."
+        actionLabel="Browse restaurants"
+        (refresh)="retryRestaurants()"
+      />
+    } @else {
+      <ul class="favorite-dishes-list">
+        @for (restaurant of facade.restaurants(); track restaurant.id) {
+          <li class="favorite-dish-card">
+            <a class="favorite-dish-image" [routerLink]="['/restaurants', restaurant.id]" tabindex="-1" aria-hidden="true">
+              @if (imageUrl(restaurant.logoUrl); as url) {
+                <img [src]="url" [alt]="restaurant.name" />
+              } @else {
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M7 3v6M5 5h4M12 3l-1.5 7c-.3 1.4.8 2.5 2 2.5s2.3-1.1 2-2.5L13 3M12 12.5V21M17 3v18M17 3c1.9 0 3.5 2 3.5 5.5S18.9 14 17 14"
+                    stroke="currentColor"
+                    stroke-width="1.4"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              }
+            </a>
+            <div class="favorite-dish-body">
+              <a class="favorite-restaurant-name" [routerLink]="['/restaurants', restaurant.id]">
+                <h3>{{ restaurant.name }}</h3>
+              </a>
+              <span class="favorite-dish-price">{{ restaurant.cuisines.join(', ') || 'Multi-cuisine' }}</span>
+            </div>
+            <lib-favorite-button [id]="restaurant.id" type="restaurant" size="sm" [label]="restaurant.name" />
+          </li>
+        }
+      </ul>
+
+      <lib-pagination
+        [page]="facade.restaurantsPage()"
+        [totalPages]="facade.restaurantsTotalPages()"
+        [total]="facade.restaurantsTotal()"
+        (pageChange)="onRestaurantsPageChange($event)"
+      />
+    }
+  } @else {
+    @if (facade.menuItemsLoading() && facade.menuItems().length === 0) {
+      <lib-skeleton [count]="4" />
+    } @else if (facade.menuItemsError()) {
+      <lib-error-state [message]="facade.menuItemsError()!" (retry)="retryDishes()" />
+    } @else if (facade.menuItems().length === 0) {
+      <lib-empty-state
+        title="No favorite dishes yet"
+        message="Tap the heart on any dish to save it here."
+        actionLabel="Browse restaurants"
+        (refresh)="retryDishes()"
+      />
+    } @else {
+      <ul class="favorite-dishes-list">
+        @for (item of facade.menuItems(); track item.id) {
+          <li class="favorite-dish-card">
+            <div class="favorite-dish-image" aria-hidden="true">
+              @if (imageUrl(item.imageUrl); as url) {
+                <img [src]="url" [alt]="item.name" />
+              } @else {
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M7 3v6M5 5h4M12 3l-1.5 7c-.3 1.4.8 2.5 2 2.5s2.3-1.1 2-2.5L13 3M12 12.5V21M17 3v18M17 3c1.9 0 3.5 2 3.5 5.5S18.9 14 17 14"
+                    stroke="currentColor"
+                    stroke-width="1.4"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+              }
+            </div>
+            <div class="favorite-dish-body">
+              <h3>{{ item.name }}</h3>
+              @if (item.restaurantName) {
+                <a class="favorite-dish-restaurant" [routerLink]="['/restaurants', item.restaurantId]">{{ item.restaurantName }}</a>
+              }
+              <span class="favorite-dish-price">₹{{ item.basePrice }}</span>
+            </div>
+            <lib-favorite-button [id]="item.id" type="menu-item" size="sm" [label]="item.name" />
+          </li>
+        }
+      </ul>
+
+      <lib-pagination
+        [page]="facade.menuItemsPage()"
+        [totalPages]="facade.menuItemsTotalPages()"
+        [total]="facade.menuItemsTotal()"
+        (pageChange)="onDishesPageChange($event)"
+      />
+    }
+  }
+</div>

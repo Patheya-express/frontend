@@ -2,8 +2,16 @@
   <lib-header
     [isAuthenticated]="isAuthenticated"
     [cartItemCount]="cartItemCount"
+    [notificationCount]="notificationCount"
+    [deliveryLocationLabel]="deliveryLocationLabel"
+    [searchValue]="searchValue"
+    [avatarUrl]="avatarUrl"
+    [firstName]="firstName"
     (logoutRequested)="logoutRequested.emit()"
     (cartToggled)="cartToggled.emit()"
+    (notificationsToggled)="notificationsToggled.emit()"
+    (locationPickerClicked)="locationPickerClicked.emit()"
+    (searchSubmitted)="searchSubmitted.emit($event)"
   />
   <main class="app-shell-content">
     <router-outlet />

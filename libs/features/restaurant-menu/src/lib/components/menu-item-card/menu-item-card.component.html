@@ -1,6 +1,12 @@
 <article class="menu-item-card" [class.unavailable]="!item.isAvailable">
   <div class="menu-item-body">
+    <span class="diet-indicator" [class.veg]="item.isVegetarian" [class.non-veg]="!item.isVegetarian" [attr.aria-label]="item.isVegetarian ? 'Vegetarian' : 'Non-vegetarian'">
+      <span class="diet-dot"></span>
+    </span>
     <h4>{{ item.name }}</h4>
+    @if (item.isVegan) {
+      <span class="vegan-badge">Vegan</span>
+    }
     @if (item.description) {
       <p class="menu-item-description">{{ item.description }}</p>
     }
@@ -9,16 +15,23 @@
       @if (!item.isAvailable) {
         <span class="menu-item-badge">Unavailable</span>
       }
+      @if (isAuthenticated()) {
+        <lib-favorite-button [id]="item.id" type="menu-item" size="sm" [label]="item.name" />
+      }
     </div>
 
     @if (item.isAvailable) {
       <div class="menu-item-cart-action">
-        @if (quantity() === 0) {
+        @if (hasCustomizations()) {
+          <button type="button" class="add-btn" (click)="add()">
+            {{ totalQuantityInCart() > 0 ? 'Add another (' + totalQuantityInCart() + ' in cart)' : 'Customize & Add' }}
+          </button>
+        } @else if (!simpleCartItem() || simpleCartItem()!.quantity === 0) {
           <button type="button" class="add-btn" (click)="add()">Add</button>
         } @else {
           <div class="menu-item-stepper">
             <button type="button" class="stepper-btn" aria-label="Decrease quantity" (click)="decrease()">−</button>
-            <span class="stepper-value">{{ quantity() }}</span>
+            <span class="stepper-value">{{ simpleCartItem()!.quantity }}</span>
             <button type="button" class="stepper-btn" aria-label="Increase quantity" (click)="increase()">+</button>
           </div>
         }
@@ -27,14 +40,22 @@
   </div>
 
   <div class="menu-item-image" aria-hidden="true">
-    <svg viewBox="0 0 24 24" fill="none">
-      <path
-        d="M7 3v6M5 5h4M12 3l-1.5 7c-.3 1.4.8 2.5 2 2.5s2.3-1.1 2-2.5L13 3M12 12.5V21M17 3v18M17 3c1.9 0 3.5 2 3.5 5.5S18.9 14 17 14"
-        stroke="currentColor"
-        stroke-width="1.4"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      />
-    </svg>
+    @if (imageUrl(); as url) {
+      <img [src]="url" [alt]="item.name" />
+    } @else {
+      <svg viewBox="0 0 24 24" fill="none">
+        <path
+          d="M7 3v6M5 5h4M12 3l-1.5 7c-.3 1.4.8 2.5 2 2.5s2.3-1.1 2-2.5L13 3M12 12.5V21M17 3v18M17 3c1.9 0 3.5 2 3.5 5.5S18.9 14 17 14"
+          stroke="currentColor"
+          stroke-width="1.4"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    }
   </div>
 </article>
+
+@if (showSheet()) {
+  <lib-menu-item-customization-sheet [item]="item" [restaurantName]="restaurantName" (closed)="closeSheet()" />
+}

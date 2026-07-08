@@ -4,6 +4,7 @@
 export interface UpdateMenuItemDto {
   basePrice?: number;
   description?: string;
+  imageUrl?: string;
   isVegan?: boolean;
   isVegetarian?: boolean;
   name?: string;

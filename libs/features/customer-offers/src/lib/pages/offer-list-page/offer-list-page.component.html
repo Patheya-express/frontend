@@ -1,0 +1,36 @@
+<div class="offer-list-page">
+  <header class="offer-list-header">
+    <h1>Offers &amp; Promotions</h1>
+  </header>
+
+  <div class="offer-list-filters">
+    <lib-search-input placeholder="Search offers…" [value]="facade.search()" (valueChange)="onSearch($event)" />
+
+    <select class="offer-type-select" [value]="facade.typeFilter() ?? ''" (change)="onTypeChange($any($event.target).value)">
+      <option value="">All types</option>
+      @for (option of typeOptions; track option.value) {
+        <option [value]="option.value">{{ option.label }}</option>
+      }
+    </select>
+
+    @if (facade.search() || facade.typeFilter()) {
+      <button type="button" class="offer-clear-filters" (click)="clearFilters()">Clear filters</button>
+    }
+  </div>
+
+  @if (facade.loading() && facade.offers().length === 0) {
+    <lib-skeleton [count]="6" />
+  } @else if (facade.error()) {
+    <lib-error-state [message]="facade.error()!" (retry)="retry()" />
+  } @else if (facade.offers().length === 0) {
+    <lib-empty-state title="No offers found" message="Check back soon for new offers and promotions." />
+  } @else {
+    <div class="offer-list-grid">
+      @for (offer of facade.offers(); track offer.id) {
+        <lib-offer-card [offer]="offer" />
+      }
+    </div>
+
+    <lib-pagination [page]="facade.page()" [totalPages]="facade.totalPages()" [total]="facade.total()" (pageChange)="onPageChange($event)" />
+  }
+</div>

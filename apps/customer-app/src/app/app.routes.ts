@@ -19,6 +19,13 @@ export const routes: Routes = [
       import('@patheya-express-frontend/auth-ui').then((m) => m.RegisterPageComponent),
   },
   {
+    path: 'restaurants/:restaurantId/offers',
+    loadComponent: () =>
+      import('@patheya-express-frontend/customer-offers').then(
+        (m) => m.RestaurantOffersPageComponent,
+      ),
+  },
+  {
     path: 'restaurants/:restaurantId',
     loadComponent: () =>
       import('@patheya-express-frontend/restaurant-menu').then(
@@ -49,10 +56,61 @@ export const routes: Routes = [
       import('@patheya-express-frontend/order-details').then((m) => m.OrderDetailsPageComponent),
   },
   {
-    path: '',
+    path: 'restaurants',
     loadComponent: () =>
       import('@patheya-express-frontend/restaurant-discovery').then(
         (m) => m.RestaurantListComponent,
       ),
+  },
+  {
+    path: 'account',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('@patheya-express-frontend/customer-profile-ui').then((m) => m.ProfilePageComponent),
+  },
+  {
+    path: 'account/settings',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('@patheya-express-frontend/customer-profile-ui').then(
+        (m) => m.AccountSettingsPageComponent,
+      ),
+  },
+  {
+    path: 'favorites',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('@patheya-express-frontend/favorites').then((m) => m.FavoritesPageComponent),
+  },
+  {
+    path: 'notifications',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('@patheya-express-frontend/customer-notifications-ui').then(
+        (m) => m.NotificationListPageComponent,
+      ),
+  },
+  {
+    path: 'notifications/:id',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('@patheya-express-frontend/customer-notifications-ui').then(
+        (m) => m.NotificationDetailPageComponent,
+      ),
+  },
+  {
+    path: 'offers',
+    loadComponent: () =>
+      import('@patheya-express-frontend/customer-offers').then((m) => m.OfferListPageComponent),
+  },
+  {
+    path: 'offers/:id',
+    loadComponent: () =>
+      import('@patheya-express-frontend/customer-offers').then((m) => m.OfferDetailPageComponent),
+  },
+  {
+    path: '',
+    loadComponent: () =>
+      import('@patheya-express-frontend/customer-home').then((m) => m.CustomerHomePageComponent),
   },
 ];

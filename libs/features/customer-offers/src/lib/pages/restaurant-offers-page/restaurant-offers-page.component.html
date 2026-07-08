@@ -1,0 +1,28 @@
+<div class="restaurant-offers-page">
+  <a class="restaurant-offers-back" [routerLink]="['/restaurants', restaurantId]">&larr; Back to restaurant</a>
+
+  <header class="restaurant-offers-header">
+    <h1>Offers for this restaurant</h1>
+  </header>
+
+  @if (facade.restaurantOffersLoading() && facade.restaurantOffers().length === 0) {
+    <lib-skeleton [count]="4" />
+  } @else if (facade.restaurantOffersError()) {
+    <lib-error-state [message]="facade.restaurantOffersError()!" (retry)="retry()" />
+  } @else if (facade.restaurantOffers().length === 0) {
+    <lib-empty-state title="No offers right now" message="This restaurant has no active offers at the moment." />
+  } @else {
+    <div class="restaurant-offers-grid">
+      @for (offer of facade.restaurantOffers(); track offer.id) {
+        <lib-offer-card [offer]="offer" />
+      }
+    </div>
+
+    <lib-pagination
+      [page]="facade.restaurantOffersPage()"
+      [totalPages]="facade.restaurantOffersTotalPages()"
+      [total]="facade.restaurantOffersTotal()"
+      (pageChange)="onPageChange($event)"
+    />
+  }
+</div>

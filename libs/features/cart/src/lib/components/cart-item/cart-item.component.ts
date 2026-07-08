@@ -15,14 +15,14 @@ export class CartItemComponent {
   private readonly cartFacade = inject(CartFacade);
 
   protected increase(): void {
-    void this.cartFacade.increaseQuantity(this.item.menuItemId);
+    void this.cartFacade.increaseQuantity(this.item.id);
   }
 
   protected decrease(): void {
-    void this.cartFacade.decreaseQuantity(this.item.menuItemId);
+    void this.cartFacade.decreaseQuantity(this.item.id);
   }
 
   protected remove(): void {
-    void this.cartFacade.removeItem(this.item.menuItemId);
+    void this.cartFacade.removeItem(this.item.id);
   }
 }

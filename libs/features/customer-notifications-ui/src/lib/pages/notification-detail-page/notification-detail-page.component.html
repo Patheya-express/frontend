@@ -1,0 +1,15 @@
+<div class="notification-detail-page">
+  @if (loading() && !notification()) {
+    <lib-skeleton [count]="3" />
+  } @else if (error() && !notification()) {
+    <lib-error-state [message]="error()!" (retry)="retry()" />
+  } @else if (notification(); as notificationValue) {
+    <a class="notification-detail-back" routerLink="/notifications">&larr; Back to notifications</a>
+
+    <article class="notification-detail-card">
+      <h1>{{ notificationValue.title }}</h1>
+      <span class="notification-detail-date">{{ notificationValue.createdAt | date: 'full' }}</span>
+      <p class="notification-detail-message">{{ notificationValue.message }}</p>
+    </article>
+  }
+</div>

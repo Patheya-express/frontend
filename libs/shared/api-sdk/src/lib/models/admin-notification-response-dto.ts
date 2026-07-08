@@ -24,6 +24,6 @@ export interface AdminNotificationResponseDto {
    * Persisted as `title` — displayed to admins as "Subject".
    */
   title: string;
-  type: 'ORDER_PLACED' | 'ORDER_STATUS_CHANGED' | 'DELIVERY_PARTNER_ASSIGNED' | 'GENERAL';
+  type: 'ORDER_PLACED' | 'ORDER_STATUS_CHANGED' | 'DELIVERY_PARTNER_ASSIGNED' | 'OFFER' | 'GENERAL';
   updatedAt: string;
 }

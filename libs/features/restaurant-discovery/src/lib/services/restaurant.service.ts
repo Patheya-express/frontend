@@ -1,7 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import {
+  CuisinesService,
   RestaurantsService,
-  type PaginatedRestaurantsResponseDto,
+  type CuisineResponseDto,
+  type PaginatedRestaurantSummariesResponseDto,
 } from '@patheya-express-frontend/api-sdk';
 
 export interface RestaurantListQuery {
@@ -24,12 +26,22 @@ interface ApiEnvelope<T> {
   data: T;
 }
 
+function unwrap<T>(response: T): T {
+  return (response as unknown as ApiEnvelope<T>).data;
+}
+
 @Injectable({ providedIn: 'root' })
 export class RestaurantService {
   private readonly restaurantsService = inject(RestaurantsService);
+  private readonly cuisinesService = inject(CuisinesService);
 
-  async listRestaurants(query: RestaurantListQuery = {}): Promise<PaginatedRestaurantsResponseDto> {
+  async listRestaurants(query: RestaurantListQuery = {}): Promise<PaginatedRestaurantSummariesResponseDto> {
     const response = await this.restaurantsService.restaurantsControllerFindAll(query);
-    return (response as unknown as ApiEnvelope<PaginatedRestaurantsResponseDto>).data;
+    return unwrap(response);
+  }
+
+  async listCuisines(): Promise<CuisineResponseDto[]> {
+    const response = await this.cuisinesService.cuisinesControllerFindAll();
+    return unwrap(response);
   }
 }

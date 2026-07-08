@@ -1,20 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { CheckoutFacade } from '../../facades/checkout.facade';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { AddressPickerComponent } from '@patheya-express-frontend/addresses';
 
 @Component({
   selector: 'lib-address-section',
   standalone: true,
+  imports: [AddressPickerComponent],
   templateUrl: './address-section.component.html',
   styleUrl: './address-section.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AddressSectionComponent {
-  private readonly checkoutFacade = inject(CheckoutFacade);
-
-  protected readonly address = this.checkoutFacade.address;
-
-  protected onAddressChange(event: Event): void {
-    const value = (event.target as HTMLTextAreaElement).value;
-    this.checkoutFacade.setAddress(value);
-  }
-}
+export class AddressSectionComponent {}

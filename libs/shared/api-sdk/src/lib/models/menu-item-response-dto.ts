@@ -9,9 +9,20 @@ export interface MenuItemResponseDto {
   categoryId: string;
   description?: string;
   id: string;
+  imageUrl?: string;
   isAvailable: boolean;
   isVegan: boolean;
   isVegetarian: boolean;
   name: string;
+
+  /**
+   * Populated when the item is returned outside its own category listing (e.g. favorites).
+   */
+  restaurantId?: string;
+
+  /**
+   * Populated when the item is returned outside its own category listing (e.g. favorites).
+   */
+  restaurantName?: string;
   variants: Array<MenuItemVariantResponseDto>;
 }

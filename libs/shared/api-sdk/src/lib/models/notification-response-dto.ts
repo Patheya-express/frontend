@@ -6,11 +6,16 @@ export interface NotificationResponseDto {
   createdAt: string;
   id: string;
   message: string;
+
+  /**
+   * Deep-link target, when applicable. referenceType is one of ORDER, RESTAURANT, REVIEW, OFFER.
+   */
   metadata?: {
 };
   readAt?: string;
   sentAt?: string;
   status: 'PENDING' | 'SENT' | 'FAILED' | 'READ';
   title: string;
+  type: 'ORDER_PLACED' | 'ORDER_STATUS_CHANGED' | 'DELIVERY_PARTNER_ASSIGNED' | 'OFFER' | 'GENERAL';
   userId: string;
 }

@@ -7,14 +7,42 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { NotificationResponseDto } from '../../models/notification-response-dto';
+import { PaginatedNotificationsResponseDto } from '../../models/paginated-notifications-response-dto';
 
 export interface NotificationsControllerGetMyNotifications$Params {
+  page?: number;
+  limit?: number;
+
+/**
+ * Matches title/message
+ */
+  search?: string;
+  type?: 'ORDER_PLACED' | 'ORDER_STATUS_CHANGED' | 'DELIVERY_PARTNER_ASSIGNED' | 'OFFER' | 'GENERAL';
+
+/**
+ * Filter by an exact status value.
+ */
+  status?: 'PENDING' | 'SENT' | 'FAILED' | 'READ';
+
+/**
+ * When true, only returns notifications whose status is not READ.
+ */
+  unreadOnly?: boolean;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
-export function notificationsControllerGetMyNotifications(http: HttpClient, rootUrl: string, params?: NotificationsControllerGetMyNotifications$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<NotificationResponseDto>>> {
+export function notificationsControllerGetMyNotifications(http: HttpClient, rootUrl: string, params?: NotificationsControllerGetMyNotifications$Params, context?: HttpContext): Observable<StrictHttpResponse<PaginatedNotificationsResponseDto>> {
   const rb = new RequestBuilder(rootUrl, notificationsControllerGetMyNotifications.PATH, 'get');
   if (params) {
+    rb.query('page', params.page, {});
+    rb.query('limit', params.limit, {});
+    rb.query('search', params.search, {});
+    rb.query('type', params.type, {});
+    rb.query('status', params.status, {});
+    rb.query('unreadOnly', params.unreadOnly, {});
+    rb.query('dateFrom', params.dateFrom, {});
+    rb.query('dateTo', params.dateTo, {});
   }
 
   return http.request(
@@ -22,7 +50,7 @@ export function notificationsControllerGetMyNotifications(http: HttpClient, root
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<Array<NotificationResponseDto>>;
+      return r as StrictHttpResponse<PaginatedNotificationsResponseDto>;
     })
   );
 }

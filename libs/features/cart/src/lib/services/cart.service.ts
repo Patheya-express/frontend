@@ -1,26 +1,61 @@
 import { Injectable, inject } from '@angular/core';
-import type { CartItem } from '../models/cart-item.model';
-import { CartStorageService } from '../storage/cart-storage.service';
+import {
+  CartService as CartApiService,
+  type AddCartItemDto,
+  type CartResponseDto,
+} from '@patheya-express-frontend/api-sdk';
 
-/**
- * Local-storage-backed cart persistence. The backend does not expose Cart APIs today, so this
- * class owns the durable copy of the cart. Its async signature is deliberate: swapping this
- * implementation for a backend-synced one later requires no changes to CartStore, CartFacade,
- * or any component.
- */
+// The API gateway wraps every response in a { success, timestamp, data } envelope via a
+// global interceptor that Swagger/the generated SDK types do not account for.
+interface ApiEnvelope<T> {
+  success: boolean;
+  timestamp: string;
+  data: T;
+}
+
+function unwrap<T>(response: T): T {
+  return (response as unknown as ApiEnvelope<T>).data;
+}
+
+export interface AddCartItemRequest {
+  menuItemId: string;
+  variantId?: string;
+  addonOptionIds?: string[];
+  quantity?: number;
+  specialInstructions?: string;
+}
+
+/** Thin wrapper around the backend Cart API — the server is the sole source of truth for cart state. */
 @Injectable({ providedIn: 'root' })
 export class CartService {
-  private readonly storage = inject(CartStorageService);
+  private readonly cartApi = inject(CartApiService);
 
-  async load(): Promise<CartItem[]> {
-    return this.storage.load();
+  async getCart(): Promise<CartResponseDto> {
+    return unwrap(await this.cartApi.cartControllerGetCart());
   }
 
-  async persist(items: CartItem[]): Promise<void> {
-    this.storage.save(items);
+  async addItem(request: AddCartItemRequest, replaceExisting: boolean): Promise<CartResponseDto> {
+    const body: AddCartItemDto = {
+      menuItemId: request.menuItemId,
+      variantId: request.variantId,
+      addonOptionIds: request.addonOptionIds,
+      quantity: request.quantity ?? 1,
+      specialInstructions: request.specialInstructions,
+      replaceExisting,
+    };
+
+    return unwrap(await this.cartApi.cartControllerAddItem({ body }));
   }
 
-  async clear(): Promise<void> {
-    this.storage.clear();
+  async updateQuantity(itemId: string, quantity: number): Promise<CartResponseDto> {
+    return unwrap(await this.cartApi.cartControllerUpdateItem({ itemId, body: { quantity } }));
+  }
+
+  async removeItem(itemId: string): Promise<CartResponseDto> {
+    return unwrap(await this.cartApi.cartControllerRemoveItem({ itemId }));
+  }
+
+  async clear(): Promise<CartResponseDto> {
+    return unwrap(await this.cartApi.cartControllerClearCart());
   }
 }

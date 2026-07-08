@@ -1,0 +1,134 @@
+.customer-home-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: var(--space-5) var(--space-4);
+  min-width: 0;
+}
+
+// Every direct child that contains a horizontally-scrolling row must have min-width: 0 —
+// otherwise, as flex items of the column above, their default min-width: auto lets the row's
+// full content width stretch the page instead of scrolling within itself.
+.customer-home-banners,
+.customer-home-shelf {
+  min-width: 0;
+}
+
+.customer-home-banners {
+  display: flex;
+  gap: var(--space-4);
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+}
+
+.customer-home-banner {
+  position: relative;
+  flex: 0 0 auto;
+  width: min(480px, 85vw);
+  aspect-ratio: 16 / 6;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-secondary-soft);
+  display: block;
+  text-decoration: none;
+  color: inherit;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+}
+
+.customer-home-banner-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: var(--space-4);
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0));
+  color: #fff;
+
+  h3 {
+    margin: 0;
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  p {
+    margin: var(--space-1) 0 0;
+    font-size: var(--font-size-sm);
+  }
+}
+
+.customer-home-banner.no-image .customer-home-banner-text {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  background: none;
+  color: var(--color-text);
+}
+
+.customer-home-cuisines {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.customer-home-cuisine-chip {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full, 999px);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  text-decoration: none;
+  background: var(--color-surface);
+
+  &:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+}
+
+.customer-home-shelf-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+
+  h2 {
+    margin: 0 0 var(--space-3);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+  }
+}
+
+.customer-home-shelf-row {
+  display: flex;
+  gap: var(--space-4);
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+}
+
+.customer-home-shelf-item {
+  flex: 0 0 auto;
+  width: 260px;
+}
+
+.customer-home-browse-all {
+  text-align: center;
+
+  a {
+    color: var(--color-primary);
+    font-weight: var(--font-weight-medium);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}

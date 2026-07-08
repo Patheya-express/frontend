@@ -14,16 +14,68 @@
       </header>
 
       <section class="order-tracking-section">
-        <h2>Order status</h2>
+        <div class="order-tracking-section-header">
+          <h2>Order status</h2>
+          <span class="realtime-indicator" [class.live]="realtimeConnected()">
+            <span class="realtime-dot" aria-hidden="true"></span>
+            {{ realtimeConnected() ? 'Live' : 'Reconnecting…' }}
+          </span>
+        </div>
         <lib-order-status-timeline [currentStatus]="orderValue.status" [statusHistory]="orderValue.statusHistory" />
       </section>
+
+      @if (showLiveMap() && destinationPoint(); as destination) {
+        <section class="order-tracking-section">
+          <h2>Live delivery tracking</h2>
+          <lib-live-tracking-map [destination]="destination" [driverLocation]="driverPoint() ?? undefined" />
+          @if (location(); as loc) {
+            <div class="order-tracking-eta">
+              @if (loc.etaMinutes !== undefined && loc.etaMinutes !== null) {
+                <span class="order-tracking-eta-value">Arriving in ~{{ loc.etaMinutes }} min</span>
+              }
+              @if (loc.distanceKm !== undefined && loc.distanceKm !== null) {
+                <span class="order-tracking-eta-distance">{{ loc.distanceKm.toFixed(1) }} km away</span>
+              }
+            </div>
+          } @else {
+            <p class="order-tracking-eta-pending">Waiting for the delivery partner's location…</p>
+          }
+        </section>
+      }
+
+      @if (orderValue.deliveryPartner; as partner) {
+        <section class="order-tracking-section">
+          <h2>Delivery partner</h2>
+          <div class="order-tracking-partner">
+            <span class="order-tracking-partner-name">{{ partner.firstName }} {{ partner.lastName }}</span>
+            @if (partner.vehicleType) {
+              <span class="order-tracking-partner-vehicle">{{ partner.vehicleType }} · {{ partner.vehicleNumber }}</span>
+            }
+            @if (partner.phone) {
+              <a class="order-tracking-partner-phone" [href]="'tel:' + partner.phone">Call {{ partner.phone }}</a>
+            }
+          </div>
+        </section>
+      }
 
       <section class="order-tracking-section">
         <h2>Order summary</h2>
         <ul class="order-tracking-items">
           @for (item of orderValue.items; track item.id) {
             <li class="order-tracking-item">
-              <span>{{ item.quantity }}x {{ item.menuItemName ?? 'Item' }}</span>
+              <div class="order-tracking-item-details">
+                <span>{{ item.quantity }}x {{ item.menuItemName ?? 'Item' }}</span>
+                @if (item.variantName) {
+                  <span class="order-tracking-item-variant">{{ item.variantName }}</span>
+                }
+                @if (item.addonOptions.length > 0) {
+                  <span class="order-tracking-item-addons">
+                    @for (option of item.addonOptions; track option.name; let last = $last) {
+                      {{ option.name }}{{ last ? '' : ', ' }}
+                    }
+                  </span>
+                }
+              </div>
               <span>₹{{ item.totalPrice }}</span>
             </li>
           }
@@ -33,6 +85,20 @@
           <span class="order-tracking-label">Delivery address</span>
           <span>{{ orderValue.deliveryAddress }}</span>
         </div>
+
+        <div class="order-tracking-payment">
+          <span class="order-tracking-label">Payment</span>
+          <span>
+            {{ orderValue.paymentMode === 'COD' ? 'Cash on Delivery' : 'Paid Online' }} ·
+            {{ orderValue.paymentStatus }}
+          </span>
+        </div>
+
+        @if (orderValue.paymentMode === 'ONLINE' && orderValue.paymentStatus !== 'PAID') {
+          <button type="button" class="retry-payment-btn" [disabled]="retryingPayment()" (click)="retryPayment()">
+            {{ retryingPayment() ? 'Processing…' : 'Complete Payment' }}
+          </button>
+        }
 
         <div class="order-tracking-total">
           <span>Order Total</span>

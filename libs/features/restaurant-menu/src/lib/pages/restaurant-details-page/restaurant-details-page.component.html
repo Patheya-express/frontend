@@ -13,8 +13,8 @@
 } @else if (restaurant(); as restaurantValue) {
   <header class="restaurant-header">
     <div class="restaurant-header-image">
-      @if (restaurantValue.bannerUrl || restaurantValue.logoUrl) {
-        <img [src]="restaurantValue.bannerUrl || restaurantValue.logoUrl" [alt]="restaurantValue.name" />
+      @if (coverImageUrl(restaurantValue.bannerUrl, restaurantValue.logoUrl); as coverUrl) {
+        <img [src]="coverUrl" [alt]="restaurantValue.name" />
       } @else {
         <div class="restaurant-header-placeholder" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none">
@@ -31,21 +31,64 @@
     </div>
 
     <div class="restaurant-header-info">
-      <h1>{{ restaurantValue.name }}</h1>
-      <p class="restaurant-header-cuisine">Multi-cuisine</p>
+      <div class="restaurant-header-title">
+        <h1>{{ restaurantValue.name }}</h1>
+        @if (isAuthenticated()) {
+          <lib-favorite-button [id]="restaurantValue.id" type="restaurant" [label]="restaurantValue.name" />
+        }
+      </div>
+      <div class="restaurant-header-rating">
+        <lib-star-rating [rating]="restaurantValue.avgRating" size="sm" />
+        <span>{{ restaurantValue.avgRating.toFixed(1) }} ({{ restaurantValue.ratingCount }})</span>
+      </div>
+      @if (restaurantValue.cuisines && restaurantValue.cuisines.length > 0) {
+        <div class="restaurant-cuisines">
+          @for (cuisine of restaurantValue.cuisines; track cuisine.name) {
+            <span class="cuisine-chip">{{ cuisine.name }}</span>
+          }
+        </div>
+      } @else {
+        <p class="restaurant-header-cuisine">Multi-cuisine</p>
+      }
       @if (restaurantValue.description) {
         <p class="restaurant-header-description">{{ restaurantValue.description }}</p>
+      }
+      @if (restaurantValue.branches?.[0]?.operatingHours; as hours) {
+        <details class="restaurant-hours">
+          <summary>Operating hours</summary>
+          <ul>
+            @for (hour of hours; track hour.dayOfWeek) {
+              <li>{{ formatOperatingHours(hour.dayOfWeek, hour.opensAt, hour.closesAt, hour.isClosed) }}</li>
+            }
+          </ul>
+        </details>
       }
     </div>
   </header>
 
+  @if (restaurantValue.offers && restaurantValue.offers.length > 0) {
+    <div class="page-padding restaurant-offers">
+      @for (offer of restaurantValue.offers; track offer.id) {
+        <lib-offer-card [offer]="offer" size="sm" />
+      }
+    </div>
+  }
+
   <div class="page-padding">
+    <lib-search-input placeholder="Search this menu" [value]="search()" (valueChange)="onSearch($event)" />
+
     @for (category of menu(); track category.id) {
       <lib-menu-category
         [category]="category"
-        [restaurantId]="restaurantValue.id"
         [restaurantName]="restaurantValue.name"
       />
     }
+
+    <lib-restaurant-reviews-section
+      id="reviews"
+      [restaurantId]="restaurantValue.id"
+      [avgRating]="restaurantValue.avgRating"
+      [ratingCount]="restaurantValue.ratingCount"
+    />
   </div>
 }

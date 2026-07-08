@@ -3,21 +3,21 @@
 
   <div class="price-row">
     <span>Subtotal</span>
-    <span>₹{{ subtotal() }}</span>
+    <span>₹{{ orderSummary().subtotal }}</span>
   </div>
 
-  <div class="price-row muted">
+  <div class="price-row">
     <span>Taxes</span>
-    <span>Calculated at checkout</span>
+    <span>₹{{ orderSummary().taxAmount }}</span>
   </div>
 
-  <div class="price-row muted">
+  <div class="price-row">
     <span>Delivery Fee</span>
-    <span>Calculated at checkout</span>
+    <span>₹{{ orderSummary().deliveryFee }}</span>
   </div>
 
   <div class="price-row total">
     <span>Grand Total</span>
-    <span>Calculated after order placement</span>
+    <span>₹{{ orderSummary().totalAmount }}</span>
   </div>
 </section>

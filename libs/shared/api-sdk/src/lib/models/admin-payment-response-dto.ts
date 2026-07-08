@@ -11,7 +11,7 @@ export interface AdminPaymentResponseDto {
   customer: AdminPaymentCustomerSummaryDto;
   id: string;
   isActive: boolean;
-  method?: 'UPI' | 'CARD' | 'NETBANKING' | 'WALLET';
+  method?: 'UPI' | 'CARD' | 'NETBANKING' | 'WALLET' | 'COD';
   order: AdminPaymentOrderSummaryDto;
   orderId: string;
   provider: 'RAZORPAY' | 'STRIPE';

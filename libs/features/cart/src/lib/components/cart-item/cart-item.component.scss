@@ -9,6 +9,23 @@
   &:last-child {
     border-bottom: none;
   }
+
+  &.unavailable {
+    opacity: 0.6;
+  }
+}
+
+.cart-item-variant,
+.cart-item-addons,
+.cart-item-instructions {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-subtle);
+}
+
+.cart-item-unavailable-badge {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-error);
 }
 
 .cart-item-body {

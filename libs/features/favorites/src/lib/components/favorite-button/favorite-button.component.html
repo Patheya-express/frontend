@@ -1,0 +1,19 @@
+<button
+  type="button"
+  class="favorite-button"
+  [class.favorite-button-sm]="size === 'sm'"
+  [class.favorited]="isFavorited()"
+  [attr.aria-pressed]="isFavorited()"
+  [attr.aria-label]="(isFavorited() ? 'Remove ' + label + ' from favorites' : 'Add ' + label + ' to favorites')"
+  (click)="onToggle($event)"
+>
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path
+      d="M12 21s-6.7-4.35-9.3-8.1C.86 10.2 1.4 6.9 4 5.2c2.2-1.45 4.9-.8 6.4 1.1L12 8l1.6-1.7c1.5-1.9 4.2-2.55 6.4-1.1 2.6 1.7 3.14 5 1.3 7.7C18.7 16.65 12 21 12 21z"
+      [attr.fill]="isFavorited() ? 'currentColor' : 'none'"
+      stroke="currentColor"
+      stroke-width="1.8"
+      stroke-linejoin="round"
+    />
+  </svg>
+</button>

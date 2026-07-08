@@ -1,8 +1,15 @@
 <lib-app-shell
   [isAuthenticated]="isAuthenticated()"
   [cartItemCount]="cartItemCount()"
+  [notificationCount]="notificationCount()"
+  [deliveryLocationLabel]="deliveryLocationLabel()"
+  [avatarUrl]="avatarUrl()"
+  [firstName]="firstName()"
   (logoutRequested)="onLogout()"
   (cartToggled)="toggleCart()"
+  (notificationsToggled)="onNotificationsToggled()"
+  (locationPickerClicked)="onLocationPickerClicked()"
+  (searchSubmitted)="onSearchSubmitted($event)"
 />
 
 <lib-cart-drawer [open]="cartOpen()" (closeRequested)="closeCart()" />

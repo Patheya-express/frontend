@@ -1,43 +1,46 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
+import type { CartResponseDto } from '@patheya-express-frontend/api-sdk';
 import type { CartItem } from '../models/cart-item.model';
-import { CartService } from '../services/cart.service';
+import { CartService, type AddCartItemRequest } from '../services/cart.service';
 
-export interface AddToCartRequest {
-  menuItemId: string;
-  name: string;
-  unitPrice: number;
-  restaurantId: string;
+export interface AddToCartRequest extends AddCartItemRequest {
+  /** Display-only — the target restaurant's name, shown in the conflict dialog if the cart must be replaced. */
   restaurantName: string;
+}
+
+function isConflict(error: unknown): boolean {
+  return error instanceof HttpErrorResponse && error.status === 409;
 }
 
 @Injectable({ providedIn: 'root' })
 export class CartStore {
   private readonly cartService = inject(CartService);
 
-  private readonly _items = signal<CartItem[]>([]);
+  private readonly _cart = signal<CartResponseDto | null>(null);
   private readonly _loading = signal(false);
   private readonly _error = signal<string | null>(null);
   /** Set when an add-to-cart request targets a different restaurant than the current cart; awaits user confirmation. */
   private readonly _pendingConflict = signal<AddToCartRequest | null>(null);
 
-  readonly items = this._items.asReadonly();
+  readonly items = computed<CartItem[]>(() => this._cart()?.items ?? []);
+  readonly restaurantId = computed(() => this._cart()?.restaurantId);
+  readonly restaurantName = computed(() => this._cart()?.restaurantName);
   readonly loading = this._loading.asReadonly();
   readonly error = this._error.asReadonly();
   readonly pendingConflict = this._pendingConflict.asReadonly();
 
-  readonly subtotal = computed(() =>
-    this._items().reduce((sum, item) => sum + item.unitPrice * item.quantity, 0),
-  );
-  readonly totalItems = computed(() => this._items().reduce((sum, item) => sum + item.quantity, 0));
+  readonly subtotal = computed(() => this._cart()?.subtotal ?? 0);
+  readonly totalItems = computed(() => this._cart()?.totalItems ?? 0);
 
-  /** Hydrates cart state from persisted storage. Call once at app bootstrap. */
+  /** Hydrates cart state from the backend. Call once at app bootstrap. */
   async restore(): Promise<void> {
     this._loading.set(true);
     this._error.set(null);
 
     try {
-      const items = await this.cartService.load();
-      this._items.set(items);
+      const cart = await this.cartService.getCart();
+      this._cart.set(cart);
     } catch {
       this._error.set('Unable to restore your cart.');
     } finally {
@@ -46,20 +49,44 @@ export class CartStore {
   }
 
   /**
-   * Adds one unit of the requested item. If the cart already contains items from a different
-   * restaurant, the request is held as a pending conflict instead of being applied — the cart
-   * is scoped to a single restaurant, and mixing restaurants requires explicit confirmation to
-   * clear the existing cart first (see confirmReplaceCart / cancelPendingAdd).
+   * Adds the requested item. If the cart already contains items from a different restaurant,
+   * the server rejects with 409 and the request is held as a pending conflict instead of being
+   * applied — the cart is scoped to a single restaurant, and mixing restaurants requires
+   * explicit confirmation to clear the existing cart first (see confirmReplaceCart / cancelPendingAdd).
    */
   async addItem(request: AddToCartRequest): Promise<void> {
-    const existingRestaurantId = this._items()[0]?.restaurantId;
+    this._loading.set(true);
+    this._error.set(null);
 
-    if (existingRestaurantId && existingRestaurantId !== request.restaurantId) {
-      this._pendingConflict.set(request);
-      return;
+    try {
+      const cart = await this.cartService.addItem(request, false);
+      this._cart.set(cart);
+    } catch (err) {
+      if (isConflict(err)) {
+        this._pendingConflict.set(request);
+      } else {
+        this._error.set('Unable to add item to cart.');
+      }
+    } finally {
+      this._loading.set(false);
     }
+  }
 
-    await this.upsertItem(request);
+  /**
+   * Adds an item and reports success/failure directly, instead of the pending-conflict-dialog
+   * flow `addItem` uses — for bulk/programmatic add scenarios (e.g. reordering a past order)
+   * where a per-item success signal is more useful than an interactive confirmation. Always
+   * replaces a cross-restaurant cart rather than pausing for confirmation, since the caller
+   * already made that call by initiating a bulk add.
+   */
+  async tryAddItem(request: AddToCartRequest): Promise<boolean> {
+    try {
+      const cart = await this.cartService.addItem(request, true);
+      this._cart.set(cart);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   /** Clears the current cart and adds the item that triggered the pending restaurant conflict. */
@@ -70,8 +97,17 @@ export class CartStore {
     }
 
     this._pendingConflict.set(null);
-    this._items.set([]);
-    await this.upsertItem(request);
+    this._loading.set(true);
+    this._error.set(null);
+
+    try {
+      const cart = await this.cartService.addItem(request, true);
+      this._cart.set(cart);
+    } catch {
+      this._error.set('Unable to add item to cart.');
+    } finally {
+      this._loading.set(false);
+    }
   }
 
   /** Discards the pending add without changing the current cart. */
@@ -79,52 +115,57 @@ export class CartStore {
     this._pendingConflict.set(null);
   }
 
-  async increaseQuantity(menuItemId: string): Promise<void> {
-    const items = this._items().map((item) =>
-      item.menuItemId === menuItemId ? { ...item, quantity: item.quantity + 1 } : item,
-    );
-    await this.persistItems(items);
-  }
+  async updateQuantity(cartItemId: string, quantity: number): Promise<void> {
+    if (quantity < 1) {
+      await this.removeItem(cartItemId);
+      return;
+    }
 
-  async decreaseQuantity(menuItemId: string): Promise<void> {
-    const items = this._items()
-      .map((item) => (item.menuItemId === menuItemId ? { ...item, quantity: item.quantity - 1 } : item))
-      .filter((item) => item.quantity > 0);
-    await this.persistItems(items);
-  }
-
-  async removeItem(menuItemId: string): Promise<void> {
-    const items = this._items().filter((item) => item.menuItemId !== menuItemId);
-    await this.persistItems(items);
-  }
-
-  async clear(): Promise<void> {
-    this._items.set([]);
-    this._error.set(null);
-    await this.cartService.clear();
-  }
-
-  private async upsertItem(request: AddToCartRequest): Promise<void> {
-    const items = this._items();
-    const existing = items.find((item) => item.menuItemId === request.menuItemId);
-
-    const nextItems = existing
-      ? items.map((item) =>
-          item.menuItemId === request.menuItemId ? { ...item, quantity: item.quantity + 1 } : item,
-        )
-      : [...items, { ...request, quantity: 1 }];
-
-    await this.persistItems(nextItems);
-  }
-
-  private async persistItems(items: CartItem[]): Promise<void> {
-    this._items.set(items);
     this._error.set(null);
 
     try {
-      await this.cartService.persist(items);
+      const cart = await this.cartService.updateQuantity(cartItemId, quantity);
+      this._cart.set(cart);
     } catch {
-      this._error.set('Unable to save your cart.');
+      this._error.set('Unable to update this item.');
+    }
+  }
+
+  async increaseQuantity(cartItemId: string): Promise<void> {
+    const item = this.items().find((i) => i.id === cartItemId);
+    if (!item) {
+      return;
+    }
+    await this.updateQuantity(cartItemId, item.quantity + 1);
+  }
+
+  async decreaseQuantity(cartItemId: string): Promise<void> {
+    const item = this.items().find((i) => i.id === cartItemId);
+    if (!item) {
+      return;
+    }
+    await this.updateQuantity(cartItemId, item.quantity - 1);
+  }
+
+  async removeItem(cartItemId: string): Promise<void> {
+    this._error.set(null);
+
+    try {
+      const cart = await this.cartService.removeItem(cartItemId);
+      this._cart.set(cart);
+    } catch {
+      this._error.set('Unable to remove this item.');
+    }
+  }
+
+  async clear(): Promise<void> {
+    this._error.set(null);
+
+    try {
+      const cart = await this.cartService.clear();
+      this._cart.set(cart);
+    } catch {
+      this._error.set('Unable to clear your cart.');
     }
   }
 }

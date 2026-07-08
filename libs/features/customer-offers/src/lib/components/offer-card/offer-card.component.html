@@ -1,0 +1,34 @@
+<a class="offer-card" [class.offer-card-sm]="size === 'sm'" [routerLink]="['/offers', offer.id]">
+  <div class="offer-card-image">
+    @if (imageUrl; as url) {
+      <img [src]="url" [alt]="offer.title" loading="lazy" />
+    } @else {
+      <div class="offer-card-placeholder" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path
+            d="M20 12a2 2 0 0 1 0 4v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a2 2 0 0 1 0-4V9a2 2 0 0 1 0-4V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v4a2 2 0 0 1 0 4Z"
+            stroke="currentColor"
+            stroke-width="1.4"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </div>
+    }
+    @if (typeLabel) {
+      <span class="offer-card-type">{{ typeLabel }}</span>
+    }
+  </div>
+
+  <div class="offer-card-body">
+    <h3>{{ offer.title }}</h3>
+    @if (offer.description) {
+      <p class="offer-card-description">{{ offer.description }}</p>
+    }
+    @if (offer.restaurantName) {
+      <span class="offer-card-restaurant">{{ offer.restaurantName }}</span>
+    }
+    @if (expirationLabel) {
+      <span class="offer-card-expiration" [class.expiring-soon]="isExpiringSoon">{{ expirationLabel }}</span>
+    }
+  </div>
+</a>

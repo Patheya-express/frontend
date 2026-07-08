@@ -1,0 +1,101 @@
+<section class="reviews-section">
+  <div class="reviews-summary">
+    <h2>Ratings &amp; Reviews</h2>
+    <div class="reviews-summary-score">
+      <lib-star-rating [rating]="avgRating" size="lg" />
+      <span class="reviews-summary-value">{{ avgRating.toFixed(1) }}</span>
+      <span class="reviews-summary-count">({{ ratingCount }} {{ ratingCount === 1 ? 'rating' : 'ratings' }})</span>
+    </div>
+  </div>
+
+  @if (isAuthenticated()) {
+    @if (!editing()) {
+      @if (myReview(); as own) {
+        <div class="my-review-card">
+          <div class="my-review-header">
+            <span>Your review</span>
+            <div class="my-review-actions">
+              <button type="button" (click)="startWriteReview()">Edit</button>
+              <button type="button" class="danger" (click)="requestDelete()">Delete</button>
+            </div>
+          </div>
+          <lib-star-rating [rating]="own.rating" size="sm" />
+          @if (own.comment) {
+            <p class="my-review-comment">{{ own.comment }}</p>
+          }
+        </div>
+      } @else if (!myReviewLoading()) {
+        <button type="button" class="write-review-btn" (click)="startWriteReview()">Write a review</button>
+      }
+    } @else {
+      <form class="review-form" (submit)="$event.preventDefault(); submit()">
+        <span class="review-form-label" id="review-rating-label">Your rating</span>
+        <lib-star-rating
+          [rating]="draftRating()"
+          [editable]="true"
+          size="lg"
+          role="group"
+          aria-labelledby="review-rating-label"
+          (ratingChange)="setDraftRating($event)"
+        />
+
+        <label class="review-form-label" for="review-comment">Your review (optional)</label>
+        <textarea
+          id="review-comment"
+          rows="3"
+          [value]="draftComment()"
+          (input)="draftComment.set($any($event.target).value)"
+          placeholder="Share details about the food, delivery, and packaging…"
+        ></textarea>
+
+        @if (formError()) {
+          <p class="review-form-error" role="alert">{{ formError() }}</p>
+        }
+
+        <div class="review-form-actions">
+          <button type="button" class="btn-secondary" (click)="cancelEdit()">Cancel</button>
+          <button type="submit" class="btn-primary" [disabled]="submitting() || draftRating() < 1">
+            {{ submitting() ? 'Saving…' : 'Submit review' }}
+          </button>
+        </div>
+      </form>
+    }
+  }
+
+  <lib-confirm-dialog
+    [open]="confirmingDelete()"
+    title="Delete your review?"
+    message="This will remove your rating and comment from this restaurant."
+    confirmLabel="Delete"
+    tone="danger"
+    (confirmed)="confirmDelete()"
+    (cancelled)="cancelDelete()"
+  />
+
+  @if (loading()) {
+    <p class="reviews-loading">Loading reviews…</p>
+  } @else if (error()) {
+    <p class="reviews-error">{{ error() }}</p>
+  } @else if (reviews().length === 0) {
+    <p class="reviews-empty">No reviews yet — be the first to share your experience.</p>
+  } @else {
+    <ul class="review-list">
+      @for (review of reviews(); track review.id) {
+        <li class="review-list-item">
+          <div class="review-list-item-header">
+            <span class="review-list-item-name">{{ review.customerName ?? 'Customer' }}</span>
+            <span class="review-list-item-date">{{ review.createdAt | date: 'mediumDate' }}</span>
+          </div>
+          <lib-star-rating [rating]="review.rating" size="sm" />
+          @if (review.comment) {
+            <p class="review-list-item-comment">{{ review.comment }}</p>
+          }
+        </li>
+      }
+    </ul>
+
+    @if (totalPages() > 1) {
+      <lib-pagination [page]="page()" [totalPages]="totalPages()" [total]="total()" (pageChange)="onPageChange($event)" />
+    }
+  }
+</section>

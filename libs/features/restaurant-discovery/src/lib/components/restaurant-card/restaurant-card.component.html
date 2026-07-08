@@ -1,7 +1,7 @@
 <a class="restaurant-card" [routerLink]="['/restaurants', restaurant.id]">
   <div class="restaurant-card-image">
-    @if (restaurant.logoUrl) {
-      <img [src]="restaurant.logoUrl" [alt]="restaurant.name" loading="lazy" />
+    @if (logoUrl) {
+      <img [src]="logoUrl" [alt]="restaurant.name" loading="lazy" />
     } @else {
       <div class="restaurant-card-placeholder" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none">
@@ -19,26 +19,37 @@
       <svg viewBox="0 0 24 24" fill="currentColor" class="star-icon">
         <path d="M12 2.5l2.9 6 6.6.7-4.9 4.6 1.3 6.5L12 16.9l-5.9 3.4 1.3-6.5-4.9-4.6 6.6-.7L12 2.5z" />
       </svg>
-      New
+      {{ ratingLabel }}
     </span>
+    @if (restaurant.featured) {
+      <span class="restaurant-card-featured">Featured</span>
+    }
+    @if (isAuthenticated()) {
+      <lib-favorite-button
+        class="restaurant-card-favorite"
+        [id]="restaurant.id"
+        type="restaurant"
+        size="sm"
+        [label]="restaurant.name"
+      />
+    }
   </div>
 
   <div class="restaurant-card-body">
     <h3>{{ restaurant.name }}</h3>
-    <p class="restaurant-card-cuisine">Multi-cuisine</p>
-    @if (restaurant.description) {
-      <p class="restaurant-card-description">{{ restaurant.description }}</p>
-    }
+    <p class="restaurant-card-cuisine">{{ cuisineLabel }}</p>
     <div class="restaurant-card-meta">
       <span class="meta-item">
         <svg viewBox="0 0 24 24" fill="none" class="meta-icon">
           <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.5" />
           <path d="M12 7.5V12l3 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
-        -- min
+        {{ deliveryTimeLabel || 'Delivery time unavailable' }}
       </span>
       <span class="meta-divider" aria-hidden="true">&bull;</span>
-      <span class="meta-item">₹₹ for one</span>
+      <span class="meta-item" [class.is-open]="restaurant.isOpenNow" [class.is-closed]="!restaurant.isOpenNow">
+        {{ restaurant.isOpenNow ? 'Open now' : 'Closed' }}
+      </span>
     </div>
   </div>
 </a>

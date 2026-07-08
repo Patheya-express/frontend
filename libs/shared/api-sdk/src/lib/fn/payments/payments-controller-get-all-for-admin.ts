@@ -12,7 +12,7 @@ import { PaginatedAdminPaymentsResponseDto } from '../../models/paginated-admin-
 export interface PaymentsControllerGetAllForAdmin$Params {
   dateTo?: any;
   dateFrom?: any;
-  method?: 'UPI' | 'CARD' | 'NETBANKING' | 'WALLET';
+  method?: 'UPI' | 'CARD' | 'NETBANKING' | 'WALLET' | 'COD';
   provider?: 'RAZORPAY' | 'STRIPE';
   status?: 'PENDING' | 'SUCCESS' | 'FAILED' | 'REFUNDED';
 

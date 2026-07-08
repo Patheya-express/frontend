@@ -1,6 +1,22 @@
-<article class="cart-item">
+<article class="cart-item" [class.unavailable]="!item.isAvailable">
   <div class="cart-item-body">
     <h4>{{ item.name }}</h4>
+    @if (item.variantName) {
+      <span class="cart-item-variant">{{ item.variantName }}</span>
+    }
+    @if (item.addonOptions.length > 0) {
+      <span class="cart-item-addons">
+        @for (option of item.addonOptions; track option.id; let last = $last) {
+          {{ option.name }}{{ last ? '' : ', ' }}
+        }
+      </span>
+    }
+    @if (item.specialInstructions) {
+      <span class="cart-item-instructions">Note: {{ item.specialInstructions }}</span>
+    }
+    @if (!item.isAvailable) {
+      <span class="cart-item-unavailable-badge">No longer available</span>
+    }
     <span class="cart-item-unit-price">₹{{ item.unitPrice }} each</span>
   </div>
 
@@ -10,7 +26,7 @@
       <span class="stepper-value">{{ item.quantity }}</span>
       <button type="button" class="stepper-btn" aria-label="Increase quantity" (click)="increase()">+</button>
     </div>
-    <span class="cart-item-line-total">₹{{ item.unitPrice * item.quantity }}</span>
+    <span class="cart-item-line-total">₹{{ item.lineTotal }}</span>
     <button type="button" class="cart-item-remove" aria-label="Remove item" (click)="remove()">Remove</button>
   </div>
 </article>

@@ -1,0 +1,88 @@
+<div class="profile-page">
+  @if (loading() && !profile()) {
+    <lib-skeleton [count]="4" />
+  } @else if (error() && !profile()) {
+    <lib-error-state [message]="error()!" (retry)="retry()" />
+  } @else if (profile(); as profileValue) {
+    <header class="profile-header">
+      <h1>My Profile</h1>
+      <a class="profile-settings-link" routerLink="/account/settings">Settings</a>
+    </header>
+
+    <lib-avatar-upload
+      [avatarUrl]="profileValue.avatarUrl"
+      [firstName]="profileValue.firstName"
+      [uploading]="avatarUploading()"
+      (fileSelected)="onAvatarSelected($event)"
+    />
+
+    @if (profileValue.profileCompletion !== undefined) {
+      <p class="profile-completion">Profile {{ profileValue.profileCompletion }}% complete</p>
+    }
+
+    <form class="profile-form" [formGroup]="form" (ngSubmit)="onSubmit()">
+      @if (error()) {
+        <p class="profile-form-alert" role="alert">{{ error() }}</p>
+      }
+      @if (saved) {
+        <p class="profile-form-success" role="status">Your profile was updated.</p>
+      }
+
+      <div class="profile-form-row">
+        <div class="form-field">
+          <label for="firstName">First name</label>
+          <input id="firstName" type="text" formControlName="firstName" />
+        </div>
+
+        <div class="form-field">
+          <label for="lastName">Last name</label>
+          <input id="lastName" type="text" formControlName="lastName" />
+        </div>
+      </div>
+
+      <div class="form-field">
+        <span class="profile-field-label">Email</span>
+        <p class="profile-readonly-value">{{ profileValue.email ?? 'Not set' }}</p>
+      </div>
+
+      <div class="form-field">
+        <label for="phone">Phone</label>
+        <input id="phone" type="tel" formControlName="phone" />
+      </div>
+
+      <div class="profile-form-row">
+        <div class="form-field">
+          <label for="preferredLanguage">Preferred language</label>
+          <select id="preferredLanguage" formControlName="preferredLanguage">
+            @for (option of languageOptions; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label for="themePreference">Theme</label>
+          <select id="themePreference" formControlName="themePreference">
+            @for (option of themeOptions; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label for="timezone">Timezone</label>
+        <input id="timezone" type="text" formControlName="timezone" />
+      </div>
+
+      <label class="profile-checkbox-field">
+        <input type="checkbox" formControlName="marketingOptIn" />
+        Send me promotions and offers
+      </label>
+
+      <button type="submit" class="profile-form-submit" [disabled]="saving()">
+        {{ saving() ? 'Saving…' : 'Save changes' }}
+      </button>
+    </form>
+  }
+</div>

@@ -1,0 +1,37 @@
+.favorite-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-text-subtle);
+  cursor: pointer;
+  transition: color var(--transition-fast, 0.15s), transform 0.1s;
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  &:hover {
+    color: #e0245e;
+    transform: scale(1.05);
+  }
+
+  &.favorited {
+    color: #e0245e;
+  }
+}
+
+.favorite-button-sm {
+  width: 28px;
+  height: 28px;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}

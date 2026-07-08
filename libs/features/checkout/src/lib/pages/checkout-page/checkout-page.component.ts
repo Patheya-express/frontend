@@ -5,6 +5,7 @@ import { CheckoutFacade } from '../../facades/checkout.facade';
 import { AddressSectionComponent } from '../../components/address-section/address-section.component';
 import { OrderSummaryComponent } from '../../components/order-summary/order-summary.component';
 import { PriceBreakdownComponent } from '../../components/price-breakdown/price-breakdown.component';
+import { PaymentMethodSectionComponent } from '../../components/payment-method-section/payment-method-section.component';
 import { PlaceOrderSectionComponent } from '../../components/place-order-section/place-order-section.component';
 
 @Component({
@@ -15,6 +16,7 @@ import { PlaceOrderSectionComponent } from '../../components/place-order-section
     AddressSectionComponent,
     OrderSummaryComponent,
     PriceBreakdownComponent,
+    PaymentMethodSectionComponent,
     PlaceOrderSectionComponent,
   ],
   templateUrl: './checkout-page.component.html',

@@ -1,0 +1,16 @@
+.live-tracking-map {
+  position: relative;
+  width: 100%;
+  height: 240px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--color-secondary-soft);
+}
+
+// Leaflet's divIcon markers are created outside Angular's template compiler, so they never
+// receive the component's scoping attribute — ::ng-deep is required to reach them at all.
+::ng-deep .map-marker {
+  font-size: 22px;
+  line-height: 1;
+  transform: translate(-50%, -50%);
+}

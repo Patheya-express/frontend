@@ -56,6 +56,8 @@ import { menuControllerUpdateMenuItem } from '../fn/menu/menu-controller-update-
 import { MenuControllerUpdateMenuItem$Params } from '../fn/menu/menu-controller-update-menu-item';
 import { menuControllerUpdateVariant } from '../fn/menu/menu-controller-update-variant';
 import { MenuControllerUpdateVariant$Params } from '../fn/menu/menu-controller-update-variant';
+import { menuControllerUploadMenuItemImage } from '../fn/menu/menu-controller-upload-menu-item-image';
+import { MenuControllerUploadMenuItemImage$Params } from '../fn/menu/menu-controller-upload-menu-item-image';
 import { MenuItemResponseDto } from '../models/menu-item-response-dto';
 import { MenuItemVariantResponseDto } from '../models/menu-item-variant-response-dto';
 
@@ -764,7 +766,7 @@ export class MenuService extends BaseService {
   /**
    * Get complete restaurant menu.
    *
-   *
+   * Public — no authentication required, so anonymous customers can browse a restaurant's menu. Only active categories and available items are returned.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `menuControllerGetRestaurantMenu()` instead.
@@ -779,7 +781,7 @@ export class MenuService extends BaseService {
   /**
    * Get complete restaurant menu.
    *
-   *
+   * Public — no authentication required, so anonymous customers can browse a restaurant's menu. Only active categories and available items are returned.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `menuControllerGetRestaurantMenu$Response()` instead.
@@ -789,6 +791,39 @@ export class MenuService extends BaseService {
   menuControllerGetRestaurantMenu(params: MenuControllerGetRestaurantMenu$Params, context?: HttpContext): Promise<Array<MenuCategoryResponseDto>> {
     const resp = this.menuControllerGetRestaurantMenu$Response(params, context);
     return resp.then((r: StrictHttpResponse<Array<MenuCategoryResponseDto>>): Array<MenuCategoryResponseDto> => r.body);
+  }
+
+  /** Path part for operation `menuControllerUploadMenuItemImage()` */
+  static readonly MenuControllerUploadMenuItemImagePath = '/api/v1/menu/items/{id}/image';
+
+  /**
+   * Upload menu item image.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `menuControllerUploadMenuItemImage()` instead.
+   *
+   * This method sends `multipart/form-data` and handles request body of type `multipart/form-data`.
+   */
+  menuControllerUploadMenuItemImage$Response(params: MenuControllerUploadMenuItemImage$Params, context?: HttpContext): Promise<StrictHttpResponse<MenuItemResponseDto>> {
+    const obs = menuControllerUploadMenuItemImage(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Upload menu item image.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `menuControllerUploadMenuItemImage$Response()` instead.
+   *
+   * This method sends `multipart/form-data` and handles request body of type `multipart/form-data`.
+   */
+  menuControllerUploadMenuItemImage(params: MenuControllerUploadMenuItemImage$Params, context?: HttpContext): Promise<MenuItemResponseDto> {
+    const resp = this.menuControllerUploadMenuItemImage$Response(params, context);
+    return resp.then((r: StrictHttpResponse<MenuItemResponseDto>): MenuItemResponseDto => r.body);
   }
 
 }

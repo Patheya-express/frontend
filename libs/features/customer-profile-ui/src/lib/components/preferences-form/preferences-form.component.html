@@ -1,0 +1,50 @@
+<div class="preferences-form">
+  @if (loading()) {
+    <p class="preferences-loading">Loading preferences…</p>
+  } @else {
+    <div class="preferences-table" role="table" aria-label="Notification preferences">
+      <div class="preferences-row preferences-header" role="row">
+        <span role="columnheader"></span>
+        <span role="columnheader">Email</span>
+        <span role="columnheader">SMS</span>
+        <span role="columnheader">Push</span>
+      </div>
+
+      @for (row of rows; track row.label) {
+        <div class="preferences-row" role="row">
+          <span class="preferences-row-label" role="rowheader">{{ row.label }}</span>
+
+          <label class="preferences-checkbox">
+            <input
+              type="checkbox"
+              [checked]="isChecked(row.emailKey)"
+              [disabled]="saving()"
+              (change)="toggle(row.emailKey)"
+              [attr.aria-label]="row.label + ' via email'"
+            />
+          </label>
+
+          <label class="preferences-checkbox">
+            <input
+              type="checkbox"
+              [checked]="isChecked(row.smsKey)"
+              [disabled]="saving()"
+              (change)="toggle(row.smsKey)"
+              [attr.aria-label]="row.label + ' via SMS'"
+            />
+          </label>
+
+          <label class="preferences-checkbox">
+            <input
+              type="checkbox"
+              [checked]="isChecked(row.pushKey)"
+              [disabled]="saving()"
+              (change)="toggle(row.pushKey)"
+              [attr.aria-label]="row.label + ' via push notification'"
+            />
+          </label>
+        </div>
+      }
+    </div>
+  }
+</div>

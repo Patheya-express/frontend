@@ -14,6 +14,15 @@ import { HeaderComponent } from '../header/header.component';
 export class AppShellComponent {
   @Input() isAuthenticated = false;
   @Input() cartItemCount = 0;
+  @Input() notificationCount = 0;
+  @Input() deliveryLocationLabel = 'Select a location';
+  @Input() searchValue = '';
+  @Input() avatarUrl?: string;
+  @Input() firstName = '';
+
   @Output() logoutRequested = new EventEmitter<void>();
   @Output() cartToggled = new EventEmitter<void>();
+  @Output() notificationsToggled = new EventEmitter<void>();
+  @Output() locationPickerClicked = new EventEmitter<void>();
+  @Output() searchSubmitted = new EventEmitter<string>();
 }

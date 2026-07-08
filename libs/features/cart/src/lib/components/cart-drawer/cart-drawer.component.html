@@ -20,7 +20,7 @@
           (refresh)="browseRestaurants()"
         />
       } @else {
-        @for (item of items(); track item.menuItemId) {
+        @for (item of items(); track item.id) {
           <lib-cart-item [item]="item" />
         }
       }

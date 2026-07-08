@@ -123,3 +123,32 @@ h3 {
 .meta-divider {
   color: var(--color-text-subtle);
 }
+
+.is-open {
+  color: var(--color-success, #1a7f37);
+}
+
+.is-closed {
+  color: var(--color-error, #c0392b);
+}
+
+.restaurant-card-featured {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  background: var(--color-primary);
+  color: var(--color-on-primary, #fff);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  padding: 3px var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.restaurant-card-favorite {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  box-shadow: var(--shadow-sm);
+}

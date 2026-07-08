@@ -3,7 +3,7 @@
 
 export interface AdminOrderPaymentSummaryDto {
   amount: number;
-  method?: 'UPI' | 'CARD' | 'NETBANKING' | 'WALLET';
+  method?: 'UPI' | 'CARD' | 'NETBANKING' | 'WALLET' | 'COD';
   provider?: 'RAZORPAY' | 'STRIPE';
   status: 'PENDING' | 'SUCCESS' | 'FAILED' | 'REFUNDED';
 }

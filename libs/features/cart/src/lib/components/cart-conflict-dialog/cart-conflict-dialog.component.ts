@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { CartFacade } from '../../facades/cart.facade';
 
 @Component({
@@ -12,7 +12,7 @@ export class CartConflictDialogComponent {
   private readonly cartFacade = inject(CartFacade);
 
   protected readonly pendingConflict = this.cartFacade.pendingConflict;
-  protected readonly currentRestaurantName = computed(() => this.cartFacade.items()[0]?.restaurantName ?? '');
+  protected readonly currentRestaurantName = this.cartFacade.restaurantName;
 
   protected confirm(): void {
     void this.cartFacade.confirmReplaceCart();

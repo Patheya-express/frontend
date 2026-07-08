@@ -7,7 +7,7 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { PaginatedRestaurantsResponseDto } from '../../models/paginated-restaurants-response-dto';
+import { PaginatedRestaurantSummariesResponseDto } from '../../models/paginated-restaurant-summaries-response-dto';
 
 export interface RestaurantsControllerFindAll$Params {
   sortOrder?: 'asc' | 'desc';
@@ -21,7 +21,7 @@ export interface RestaurantsControllerFindAll$Params {
   page?: number;
 }
 
-export function restaurantsControllerFindAll(http: HttpClient, rootUrl: string, params?: RestaurantsControllerFindAll$Params, context?: HttpContext): Observable<StrictHttpResponse<PaginatedRestaurantsResponseDto>> {
+export function restaurantsControllerFindAll(http: HttpClient, rootUrl: string, params?: RestaurantsControllerFindAll$Params, context?: HttpContext): Observable<StrictHttpResponse<PaginatedRestaurantSummariesResponseDto>> {
   const rb = new RequestBuilder(rootUrl, restaurantsControllerFindAll.PATH, 'get');
   if (params) {
     rb.query('sortOrder', params.sortOrder, {});
@@ -40,7 +40,7 @@ export function restaurantsControllerFindAll(http: HttpClient, rootUrl: string, 
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<PaginatedRestaurantsResponseDto>;
+      return r as StrictHttpResponse<PaginatedRestaurantSummariesResponseDto>;
     })
   );
 }

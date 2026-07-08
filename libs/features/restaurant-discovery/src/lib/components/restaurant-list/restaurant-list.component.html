@@ -1,17 +1,63 @@
-@if (facade.loading()) {
-  <lib-skeleton [count]="6" />
-} @else if (facade.error()) {
-  <lib-error-state [message]="facade.error()!" (retry)="retry()" />
-} @else if (facade.isEmpty()) {
-  <lib-empty-state
-    title="No restaurants found"
-    message="Try adjusting your search or check back later."
-    (refresh)="retry()"
-  />
-} @else {
-  <div class="restaurant-grid">
-    @for (restaurant of facade.restaurants(); track restaurant.id) {
-      <lib-restaurant-card [restaurant]="restaurant" />
-    }
+<div class="restaurant-discovery-page">
+  <h1>Restaurants</h1>
+
+  <div class="restaurant-discovery-toolbar">
+    <lib-search-input
+      placeholder="Search restaurants"
+      [value]="facade.filters().search"
+      (valueChange)="onSearch($event)"
+    />
+
+    <select class="restaurant-discovery-filter-select" (change)="onCuisineFilterChange($any($event.target).value)">
+      <option value="" [selected]="!facade.filters().cuisine">All cuisines</option>
+      @for (cuisine of facade.cuisines(); track cuisine.id) {
+        <option [value]="cuisine.name" [selected]="facade.filters().cuisine === cuisine.name">
+          {{ cuisine.name }}
+        </option>
+      }
+    </select>
+
+    <label class="restaurant-discovery-open-now">
+      <input
+        type="checkbox"
+        [checked]="facade.filters().openNow"
+        (change)="onOpenNowToggle($any($event.target).checked)"
+      />
+      Open now
+    </label>
+
+    <select
+      class="restaurant-discovery-filter-select"
+      (change)="onSortChange($any($event.target).value)"
+    >
+      <option value="name:asc" [selected]="facade.filters().sortBy === 'name'">Name (A-Z)</option>
+      <option value="rating:desc" [selected]="facade.filters().sortBy === 'rating'">Highest rated</option>
+      <option value="createdAt:desc" [selected]="facade.filters().sortBy === 'createdAt'">Newest</option>
+    </select>
   </div>
-}
+
+  @if (facade.loading()) {
+    <lib-skeleton [count]="6" />
+  } @else if (facade.error()) {
+    <lib-error-state [message]="facade.error()!" (retry)="retry()" />
+  } @else if (facade.isEmpty()) {
+    <lib-empty-state
+      title="No restaurants found"
+      message="Try adjusting your search or filters."
+      (refresh)="retry()"
+    />
+  } @else {
+    <div class="restaurant-grid">
+      @for (restaurant of facade.restaurants(); track restaurant.id) {
+        <lib-restaurant-card [restaurant]="restaurant" />
+      }
+    </div>
+
+    <lib-pagination
+      [page]="facade.pagination().page"
+      [totalPages]="facade.pagination().totalPages"
+      [total]="facade.pagination().total"
+      (pageChange)="onPageChange($event)"
+    />
+  }
+</div>

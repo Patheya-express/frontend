@@ -1,0 +1,71 @@
+<button type="button" class="sheet-backdrop" aria-label="Close" (click)="close()"></button>
+
+<div class="sheet-panel" role="dialog" aria-modal="true" [attr.aria-label]="item.name">
+  <header class="sheet-header">
+    <h2>{{ item.name }}</h2>
+    <button type="button" class="sheet-close" aria-label="Close" (click)="close()">✕</button>
+  </header>
+
+  <div class="sheet-body">
+    @if (item.variants.length > 0) {
+      <section class="sheet-section">
+        <h3>Choose an option</h3>
+        <div class="option-list">
+          @for (variant of item.variants; track variant.id) {
+            <label class="option-row">
+              <input
+                type="radio"
+                name="variant"
+                [checked]="selectedVariantId() === variant.id"
+                (change)="selectVariant(variant.id)"
+              />
+              <span class="option-name">{{ variant.name }}</span>
+              <span class="option-price">₹{{ variant.price }}</span>
+            </label>
+          }
+        </div>
+      </section>
+    }
+
+    @for (addon of item.addons; track addon.id) {
+      <section class="sheet-section">
+        <h3>
+          {{ addon.name }}
+          <span class="addon-hint">
+            @if (addon.minSelection > 0) {
+              (required, {{ selectedCountForAddon(addon.id) }}/{{ addon.maxSelection }})
+            } @else {
+              (optional, up to {{ addon.maxSelection }})
+            }
+          </span>
+        </h3>
+        <div class="option-list">
+          @for (option of addon.options; track option.id) {
+            <label class="option-row" [class.disabled]="!option.isAvailable">
+              <input
+                [type]="addon.maxSelection === 1 ? 'radio' : 'checkbox'"
+                [name]="'addon-' + addon.id"
+                [checked]="selectedOptionIds().has(option.id)"
+                [disabled]="!option.isAvailable"
+                (change)="toggleOption(addon.id, option.id, addon.maxSelection)"
+              />
+              <span class="option-name">{{ option.name }}</span>
+              <span class="option-price">+₹{{ option.price }}</span>
+            </label>
+          }
+        </div>
+      </section>
+    }
+  </div>
+
+  <footer class="sheet-footer">
+    <div class="quantity-stepper">
+      <button type="button" (click)="decreaseQuantity()" aria-label="Decrease quantity">−</button>
+      <span>{{ quantity() }}</span>
+      <button type="button" (click)="increaseQuantity()" aria-label="Increase quantity">+</button>
+    </div>
+    <button type="button" class="add-to-cart-btn" [disabled]="!isValid() || adding()" (click)="addToCart()">
+      {{ adding() ? 'Adding…' : 'Add item · ₹' + totalPrice() }}
+    </button>
+  </footer>
+</div>

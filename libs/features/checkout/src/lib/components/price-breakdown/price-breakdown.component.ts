@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { CheckoutFacade } from '../../facades/checkout.facade';
 
 @Component({
@@ -11,5 +11,5 @@ import { CheckoutFacade } from '../../facades/checkout.facade';
 export class PriceBreakdownComponent {
   private readonly checkoutFacade = inject(CheckoutFacade);
 
-  protected readonly subtotal = computed(() => this.checkoutFacade.orderSummary().subtotal);
+  protected readonly orderSummary = this.checkoutFacade.orderSummary;
 }
