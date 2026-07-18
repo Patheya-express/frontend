@@ -17,7 +17,7 @@ jobs:
   dependency-audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v4
         with:
           version: 11.5.3
@@ -35,7 +35,7 @@ jobs:
   filesystem-scan:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Trivy filesystem scan
         uses: aquasecurity/trivy-action@0.28.0
         with:
