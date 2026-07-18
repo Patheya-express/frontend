@@ -6,12 +6,11 @@ import type { AppEnvironment } from '@patheya-express-frontend/core';
  * this file is deliberately not a secret and is safe to commit with the real QA origin.
  */
 
-
 export const environment: AppEnvironment = {
   production: true,
 
   apiBaseUrl:
-    'https://patheya-express-api-gateway-qa.onrender.com/api/v1',
+    'https://patheya-express-api-gateway-qa.onrender.com',
 
   socketUrl:
     'https://patheya-express-api-gateway-qa.onrender.com',
