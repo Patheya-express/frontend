@@ -2,10 +2,11 @@ import type { AppEnvironment } from '@patheya-express-frontend/core';
 
 /** QA build (`nx build delivery-app --configuration=qa`). */
 export const environment: AppEnvironment = {
-  production: false,
-  apiBaseUrl: 'https://replace-with-qa-backend-url',
-  socketUrl: 'https://replace-with-qa-backend-url',
-  mediaBaseUrl: 'https://replace-with-qa-backend-url',
+  production: true,
+  apiBaseUrl: 'https://patheya-express-api-gateway-qa.onrender.com',
+  socketUrl: 'https://patheya-express-api-gateway-qa.onrender.com',
+  mediaBaseUrl: 'https://patheya-express-api-gateway-qa.onrender.com',
+  // Delivery App never initiates a Razorpay checkout — not used, kept empty.
   razorpayKeyId: '',
   maps: { provider: 'GOOGLE_MAPS', googleMapsApiKey: '' },
 };
