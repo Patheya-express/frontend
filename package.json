@@ -43,7 +43,7 @@
     "jest": "^30.4.2",
     "jest-environment-jsdom": "^30.4.1",
     "jest-preset-angular": "^17.0.0",
-    "jest-util": "~30.3.0",
+    "jest-util": "~30.4.1",
     "jsonc-eslint-parser": "^2.1.0",
     "ng-openapi-gen": "^1.0.5",
     "ng-packagr": "^21.2.0",
