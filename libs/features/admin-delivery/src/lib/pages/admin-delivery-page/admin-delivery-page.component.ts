@@ -86,8 +86,6 @@ export class AdminDeliveryPageComponent implements OnInit {
   protected readonly actionError = this.facade.actionError;
 
   protected readonly pendingAction = signal<PendingAction | null>(null);
-  protected readonly reassigningPartnerId = signal<string | null>(null);
-  protected readonly reassignInputValue = signal('');
 
   ngOnInit(): void {
     void this.facade.initialize();
@@ -197,31 +195,6 @@ export class AdminDeliveryPageComponent implements OnInit {
     } else {
       await this.facade.unblockPartner(id);
     }
-  }
-
-  protected startReassign(partner: AdminDeliveryPartnerResponseDto): void {
-    this.reassigningPartnerId.set(partner.id);
-    this.reassignInputValue.set('');
-  }
-
-  protected cancelReassign(): void {
-    this.reassigningPartnerId.set(null);
-    this.reassignInputValue.set('');
-  }
-
-  protected onReassignInputChange(value: string): void {
-    this.reassignInputValue.set(value);
-  }
-
-  protected async confirmReassign(partnerId: string): Promise<void> {
-    const targetUserId = this.reassignInputValue().trim();
-    if (!targetUserId) {
-      return;
-    }
-
-    this.reassigningPartnerId.set(null);
-    this.reassignInputValue.set('');
-    await this.facade.reassignCurrentOrder(partnerId, targetUserId);
   }
 
   protected isProcessing(partnerId: string): boolean {

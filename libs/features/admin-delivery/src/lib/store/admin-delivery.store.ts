@@ -224,21 +224,6 @@ export class AdminDeliveryStore {
     );
   }
 
-  /** Clears this partner's currentOrder — the newly-assigned partner (if on the current page) reflects the change only on next reload. */
-  reassignCurrentOrder(partnerId: string, deliveryPartnerUserId: string): Promise<void> {
-    return this.transitionPartner(
-      partnerId,
-      (partner) => ({ ...partner, currentOrder: undefined }),
-      async (original) => {
-        if (!original.currentOrder) {
-          return {};
-        }
-        await this.adminDeliveryService.reassignCurrentOrder(original.currentOrder.id, deliveryPartnerUserId);
-        return { currentOrder: undefined };
-      },
-    );
-  }
-
   dismissActionError(): void {
     this._actionError.set(null);
   }

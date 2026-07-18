@@ -421,6 +421,8 @@ export type { NotificationsControllerGetByIdForAdmin$Params as NotificationsCont
 export { notificationsControllerGetByIdForAdmin as notificationsControllerGetByIdForAdmin } from './fn/notifications/notifications-controller-get-by-id-for-admin';
 export type { NotificationsControllerRetryNotification$Params as NotificationsControllerRetryNotification$Params } from './fn/notifications/notifications-controller-retry-notification';
 export { notificationsControllerRetryNotification as notificationsControllerRetryNotification } from './fn/notifications/notifications-controller-retry-notification';
+export type { MetricsControllerGetMetrics$Params as MetricsControllerGetMetrics$Params } from './fn/metrics/metrics-controller-get-metrics';
+export { metricsControllerGetMetrics as metricsControllerGetMetrics } from './fn/metrics/metrics-controller-get-metrics';
 export type { SystemControllerTestRedis$Params as SystemControllerTestRedis$Params } from './fn/system/system-controller-test-redis';
 export { systemControllerTestRedis as systemControllerTestRedis } from './fn/system/system-controller-test-redis';
 export type { SystemControllerQueueTest$Params as SystemControllerQueueTest$Params } from './fn/system/system-controller-queue-test';
@@ -437,6 +439,10 @@ export type { DispatchControllerRejectAssignment$Params as DispatchControllerRej
 export { dispatchControllerRejectAssignment as dispatchControllerRejectAssignment } from './fn/dispatch/dispatch-controller-reject-assignment';
 export type { AdminControllerGetDashboard$Params as AdminControllerGetDashboard$Params } from './fn/admin/admin-controller-get-dashboard';
 export { adminControllerGetDashboard as adminControllerGetDashboard } from './fn/admin/admin-controller-get-dashboard';
+export type { AdminDispatchControllerGetAvailablePartners$Params as AdminDispatchControllerGetAvailablePartners$Params } from './fn/admin-dispatch/admin-dispatch-controller-get-available-partners';
+export { adminDispatchControllerGetAvailablePartners as adminDispatchControllerGetAvailablePartners } from './fn/admin-dispatch/admin-dispatch-controller-get-available-partners';
+export type { AdminDispatchControllerAssignOrderToPartner$Params as AdminDispatchControllerAssignOrderToPartner$Params } from './fn/admin-dispatch/admin-dispatch-controller-assign-order-to-partner';
+export { adminDispatchControllerAssignOrderToPartner as adminDispatchControllerAssignOrderToPartner } from './fn/admin-dispatch/admin-dispatch-controller-assign-order-to-partner';
 export type { CustomerHomeControllerGetHome$Params as CustomerHomeControllerGetHome$Params } from './fn/customer/customer-home-controller-get-home';
 export { customerHomeControllerGetHome as customerHomeControllerGetHome } from './fn/customer/customer-home-controller-get-home';
 export type { CartControllerGetCart$Params as CartControllerGetCart$Params } from './fn/cart/cart-controller-get-cart';

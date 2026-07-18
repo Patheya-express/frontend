@@ -1,6 +1,25 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import type { AdminOrderResponseDto, OrderResponseDto } from '@patheya-express-frontend/api-sdk';
 import { AdminOrdersService } from '../services/admin-orders.service';
+
+/** Maps Admin Dispatch assignment failures to enterprise-friendly copy — never surface the raw backend error. */
+function assignmentErrorMessage(error: unknown): string {
+  const status = error instanceof HttpErrorResponse ? error.status : null;
+
+  switch (status) {
+    case 400:
+      return 'Invalid assignment request. Please check the selected delivery partner and try again.';
+    case 403:
+      return "You don't have permission to assign delivery partners.";
+    case 404:
+      return 'Selected delivery partner is unavailable.';
+    case 409:
+      return 'Order already has an active assignment.';
+    default:
+      return 'Unable to assign a delivery partner right now. Please try again.';
+  }
+}
 
 export type OrderStatusFilter = AdminOrderResponseDto['status'];
 
@@ -42,11 +61,13 @@ export class AdminOrdersStore {
   private readonly _error = signal<string | null>(null);
   private readonly _processingId = signal<string | null>(null);
   private readonly _actionError = signal<string | null>(null);
+  private readonly _actionMessage = signal<string | null>(null);
 
   readonly loading = this._loading.asReadonly();
   readonly error = this._error.asReadonly();
   readonly processingId = this._processingId.asReadonly();
   readonly actionError = this._actionError.asReadonly();
+  readonly actionMessage = this._actionMessage.asReadonly();
 
   readonly state = computed<AdminOrdersState>(() => ({
     orders: this._orders(),
@@ -145,24 +166,52 @@ export class AdminOrdersStore {
     );
   }
 
-  reassignDeliveryPartner(orderId: string, deliveryPartnerId: string): Promise<void> {
-    return this.transitionOrder(
-      orderId,
-      // The new partner's name/phone aren't known client-side until the next load — clearing
-      // the summary avoids showing a stale name attached to the newly-assigned partner ID.
-      (order) => ({ ...order, deliveryPartnerId, deliveryPartner: undefined }),
-      (original) => this.adminOrdersService.reassignDeliveryPartner(original.id, deliveryPartnerId),
-    );
+  /**
+   * Manual dispatch via the Admin Dispatch module (POST /admin/orders/:orderId/assign). Unlike
+   * cancel/force-complete/refund, this doesn't return an updated order — it creates a PENDING
+   * DeliveryAssignment the partner still has to accept, so there's nothing to optimistically
+   * patch onto the order (deliveryPartnerId stays null until they do). We disable the row,
+   * make the call, then reload from the server so the list reflects whatever actually happened.
+   */
+  async assignDeliveryPartner(orderId: string, deliveryPartnerId: string): Promise<void> {
+    const original = this._orders().find((order) => order.id === orderId);
+    if (!original) {
+      return;
+    }
+
+    this._processingId.set(orderId);
+    this._actionError.set(null);
+    this._actionMessage.set(null);
+
+    try {
+      await this.adminOrdersService.assignDeliveryPartner(orderId, deliveryPartnerId);
+      this._actionMessage.set('Assignment offer sent to the delivery partner. Awaiting their response.');
+      await this.loadOrders();
+
+      if (this._selectedOrder()?.id === orderId) {
+        const refreshed = this._orders().find((order) => order.id === orderId);
+        this._selectedOrder.set(refreshed ?? null);
+      }
+    } catch (error) {
+      this._actionError.set(assignmentErrorMessage(error));
+    } finally {
+      this._processingId.set(null);
+    }
   }
 
   dismissActionError(): void {
     this._actionError.set(null);
   }
 
+  dismissActionMessage(): void {
+    this._actionMessage.set(null);
+  }
+
   /**
-   * The single path every order action runs through — cancel, force-complete, refund, and
-   * reassign — mirroring transitionUser()/transitionRestaurant(): optimistically apply the
-   * change, then reconcile with the server response, or roll back to the original on failure.
+   * The single path cancel/force-complete/refund run through — mirroring transitionUser()/
+   * transitionRestaurant(): optimistically apply the change, then reconcile with the server
+   * response, or roll back to the original on failure. assignDeliveryPartner() doesn't use this
+   * path — its response isn't an updated order (see its own doc comment above).
    *
    * Action endpoints return a minimal OrderResponseDto that omits relations (customer,
    * restaurant, items, statusHistory) present on the admin list's AdminOrderResponseDto — only

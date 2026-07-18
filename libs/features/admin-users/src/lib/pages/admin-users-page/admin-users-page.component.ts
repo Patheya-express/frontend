@@ -34,6 +34,7 @@ const ROLE_OPTIONS: { value: UserRoleFilter; label: string }[] = [
   { value: 'SUPPORT_AGENT', label: 'Support Agent' },
   { value: 'ADMIN', label: 'Admin' },
   { value: 'SUPER_ADMIN', label: 'Super Admin' },
+  { value: 'DISPATCH_MANAGER', label: 'Dispatch Manager' },
 ];
 
 const STATUS_OPTIONS: { value: UserStatusFilter; label: string }[] = [
@@ -58,6 +59,7 @@ const ROLE_LABELS: Record<UserResponseDto['role'], string> = {
   SUPPORT_AGENT: 'Support Agent',
   ADMIN: 'Admin',
   SUPER_ADMIN: 'Super Admin',
+  DISPATCH_MANAGER: 'Dispatch Manager',
 };
 
 type PendingActionType = 'activate' | 'suspend' | 'restore';

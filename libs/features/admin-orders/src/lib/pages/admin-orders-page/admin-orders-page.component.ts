@@ -93,10 +93,11 @@ export class AdminOrdersPageComponent implements OnInit {
   protected readonly error = this.facade.error;
   protected readonly processingId = this.facade.processingId;
   protected readonly actionError = this.facade.actionError;
+  protected readonly actionMessage = this.facade.actionMessage;
 
   protected readonly pendingAction = signal<PendingAction | null>(null);
-  protected readonly reassigningOrderId = signal<string | null>(null);
-  protected readonly reassignInputValue = signal('');
+  protected readonly assigningOrderId = signal<string | null>(null);
+  protected readonly assignInputValue = signal('');
 
   ngOnInit(): void {
     void this.facade.initialize();
@@ -150,8 +151,13 @@ export class AdminOrdersPageComponent implements OnInit {
     return order.paymentStatus === 'PAID';
   }
 
-  protected canReassign(order: AdminOrderResponseDto): boolean {
-    return !TERMINAL_STATUSES.includes(order.status);
+  /**
+   * The Admin Dispatch endpoint (POST /admin/orders/:orderId/assign) rejects orders that
+   * already have a delivery partner or an active assignment (409) — it's manual dispatch for
+   * unassigned orders, not a reassignment tool.
+   */
+  protected canAssign(order: AdminOrderResponseDto): boolean {
+    return !TERMINAL_STATUSES.includes(order.status) && !order.deliveryPartnerId;
   }
 
   protected requestAction(type: PendingActionType, order: AdminOrderResponseDto): void {
@@ -179,29 +185,29 @@ export class AdminOrdersPageComponent implements OnInit {
     }
   }
 
-  protected startReassign(order: AdminOrderResponseDto): void {
-    this.reassigningOrderId.set(order.id);
-    this.reassignInputValue.set(order.deliveryPartnerId ?? '');
+  protected startAssign(order: AdminOrderResponseDto): void {
+    this.assigningOrderId.set(order.id);
+    this.assignInputValue.set('');
   }
 
-  protected cancelReassign(): void {
-    this.reassigningOrderId.set(null);
-    this.reassignInputValue.set('');
+  protected cancelAssign(): void {
+    this.assigningOrderId.set(null);
+    this.assignInputValue.set('');
   }
 
-  protected onReassignInputChange(value: string): void {
-    this.reassignInputValue.set(value);
+  protected onAssignInputChange(value: string): void {
+    this.assignInputValue.set(value);
   }
 
-  protected async confirmReassign(orderId: string): Promise<void> {
-    const partnerId = this.reassignInputValue().trim();
+  protected async confirmAssign(orderId: string): Promise<void> {
+    const partnerId = this.assignInputValue().trim();
     if (!partnerId) {
       return;
     }
 
-    this.reassigningOrderId.set(null);
-    this.reassignInputValue.set('');
-    await this.facade.reassignDeliveryPartner(orderId, partnerId);
+    this.assigningOrderId.set(null);
+    this.assignInputValue.set('');
+    await this.facade.assignDeliveryPartner(orderId, partnerId);
   }
 
   protected isProcessing(orderId: string): boolean {

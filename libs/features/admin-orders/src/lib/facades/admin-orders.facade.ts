@@ -11,6 +11,7 @@ export class AdminOrdersFacade {
   readonly error = this.store.error;
   readonly processingId = this.store.processingId;
   readonly actionError = this.store.actionError;
+  readonly actionMessage = this.store.actionMessage;
 
   /** Loads the first page of orders. Call once on page init. */
   initialize(): Promise<void> {
@@ -57,11 +58,15 @@ export class AdminOrdersFacade {
     return this.store.refundOrder(orderId, reason);
   }
 
-  reassignDeliveryPartner(orderId: string, deliveryPartnerId: string): Promise<void> {
-    return this.store.reassignDeliveryPartner(orderId, deliveryPartnerId);
+  assignDeliveryPartner(orderId: string, deliveryPartnerId: string): Promise<void> {
+    return this.store.assignDeliveryPartner(orderId, deliveryPartnerId);
   }
 
   dismissActionError(): void {
     this.store.dismissActionError();
+  }
+
+  dismissActionMessage(): void {
+    this.store.dismissActionMessage();
   }
 }

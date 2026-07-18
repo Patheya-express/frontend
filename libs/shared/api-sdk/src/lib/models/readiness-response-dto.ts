@@ -14,5 +14,10 @@ export interface ReadinessResponseDto {
    * "ok" if every checked dependency is reachable, otherwise "degraded"
    */
   status: string;
+
+  /**
+   * Storage backend reachability — a writable-directory check for the local driver, a config-presence check (no live API call) for Cloudinary
+   */
+  storage: 'connected' | 'disconnected';
   timestamp: string;
 }

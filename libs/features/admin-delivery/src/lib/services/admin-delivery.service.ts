@@ -1,10 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import {
   DeliveryService,
-  OrdersService,
   type AdminDeliveryPartnerResponseDto,
   type DeliveryPartnerResponseDto,
-  type OrderResponseDto,
   type PaginatedAdminDeliveryPartnersResponseDto,
   type UserResponseDto,
 } from '@patheya-express-frontend/api-sdk';
@@ -37,7 +35,6 @@ export interface GetAdminDeliveryPartnersQuery {
 @Injectable({ providedIn: 'root' })
 export class AdminDeliveryService {
   private readonly deliveryService = inject(DeliveryService);
-  private readonly ordersService = inject(OrdersService);
 
   async getPartners(query: GetAdminDeliveryPartnersQuery): Promise<PaginatedAdminDeliveryPartnersResponseDto> {
     const response = await this.deliveryService.deliveryControllerGetAllForAdmin(query);
@@ -76,20 +73,6 @@ export class AdminDeliveryService {
 
   async unblockPartner(id: string): Promise<UserResponseDto> {
     const response = await this.deliveryService.deliveryControllerUnblockPartner({ id });
-    return unwrap(response);
-  }
-
-  /**
-   * Reuses the admin reassignment endpoint Phase 10.4 already built on the Orders module
-   * (PATCH /orders/:id/assign-delivery-partner) — no delivery-side reassignment logic exists
-   * or is needed; this is the same call `admin-orders` makes, kept here as its own thin
-   * wrapper rather than importing that feature library directly.
-   */
-  async reassignCurrentOrder(orderId: string, deliveryPartnerUserId: string): Promise<OrderResponseDto> {
-    const response = await this.ordersService.ordersControllerAssignDeliveryPartner({
-      id: orderId,
-      body: { deliveryPartnerId: deliveryPartnerUserId },
-    });
     return unwrap(response);
   }
 }

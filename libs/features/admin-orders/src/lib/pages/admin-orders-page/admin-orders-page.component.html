@@ -37,6 +37,10 @@
     <div class="admin-orders-action-error" role="alert">{{ actionError() }}</div>
   }
 
+  @if (actionMessage()) {
+    <div class="admin-orders-action-success" role="status">{{ actionMessage() }}</div>
+  }
+
   @if (loading()) {
     <lib-skeleton [count]="6" />
   } @else if (error()) {
@@ -51,17 +55,18 @@
           <td>{{ customerName(order) }}</td>
           <td>{{ order.restaurant.name }}</td>
           <td>
-            @if (reassigningOrderId() === order.id) {
+            @if (assigningOrderId() === order.id) {
               <div class="admin-orders-reassign-form">
                 <input
                   type="text"
                   class="admin-orders-reassign-input"
-                  placeholder="Delivery partner user ID"
-                  [value]="reassignInputValue()"
-                  (input)="onReassignInputChange($any($event.target).value)"
+                  placeholder="Delivery partner ID"
+                  [value]="assignInputValue()"
+                  [disabled]="isProcessing(order.id)"
+                  (input)="onAssignInputChange($any($event.target).value)"
                 />
-                <button type="button" class="admin-orders-action-link" (click)="confirmReassign(order.id)">Save</button>
-                <button type="button" class="admin-orders-action-link" (click)="cancelReassign()">Cancel</button>
+                <button type="button" class="admin-orders-action-link" [disabled]="isProcessing(order.id)" (click)="confirmAssign(order.id)">Save</button>
+                <button type="button" class="admin-orders-action-link" [disabled]="isProcessing(order.id)" (click)="cancelAssign()">Cancel</button>
               </div>
             } @else {
               {{ deliveryPartnerName(order) }}
@@ -73,9 +78,9 @@
           <td>{{ formattedDate(order.createdAt) }}</td>
           <td class="admin-orders-row-actions">
             <button type="button" class="admin-orders-action-link" (click)="viewOrder(order)">View</button>
-            @if (canReassign(order) && reassigningOrderId() !== order.id) {
-              <button type="button" class="admin-orders-action-link" [disabled]="isProcessing(order.id)" (click)="startReassign(order)">
-                Reassign
+            @if (canAssign(order) && assigningOrderId() !== order.id) {
+              <button type="button" class="admin-orders-action-link" [disabled]="isProcessing(order.id)" (click)="startAssign(order)">
+                Assign
               </button>
             }
             @if (canForceComplete(order)) {

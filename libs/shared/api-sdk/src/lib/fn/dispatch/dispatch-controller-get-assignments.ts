@@ -10,11 +10,17 @@ import { RequestBuilder } from '../../request-builder';
 import { DeliveryAssignmentResponseDto } from '../../models/delivery-assignment-response-dto';
 
 export interface DispatchControllerGetAssignments$Params {
+
+/**
+ * Optional — omit to get every assignment (unchanged default behavior); pass to narrow to one status (Pending/Accepted/Rejected/Expired).
+ */
+  status?: 'PENDING' | 'ASSIGNED' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED';
 }
 
 export function dispatchControllerGetAssignments(http: HttpClient, rootUrl: string, params?: DispatchControllerGetAssignments$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<DeliveryAssignmentResponseDto>>> {
   const rb = new RequestBuilder(rootUrl, dispatchControllerGetAssignments.PATH, 'get');
   if (params) {
+    rb.query('status', params.status, {});
   }
 
   return http.request(

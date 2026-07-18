@@ -5,13 +5,27 @@ import { HealthMemoryUsageDto } from '../models/health-memory-usage-dto';
 export interface HealthResponseDto {
   database: string;
   memory: HealthMemoryUsageDto;
+
+  /**
+   * Reachability of the BullMQ queues' Redis connections
+   */
+  queues: 'connected' | 'disconnected';
   redis: string;
   service: string;
-  status: string;
+
+  /**
+   * "ok" only when database, redis, and queues are all connected — otherwise "degraded"
+   */
+  status: 'ok' | 'degraded';
   timestamp: string;
 
   /**
    * Process uptime in seconds
    */
   uptime: number;
+
+  /**
+   * Whether the in-process Socket.IO server is bound and accepting connections — "not_applicable" for the worker process, which never runs a gateway.
+   */
+  websocket: 'ready' | 'not_ready' | 'not_applicable';
 }

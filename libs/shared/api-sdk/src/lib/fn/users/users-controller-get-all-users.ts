@@ -11,7 +11,7 @@ import { PaginatedUsersResponseDto } from '../../models/paginated-users-response
 
 export interface UsersControllerGetAllUsers$Params {
   status?: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'BLOCKED';
-  role?: 'CUSTOMER' | 'RESTAURANT_OWNER' | 'RESTAURANT_MANAGER' | 'DELIVERY_PARTNER' | 'SUPPORT_AGENT' | 'ADMIN' | 'SUPER_ADMIN';
+  role?: 'CUSTOMER' | 'RESTAURANT_OWNER' | 'RESTAURANT_MANAGER' | 'DELIVERY_PARTNER' | 'SUPPORT_AGENT' | 'ADMIN' | 'SUPER_ADMIN' | 'DISPATCH_MANAGER';
   search?: any;
   limit?: number;
   page?: number;

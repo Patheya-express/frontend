@@ -17,7 +17,7 @@ export interface UserResponseDto {
    */
   profileCompletion?: number;
   provider: 'EMAIL' | 'GOOGLE' | 'APPLE' | 'PHONE';
-  role: 'CUSTOMER' | 'RESTAURANT_OWNER' | 'RESTAURANT_MANAGER' | 'DELIVERY_PARTNER' | 'SUPPORT_AGENT' | 'ADMIN' | 'SUPER_ADMIN';
+  role: 'CUSTOMER' | 'RESTAURANT_OWNER' | 'RESTAURANT_MANAGER' | 'DELIVERY_PARTNER' | 'SUPPORT_AGENT' | 'ADMIN' | 'SUPER_ADMIN' | 'DISPATCH_MANAGER';
   status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'BLOCKED';
   themePreference: 'LIGHT' | 'DARK' | 'SYSTEM';
   timezone: string;

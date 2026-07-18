@@ -81,10 +81,6 @@ export class AdminDeliveryFacade {
     return this.store.unblockPartner(partnerId);
   }
 
-  reassignCurrentOrder(partnerId: string, deliveryPartnerUserId: string): Promise<void> {
-    return this.store.reassignCurrentOrder(partnerId, deliveryPartnerUserId);
-  }
-
   dismissActionError(): void {
     this.store.dismissActionError();
   }

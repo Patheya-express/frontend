@@ -42,10 +42,9 @@ export class AdminPaymentsService {
   }
 
   /**
-   * Reuses the admin order-refund endpoint Phase 10.4 already built (PATCH
-   * /orders/:id/assign-delivery-partner's sibling, /orders/:id/refund) — it resolves the
-   * order's active payment, calls the payment provider, and keeps Order.paymentStatus in sync,
-   * none of which the raw POST /payments/refund does. No refund logic is duplicated here.
+   * Reuses the admin order-refund endpoint (POST /orders/:id/refund) — it resolves the order's
+   * active payment, calls the payment provider, and keeps Order.paymentStatus in sync, none of
+   * which the raw POST /payments/refund does. No refund logic is duplicated here.
    */
   async refundPayment(orderId: string, amount?: number, reason?: string): Promise<OrderResponseDto> {
     const response = await this.ordersService.ordersControllerRefundOrder({

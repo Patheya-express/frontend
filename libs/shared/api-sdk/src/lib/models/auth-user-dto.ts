@@ -6,5 +6,5 @@ export interface AuthUserDto {
   firstName: string;
   id: string;
   lastName?: string;
-  role: 'CUSTOMER' | 'RESTAURANT_OWNER' | 'RESTAURANT_MANAGER' | 'DELIVERY_PARTNER' | 'SUPPORT_AGENT' | 'ADMIN' | 'SUPER_ADMIN';
+  role: 'CUSTOMER' | 'RESTAURANT_OWNER' | 'RESTAURANT_MANAGER' | 'DELIVERY_PARTNER' | 'SUPPORT_AGENT' | 'ADMIN' | 'SUPER_ADMIN' | 'DISPATCH_MANAGER';
 }

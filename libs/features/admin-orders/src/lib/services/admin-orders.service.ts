@@ -1,7 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import {
+  AdminDispatchService,
   OrdersService,
   type AdminOrderResponseDto,
+  type DeliveryAssignmentResponseDto,
   type OrderResponseDto,
   type PaginatedAdminOrdersResponseDto,
 } from '@patheya-express-frontend/api-sdk';
@@ -34,6 +36,7 @@ export interface GetAdminOrdersQuery {
 @Injectable({ providedIn: 'root' })
 export class AdminOrdersService {
   private readonly ordersService = inject(OrdersService);
+  private readonly adminDispatchService = inject(AdminDispatchService);
 
   async getOrders(query: GetAdminOrdersQuery): Promise<PaginatedAdminOrdersResponseDto> {
     const response = await this.ordersService.ordersControllerGetAllForAdmin(query);
@@ -55,9 +58,15 @@ export class AdminOrdersService {
     return unwrap(response);
   }
 
-  async reassignDeliveryPartner(id: string, deliveryPartnerId: string): Promise<OrderResponseDto> {
-    const response = await this.ordersService.ordersControllerAssignDeliveryPartner({
-      id,
+  /**
+   * Manual dispatch — POST /admin/orders/:orderId/assign (Admin Dispatch module). Creates a
+   * PENDING DeliveryAssignment the partner still has to accept/reject; it does not immediately
+   * set the order's deliveryPartnerId, and the backend rejects orders that already have a
+   * partner or an active assignment (409).
+   */
+  async assignDeliveryPartner(orderId: string, deliveryPartnerId: string): Promise<DeliveryAssignmentResponseDto> {
+    const response = await this.adminDispatchService.adminDispatchControllerAssignOrderToPartner({
+      orderId,
       body: { deliveryPartnerId },
     });
     return unwrap(response);

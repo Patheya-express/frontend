@@ -30,7 +30,7 @@ export class DispatchService extends BaseService {
   /**
    * Get delivery partner assignments.
    *
-   * Returns all delivery assignments assigned to the authenticated delivery partner.
+   * Returns all delivery assignments assigned to the authenticated delivery partner, optionally narrowed to one status.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `dispatchControllerGetAssignments()` instead.
@@ -45,7 +45,7 @@ export class DispatchService extends BaseService {
   /**
    * Get delivery partner assignments.
    *
-   * Returns all delivery assignments assigned to the authenticated delivery partner.
+   * Returns all delivery assignments assigned to the authenticated delivery partner, optionally narrowed to one status.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `dispatchControllerGetAssignments$Response()` instead.

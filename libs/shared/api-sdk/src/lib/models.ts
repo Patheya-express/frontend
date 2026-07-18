@@ -35,8 +35,12 @@ export type { AssignmentBranchSummaryDto } from './models/assignment-branch-summ
 export type { AssignmentOrderItemSummaryDto } from './models/assignment-order-item-summary-dto';
 export type { AssignmentOrderSummaryDto } from './models/assignment-order-summary-dto';
 export type { AssignmentRestaurantSummaryDto } from './models/assignment-restaurant-summary-dto';
+export type { AssignOrderToPartnerDto } from './models/assign-order-to-partner-dto';
 export type { AssignTicketDto } from './models/assign-ticket-dto';
 export type { AuthUserDto } from './models/auth-user-dto';
+export type { AvailableDeliveryPartnerResponseDto } from './models/available-delivery-partner-response-dto';
+export type { AvailablePartnerCurrentAssignmentDto } from './models/available-partner-current-assignment-dto';
+export type { AvailablePartnerLocationDto } from './models/available-partner-location-dto';
 export type { BankAccountResponseDto } from './models/bank-account-response-dto';
 export type { BranchResponseDto } from './models/branch-response-dto';
 export type { CancelOrderDto } from './models/cancel-order-dto';
@@ -124,6 +128,7 @@ export type { PaginatedAdminOrdersResponseDto } from './models/paginated-admin-o
 export type { PaginatedAdminPaymentsResponseDto } from './models/paginated-admin-payments-response-dto';
 export type { PaginatedAdminTicketsResponseDto } from './models/paginated-admin-tickets-response-dto';
 export type { PaginatedAdminWalletTransactionsResponseDto } from './models/paginated-admin-wallet-transactions-response-dto';
+export type { PaginatedAvailableDeliveryPartnersResponseDto } from './models/paginated-available-delivery-partners-response-dto';
 export type { PaginatedFavoriteMenuItemsResponseDto } from './models/paginated-favorite-menu-items-response-dto';
 export type { PaginatedMenuItemSearchResponseDto } from './models/paginated-menu-item-search-response-dto';
 export type { PaginatedNotificationsResponseDto } from './models/paginated-notifications-response-dto';

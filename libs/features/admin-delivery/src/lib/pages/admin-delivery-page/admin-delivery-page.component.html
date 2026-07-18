@@ -72,34 +72,13 @@
           <td><lib-status-chip [label]="statusLabel(partner)" [tone]="statusTone(partner)" /></td>
           <td><lib-status-chip [label]="onlineLabel(partner)" [tone]="onlineTone(partner)" /></td>
           <td><lib-status-chip [label]="availabilityLabel(partner)" [tone]="availabilityTone(partner)" /></td>
-          <td>
-            @if (reassigningPartnerId() === partner.id) {
-              <div class="admin-delivery-reassign-form">
-                <input
-                  type="text"
-                  class="admin-delivery-reassign-input"
-                  placeholder="New partner user ID"
-                  [value]="reassignInputValue()"
-                  (input)="onReassignInputChange($any($event.target).value)"
-                />
-                <button type="button" class="admin-delivery-action-link" (click)="confirmReassign(partner.id)">Save</button>
-                <button type="button" class="admin-delivery-action-link" (click)="cancelReassign()">Cancel</button>
-              </div>
-            } @else {
-              {{ currentOrderLabel(partner) }}
-            }
-          </td>
+          <td>{{ currentOrderLabel(partner) }}</td>
           <td>{{ partner.completedDeliveries }}</td>
           <td>{{ partner.todaysDeliveries }}</td>
           <td>{{ formattedAmount(partner.estimatedFeesToday) }}</td>
           <td>{{ formattedDate(partner.createdAt) }}</td>
           <td class="admin-delivery-row-actions">
             <button type="button" class="admin-delivery-action-link" (click)="viewPartner(partner)">View</button>
-            @if (partner.currentOrder && reassigningPartnerId() !== partner.id) {
-              <button type="button" class="admin-delivery-action-link" [disabled]="isProcessing(partner.id)" (click)="startReassign(partner)">
-                Reassign
-              </button>
-            }
             @if (canApprove(partner)) {
               <button type="button" class="admin-delivery-action-link" [disabled]="isProcessing(partner.id)" (click)="requestAction('approve', partner)">
                 Approve
