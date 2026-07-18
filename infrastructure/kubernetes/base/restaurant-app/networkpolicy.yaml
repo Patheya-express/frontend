@@ -1,0 +1,52 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: restaurant-app-allow
+  labels:
+    app.kubernetes.io/name: restaurant-app
+    app.kubernetes.io/part-of: patheya-express
+    app.kubernetes.io/component: frontend
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: restaurant-app
+  policyTypes: ["Ingress", "Egress"]
+  ingress:
+    # The Ingress controller is the only thing allowed to reach the app
+    # port — nothing else in the cluster has a reason to. Every namespace
+    # has an automatic, immutable `kubernetes.io/metadata.name` label
+    # (Kubernetes 1.21+) equal to its own name, so this doesn't depend on
+    # us remembering to hand-label the ingress-nginx namespace ourselves.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Prometheus (see infrastructure/monitoring) is the only thing allowed
+    # to reach the metrics-exporter sidecar's port.
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 9113
+  egress:
+    # nginx serving a prebuilt static bundle has no outbound calls to make
+    # at all — not to the backend (the browser calls that directly, see
+    # infrastructure/docs/infrastructure-overview.md), not to any other
+    # in-cluster service. DNS is the one exception every pod needs for the
+    # kubelet's own health-check/liveness-probe DNS resolution and general
+    # cluster hygiene.
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

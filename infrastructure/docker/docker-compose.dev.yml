@@ -1,0 +1,57 @@
+# Development overlay — swaps every service to the `dev` build stage
+# (Angular/Vite dev server with HMR) and bind-mounts source so edits on the
+# host are picked up without an image rebuild.
+#
+#   docker compose -f infrastructure/docker/docker-compose.yml -f infrastructure/docker/docker-compose.dev.yml up --build
+#
+# node_modules is kept in a named volume (not bind-mounted) so the
+# container's own Linux-built native deps aren't shadowed by a
+# Windows/host-installed node_modules.
+
+x-dev-volumes: &dev-volumes
+  volumes:
+    - ../../apps:/workspace/apps
+    - ../../libs:/workspace/libs
+    - ../../tsconfig.base.json:/workspace/tsconfig.base.json
+    - ../../nx.json:/workspace/nx.json
+    - workspace-node-modules:/workspace/node_modules
+
+services:
+  customer-app:
+    build:
+      target: dev
+    <<: *dev-volumes
+    environment:
+      NODE_ENV: development
+    healthcheck:
+      disable: true
+
+  restaurant-app:
+    build:
+      target: dev
+    <<: *dev-volumes
+    environment:
+      NODE_ENV: development
+    healthcheck:
+      disable: true
+
+  admin-app:
+    build:
+      target: dev
+    <<: *dev-volumes
+    environment:
+      NODE_ENV: development
+    healthcheck:
+      disable: true
+
+  delivery-app:
+    build:
+      target: dev
+    <<: *dev-volumes
+    environment:
+      NODE_ENV: development
+    healthcheck:
+      disable: true
+
+volumes:
+  workspace-node-modules:

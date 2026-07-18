@@ -16,5 +16,5 @@ export interface CreateDeliveryPartnerDto {
   /**
    * Vehicle type used for deliveries
    */
-  vehicleType: 'BIKE' | 'SCOOTER' | 'BICYCLE' | 'CAR';
+  vehicleType: 'BIKE' | 'SCOOTER' | 'BICYCLE' | 'CAR' | 'ELECTRIC_VEHICLE';
 }

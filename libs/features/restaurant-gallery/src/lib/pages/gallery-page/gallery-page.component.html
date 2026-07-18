@@ -1,0 +1,90 @@
+<div class="gallery-page">
+  <h1>Restaurant Media</h1>
+
+  @if (facade.actionError(); as error) {
+    <div class="gallery-banner gallery-banner--error">{{ error }}</div>
+  }
+
+  @if (facade.loading()) {
+    <lib-skeleton [count]="4" />
+  } @else if (facade.error()) {
+    <lib-error-state [message]="facade.error()!" (retry)="retry()" />
+  } @else {
+    <section class="gallery-section">
+      <h2>Logo &amp; Banner</h2>
+      <div class="gallery-brand-row">
+        <lib-file-upload
+          label="Restaurant Logo"
+          accept="image/png,image/jpeg,image/webp"
+          hint="Square image recommended, max 5MB."
+          [uploading]="facade.uploadingLogo()"
+          [previewUrl]="resolveUrl(facade.logoUrl())"
+          (fileSelected)="onLogoSelected($event)"
+        />
+        <lib-file-upload
+          label="Restaurant Banner"
+          accept="image/png,image/jpeg,image/webp"
+          hint="Wide image recommended, max 5MB."
+          [uploading]="facade.uploadingBanner()"
+          [previewUrl]="resolveUrl(facade.bannerUrl())"
+          (fileSelected)="onBannerSelected($event)"
+        />
+      </div>
+    </section>
+
+    <section class="gallery-section">
+      <h2>Gallery</h2>
+
+      <div class="gallery-upload-row">
+        <label class="gallery-type-select">
+          <span>Category</span>
+          <select (change)="onTypeChange($event)">
+            @for (type of galleryTypes; track type) {
+              <option [value]="type">{{ type }}</option>
+            }
+          </select>
+        </label>
+        <lib-file-upload
+          label="Upload image or video"
+          accept="image/png,image/jpeg,image/webp,video/mp4"
+          hint="Images or short videos, max 50MB."
+          [uploading]="facade.uploadingMedia()"
+          (fileSelected)="onGalleryFileSelected($event)"
+        />
+      </div>
+
+      @if (facade.media().length === 0) {
+        <lib-empty-state title="No gallery media yet" message="Upload interior, exterior, kitchen, or dining photos to showcase your restaurant." />
+      } @else {
+        <div class="gallery-grid">
+          @for (item of facade.media(); track item.id; let i = $index) {
+            <div class="gallery-item">
+              @if (item.type === 'VIDEO') {
+                <video [src]="resolveUrl(item.url)" controls></video>
+              } @else {
+                <img [src]="resolveUrl(item.url)" [alt]="item.type" />
+              }
+              <div class="gallery-item-footer">
+                <span>{{ item.type }}</span>
+                <div class="gallery-item-actions">
+                  <button type="button" (click)="moveUp(i)" [disabled]="i === 0">↑</button>
+                  <button type="button" (click)="moveDown(i)" [disabled]="i === facade.media().length - 1">↓</button>
+                  <button type="button" class="gallery-item-remove" (click)="requestRemove(item.id)">Delete</button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </section>
+  }
+
+  <lib-confirm-dialog
+    [open]="!!confirmRemoveId"
+    title="Remove this media?"
+    tone="danger"
+    confirmLabel="Remove"
+    (confirmed)="confirmRemove()"
+    (cancelled)="cancelRemove()"
+  />
+</div>

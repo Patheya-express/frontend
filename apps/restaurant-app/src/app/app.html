@@ -1,5 +1,15 @@
 @if (isAuthenticated()) {
-  <lib-partner-shell [brandName]="brandName" [navLinks]="navLinks" (logoutRequested)="onLogout()" />
+  <lib-partner-shell [brandName]="brandName" [navLinks]="navLinks" (logoutRequested)="onLogout()">
+    <lib-restaurant-branch-switcher
+      shell-header-extra
+      [restaurants]="restaurantOptions()"
+      [branches]="branchOptions()"
+      [currentRestaurantId]="context.currentRestaurantId()"
+      [currentBranchId]="context.currentBranchId()"
+      (restaurantChange)="onRestaurantChange($event)"
+      (branchChange)="onBranchChange($event)"
+    />
+  </lib-partner-shell>
 } @else {
   <router-outlet />
 }

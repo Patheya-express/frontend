@@ -11,7 +11,13 @@ import { StrictHttpResponse } from '../strict-http-response';
 
 import { healthControllerGetHealth } from '../fn/health/health-controller-get-health';
 import { HealthControllerGetHealth$Params } from '../fn/health/health-controller-get-health';
+import { healthControllerGetLiveness } from '../fn/health/health-controller-get-liveness';
+import { HealthControllerGetLiveness$Params } from '../fn/health/health-controller-get-liveness';
+import { healthControllerGetReadiness } from '../fn/health/health-controller-get-readiness';
+import { HealthControllerGetReadiness$Params } from '../fn/health/health-controller-get-readiness';
 import { HealthResponseDto } from '../models/health-response-dto';
+import { LivenessResponseDto } from '../models/liveness-response-dto';
+import { ReadinessResponseDto } from '../models/readiness-response-dto';
 
 @Injectable({ providedIn: 'root' })
 export class HealthService extends BaseService {
@@ -50,6 +56,72 @@ export class HealthService extends BaseService {
   healthControllerGetHealth(params?: HealthControllerGetHealth$Params, context?: HttpContext): Promise<HealthResponseDto> {
     const resp = this.healthControllerGetHealth$Response(params, context);
     return resp.then((r: StrictHttpResponse<HealthResponseDto>): HealthResponseDto => r.body);
+  }
+
+  /** Path part for operation `healthControllerGetLiveness()` */
+  static readonly HealthControllerGetLivenessPath = '/api/v1/health/live';
+
+  /**
+   * Liveness probe.
+   *
+   * Confirms only that the process itself is up — no dependency checks. Used by orchestrators to decide whether to restart the container.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `healthControllerGetLiveness()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  healthControllerGetLiveness$Response(params?: HealthControllerGetLiveness$Params, context?: HttpContext): Promise<StrictHttpResponse<LivenessResponseDto>> {
+    const obs = healthControllerGetLiveness(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Liveness probe.
+   *
+   * Confirms only that the process itself is up — no dependency checks. Used by orchestrators to decide whether to restart the container.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `healthControllerGetLiveness$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  healthControllerGetLiveness(params?: HealthControllerGetLiveness$Params, context?: HttpContext): Promise<LivenessResponseDto> {
+    const resp = this.healthControllerGetLiveness$Response(params, context);
+    return resp.then((r: StrictHttpResponse<LivenessResponseDto>): LivenessResponseDto => r.body);
+  }
+
+  /** Path part for operation `healthControllerGetReadiness()` */
+  static readonly HealthControllerGetReadinessPath = '/api/v1/health/ready';
+
+  /**
+   * Readiness probe.
+   *
+   * Verifies Database, Redis, and the BullMQ queues are reachable. Used by orchestrators to decide whether to route traffic to this instance.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `healthControllerGetReadiness()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  healthControllerGetReadiness$Response(params?: HealthControllerGetReadiness$Params, context?: HttpContext): Promise<StrictHttpResponse<ReadinessResponseDto>> {
+    const obs = healthControllerGetReadiness(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Readiness probe.
+   *
+   * Verifies Database, Redis, and the BullMQ queues are reachable. Used by orchestrators to decide whether to route traffic to this instance.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `healthControllerGetReadiness$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  healthControllerGetReadiness(params?: HealthControllerGetReadiness$Params, context?: HttpContext): Promise<ReadinessResponseDto> {
+    const resp = this.healthControllerGetReadiness$Response(params, context);
+    return resp.then((r: StrictHttpResponse<ReadinessResponseDto>): ReadinessResponseDto => r.body);
   }
 
 }

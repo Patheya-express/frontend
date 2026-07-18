@@ -1,0 +1,111 @@
+# Prepared but inert — `--dry-run` means ExternalDNS computes and logs what
+# DNS changes it *would* make without ever calling a DNS provider's API.
+# No AWS credentials are configured anywhere here (contrast
+# infrastructure/terraform, which does own real Route53 records — see its
+# README for why that's Terraform's job and not this controller's, at
+# least until Phase 2 decides otherwise). Flip `--dry-run` off and add a
+# real provider credential source only once that decision is made.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: external-dns
+  namespace: patheya-system
+  labels:
+    app.kubernetes.io/name: external-dns
+    app.kubernetes.io/part-of: patheya-express-platform
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: external-dns
+  labels:
+    app.kubernetes.io/name: external-dns
+    app.kubernetes.io/part-of: patheya-express-platform
+rules:
+  - apiGroups: [""]
+    resources: ["services", "endpoints", "pods"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: external-dns
+  labels:
+    app.kubernetes.io/name: external-dns
+    app.kubernetes.io/part-of: patheya-express-platform
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: external-dns
+subjects:
+  - kind: ServiceAccount
+    name: external-dns
+    namespace: patheya-system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: external-dns
+  namespace: patheya-system
+  labels:
+    app.kubernetes.io/name: external-dns
+    app.kubernetes.io/part-of: patheya-express-platform
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    # ExternalDNS assumes it's the only writer running against a given DNS
+    # zone at any moment — two replicas racing the same reconcile loop can
+    # thrash records. A single replica restarting is an acceptable gap for
+    # a controller that only reconciles state periodically, unlike an
+    # HTTP-serving Deployment.
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: external-dns
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: external-dns
+    spec:
+      serviceAccountName: external-dns
+      priorityClassName: patheya-normal-priority
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: external-dns
+          image: registry.k8s.io/external-dns/external-dns:v0.15.0
+          args:
+            - --source=ingress
+            - --provider=aws
+            - --registry=txt
+            - --txt-owner-id=patheya-express
+            # Scope to whatever domain infrastructure/terraform actually
+            # provisions a zone for (see its README/tfvars) — never left
+            # unset, which would let ExternalDNS touch every zone the
+            # credential it's given can see.
+            - --domain-filter=patheyaexpress.example
+            - --dry-run
+            - --log-level=info
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 20m
+              memory: 32Mi
+              ephemeral-storage: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+              ephemeral-storage: 32Mi

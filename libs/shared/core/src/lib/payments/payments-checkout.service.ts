@@ -25,13 +25,19 @@ export class PaymentsCheckoutService {
   private readonly paymentsService = inject(PaymentsService);
   private readonly razorpayCheckout = inject(RazorpayCheckoutService);
 
-  async payForOrder(order: OrderResponseDto): Promise<boolean> {
+  /**
+   * `amountOverride` covers the C9 mixed-payment case: when part of the order was already paid
+   * via wallet, the Razorpay leg must charge only what's left, not the full order total — the
+   * backend rejects a mismatched amount (see PaymentsService.createPayment's remaining-amount
+   * check), so this must match exactly what the wallet-apply call reported as remaining.
+   */
+  async payForOrder(order: OrderResponseDto, amountOverride?: number): Promise<boolean> {
     try {
       const created = unwrap(
         await this.paymentsService.paymentsControllerCreatePayment({
           // Order amounts come back from the API as Prisma Decimal values serialized to
           // strings (e.g. "459.00") despite the SDK typing them as number — coerce explicitly.
-          body: { orderId: order.id, amount: Number(order.totalAmount) },
+          body: { orderId: order.id, amount: amountOverride ?? Number(order.totalAmount) },
         }),
       );
 

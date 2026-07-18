@@ -31,6 +31,8 @@ import { restaurantsControllerRestoreRestaurant } from '../fn/restaurants/restau
 import { RestaurantsControllerRestoreRestaurant$Params } from '../fn/restaurants/restaurants-controller-restore-restaurant';
 import { restaurantsControllerSuspendRestaurant } from '../fn/restaurants/restaurants-controller-suspend-restaurant';
 import { RestaurantsControllerSuspendRestaurant$Params } from '../fn/restaurants/restaurants-controller-suspend-restaurant';
+import { restaurantsControllerUpdateRestaurant } from '../fn/restaurants/restaurants-controller-update-restaurant';
+import { RestaurantsControllerUpdateRestaurant$Params } from '../fn/restaurants/restaurants-controller-update-restaurant';
 import { restaurantsControllerUploadBanner } from '../fn/restaurants/restaurants-controller-upload-banner';
 import { RestaurantsControllerUploadBanner$Params } from '../fn/restaurants/restaurants-controller-upload-banner';
 import { restaurantsControllerUploadLogo } from '../fn/restaurants/restaurants-controller-upload-logo';
@@ -114,6 +116,72 @@ export class RestaurantsService extends BaseService {
    */
   restaurantsControllerCreateRestaurant(params: RestaurantsControllerCreateRestaurant$Params, context?: HttpContext): Promise<RestaurantResponseDto> {
     const resp = this.restaurantsControllerCreateRestaurant$Response(params, context);
+    return resp.then((r: StrictHttpResponse<RestaurantResponseDto>): RestaurantResponseDto => r.body);
+  }
+
+  /** Path part for operation `restaurantsControllerGetRestaurantById()` */
+  static readonly RestaurantsControllerGetRestaurantByIdPath = '/api/v1/restaurants/{id}';
+
+  /**
+   * Get restaurant by ID.
+   *
+   * Public — no authentication required, so anonymous customers can browse restaurant detail pages.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `restaurantsControllerGetRestaurantById()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  restaurantsControllerGetRestaurantById$Response(params: RestaurantsControllerGetRestaurantById$Params, context?: HttpContext): Promise<StrictHttpResponse<RestaurantResponseDto>> {
+    const obs = restaurantsControllerGetRestaurantById(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Get restaurant by ID.
+   *
+   * Public — no authentication required, so anonymous customers can browse restaurant detail pages.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `restaurantsControllerGetRestaurantById$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  restaurantsControllerGetRestaurantById(params: RestaurantsControllerGetRestaurantById$Params, context?: HttpContext): Promise<RestaurantResponseDto> {
+    const resp = this.restaurantsControllerGetRestaurantById$Response(params, context);
+    return resp.then((r: StrictHttpResponse<RestaurantResponseDto>): RestaurantResponseDto => r.body);
+  }
+
+  /** Path part for operation `restaurantsControllerUpdateRestaurant()` */
+  static readonly RestaurantsControllerUpdateRestaurantPath = '/api/v1/restaurants/{id}';
+
+  /**
+   * Update restaurant profile.
+   *
+   * Owner, active co-owner staff, or admin only. Previously there was no way to edit a restaurant after creation at all.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `restaurantsControllerUpdateRestaurant()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  restaurantsControllerUpdateRestaurant$Response(params: RestaurantsControllerUpdateRestaurant$Params, context?: HttpContext): Promise<StrictHttpResponse<RestaurantResponseDto>> {
+    const obs = restaurantsControllerUpdateRestaurant(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Update restaurant profile.
+   *
+   * Owner, active co-owner staff, or admin only. Previously there was no way to edit a restaurant after creation at all.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `restaurantsControllerUpdateRestaurant$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  restaurantsControllerUpdateRestaurant(params: RestaurantsControllerUpdateRestaurant$Params, context?: HttpContext): Promise<RestaurantResponseDto> {
+    const resp = this.restaurantsControllerUpdateRestaurant$Response(params, context);
     return resp.then((r: StrictHttpResponse<RestaurantResponseDto>): RestaurantResponseDto => r.body);
   }
 
@@ -312,39 +380,6 @@ export class RestaurantsService extends BaseService {
    */
   restaurantsControllerRestoreRestaurant(params: RestaurantsControllerRestoreRestaurant$Params, context?: HttpContext): Promise<RestaurantResponseDto> {
     const resp = this.restaurantsControllerRestoreRestaurant$Response(params, context);
-    return resp.then((r: StrictHttpResponse<RestaurantResponseDto>): RestaurantResponseDto => r.body);
-  }
-
-  /** Path part for operation `restaurantsControllerGetRestaurantById()` */
-  static readonly RestaurantsControllerGetRestaurantByIdPath = '/api/v1/restaurants/{id}';
-
-  /**
-   * Get restaurant by ID.
-   *
-   * Public — no authentication required, so anonymous customers can browse restaurant detail pages.
-   *
-   * This method provides access to the full `HttpResponse`, allowing access to response headers.
-   * To access only the response body, use `restaurantsControllerGetRestaurantById()` instead.
-   *
-   * This method doesn't expect any request body.
-   */
-  restaurantsControllerGetRestaurantById$Response(params: RestaurantsControllerGetRestaurantById$Params, context?: HttpContext): Promise<StrictHttpResponse<RestaurantResponseDto>> {
-    const obs = restaurantsControllerGetRestaurantById(this.http, this.rootUrl, params, context);
-    return firstValueFrom(obs);
-  }
-
-  /**
-   * Get restaurant by ID.
-   *
-   * Public — no authentication required, so anonymous customers can browse restaurant detail pages.
-   *
-   * This method provides access only to the response body.
-   * To access the full response (for headers, for example), `restaurantsControllerGetRestaurantById$Response()` instead.
-   *
-   * This method doesn't expect any request body.
-   */
-  restaurantsControllerGetRestaurantById(params: RestaurantsControllerGetRestaurantById$Params, context?: HttpContext): Promise<RestaurantResponseDto> {
-    const resp = this.restaurantsControllerGetRestaurantById$Response(params, context);
     return resp.then((r: StrictHttpResponse<RestaurantResponseDto>): RestaurantResponseDto => r.body);
   }
 

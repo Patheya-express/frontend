@@ -73,7 +73,7 @@ export class MenuService extends BaseService {
   /**
    * Create menu category.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `menuControllerCreateCategory()` instead.
@@ -88,7 +88,7 @@ export class MenuService extends BaseService {
   /**
    * Create menu category.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `menuControllerCreateCategory$Response()` instead.
@@ -106,7 +106,7 @@ export class MenuService extends BaseService {
   /**
    * Create menu item.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `menuControllerCreateMenuItem()` instead.
@@ -121,7 +121,7 @@ export class MenuService extends BaseService {
   /**
    * Create menu item.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `menuControllerCreateMenuItem$Response()` instead.
@@ -172,7 +172,7 @@ export class MenuService extends BaseService {
   /**
    * Delete menu item.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `menuControllerDeleteMenuItem()` instead.
@@ -187,7 +187,7 @@ export class MenuService extends BaseService {
   /**
    * Delete menu item.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `menuControllerDeleteMenuItem$Response()` instead.
@@ -205,7 +205,7 @@ export class MenuService extends BaseService {
   /**
    * Update menu item.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `menuControllerUpdateMenuItem()` instead.
@@ -220,7 +220,7 @@ export class MenuService extends BaseService {
   /**
    * Update menu item.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `menuControllerUpdateMenuItem$Response()` instead.
@@ -238,7 +238,7 @@ export class MenuService extends BaseService {
   /**
    * Toggle menu item availability.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `menuControllerToggleAvailability()` instead.
@@ -253,7 +253,7 @@ export class MenuService extends BaseService {
   /**
    * Toggle menu item availability.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `menuControllerToggleAvailability$Response()` instead.
@@ -304,7 +304,7 @@ export class MenuService extends BaseService {
   /**
    * Delete category.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `menuControllerDeleteCategory()` instead.
@@ -319,7 +319,7 @@ export class MenuService extends BaseService {
   /**
    * Delete category.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `menuControllerDeleteCategory$Response()` instead.
@@ -337,7 +337,7 @@ export class MenuService extends BaseService {
   /**
    * Update category.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `menuControllerUpdateCategory()` instead.
@@ -352,7 +352,7 @@ export class MenuService extends BaseService {
   /**
    * Update category.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `menuControllerUpdateCategory$Response()` instead.
@@ -370,7 +370,7 @@ export class MenuService extends BaseService {
   /**
    * Create menu item variant.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `menuControllerCreateVariant()` instead.
@@ -385,7 +385,7 @@ export class MenuService extends BaseService {
   /**
    * Create menu item variant.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `menuControllerCreateVariant$Response()` instead.
@@ -436,7 +436,7 @@ export class MenuService extends BaseService {
   /**
    * Delete variant.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `menuControllerDeleteVariant()` instead.
@@ -451,7 +451,7 @@ export class MenuService extends BaseService {
   /**
    * Delete variant.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `menuControllerDeleteVariant$Response()` instead.
@@ -469,7 +469,7 @@ export class MenuService extends BaseService {
   /**
    * Update variant.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `menuControllerUpdateVariant()` instead.
@@ -484,7 +484,7 @@ export class MenuService extends BaseService {
   /**
    * Update variant.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `menuControllerUpdateVariant$Response()` instead.
@@ -502,7 +502,7 @@ export class MenuService extends BaseService {
   /**
    * Create addon group.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `menuControllerCreateAddon()` instead.
@@ -517,7 +517,7 @@ export class MenuService extends BaseService {
   /**
    * Create addon group.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `menuControllerCreateAddon$Response()` instead.
@@ -568,7 +568,7 @@ export class MenuService extends BaseService {
   /**
    * Delete addon.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `menuControllerDeleteAddon()` instead.
@@ -583,7 +583,7 @@ export class MenuService extends BaseService {
   /**
    * Delete addon.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `menuControllerDeleteAddon$Response()` instead.
@@ -601,7 +601,7 @@ export class MenuService extends BaseService {
   /**
    * Update addon.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `menuControllerUpdateAddon()` instead.
@@ -616,7 +616,7 @@ export class MenuService extends BaseService {
   /**
    * Update addon.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `menuControllerUpdateAddon$Response()` instead.
@@ -634,7 +634,7 @@ export class MenuService extends BaseService {
   /**
    * Create addon option.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `menuControllerCreateAddonOption()` instead.
@@ -649,7 +649,7 @@ export class MenuService extends BaseService {
   /**
    * Create addon option.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `menuControllerCreateAddonOption$Response()` instead.
@@ -700,7 +700,7 @@ export class MenuService extends BaseService {
   /**
    * Delete addon option.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `menuControllerDeleteAddonOption()` instead.
@@ -715,7 +715,7 @@ export class MenuService extends BaseService {
   /**
    * Delete addon option.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `menuControllerDeleteAddonOption$Response()` instead.
@@ -733,7 +733,7 @@ export class MenuService extends BaseService {
   /**
    * Update addon option.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `menuControllerUpdateAddonOption()` instead.
@@ -748,7 +748,7 @@ export class MenuService extends BaseService {
   /**
    * Update addon option.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `menuControllerUpdateAddonOption$Response()` instead.
@@ -799,7 +799,7 @@ export class MenuService extends BaseService {
   /**
    * Upload menu item image.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `menuControllerUploadMenuItemImage()` instead.
@@ -814,7 +814,7 @@ export class MenuService extends BaseService {
   /**
    * Upload menu item image.
    *
-   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `menuControllerUploadMenuItemImage$Response()` instead.

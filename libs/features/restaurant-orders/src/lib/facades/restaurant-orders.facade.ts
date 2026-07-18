@@ -11,15 +11,18 @@ export class RestaurantOrdersFacade {
   readonly error = this.store.error;
   readonly processingOrderId = this.store.processingOrderId;
   readonly actionError = this.store.actionError;
+  /** True once the realtime socket is connected — used to show a live/reconnecting indicator. */
+  readonly realtimeConnected = this.store.realtimeConnected;
 
-  /** Starts the order list loading and begins background polling. Call once on page init. */
+  /** Starts the order list loading, joins the restaurant's realtime room, and begins
+   *  fallback polling only while the socket is disconnected. Call once on page init. */
   initialize(): void {
-    this.store.startPolling();
+    this.store.startSync();
   }
 
-  /** Stops background polling. Call on page destroy. */
+  /** Stops realtime subscriptions and any fallback polling. Call on page destroy. */
   dispose(): void {
-    this.store.stopPolling();
+    this.store.stopSync();
   }
 
   setFilter(filter: RestaurantOrderFilter): void {

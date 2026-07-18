@@ -1,0 +1,31 @@
+<div class="faq-page">
+  <header class="faq-header">
+    <h1>Help Center</h1>
+    <a class="faq-contact-link" routerLink="/support/tickets/new">Still need help? Contact support &rarr;</a>
+  </header>
+
+  @if (facade.faqsLoading()) {
+    <lib-skeleton [count]="4" />
+  } @else if (facade.faqs().length === 0) {
+    <lib-empty-state title="No FAQs yet" message="Check back soon, or contact support directly." />
+  } @else {
+    @for (category of categories(); track category) {
+      <section class="faq-category">
+        <h2>{{ category }}</h2>
+        <ul class="faq-list">
+          @for (faq of faqsForCategory(category); track faq.id) {
+            <li class="faq-item">
+              <button type="button" class="faq-question" (click)="toggle(faq.id)">
+                {{ faq.question }}
+                <span class="faq-toggle-icon">{{ expandedId() === faq.id ? '−' : '+' }}</span>
+              </button>
+              @if (expandedId() === faq.id) {
+                <p class="faq-answer">{{ faq.answer }}</p>
+              }
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  }
+</div>

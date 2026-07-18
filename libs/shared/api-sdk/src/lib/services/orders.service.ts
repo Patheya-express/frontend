@@ -30,6 +30,8 @@ import { ordersControllerGetOrderById } from '../fn/orders/orders-controller-get
 import { OrdersControllerGetOrderById$Params } from '../fn/orders/orders-controller-get-order-by-id';
 import { ordersControllerGetOrderTimeline } from '../fn/orders/orders-controller-get-order-timeline';
 import { OrdersControllerGetOrderTimeline$Params } from '../fn/orders/orders-controller-get-order-timeline';
+import { ordersControllerGetRestaurantDashboard } from '../fn/orders/orders-controller-get-restaurant-dashboard';
+import { OrdersControllerGetRestaurantDashboard$Params } from '../fn/orders/orders-controller-get-restaurant-dashboard';
 import { ordersControllerGetRestaurantOrders } from '../fn/orders/orders-controller-get-restaurant-orders';
 import { OrdersControllerGetRestaurantOrders$Params } from '../fn/orders/orders-controller-get-restaurant-orders';
 import { ordersControllerPickedUp } from '../fn/orders/orders-controller-picked-up';
@@ -49,6 +51,7 @@ import { OrdersControllerUpdateOrderStatus$Params } from '../fn/orders/orders-co
 import { OrderStatusHistoryResponseDto } from '../models/order-status-history-response-dto';
 import { PaginatedAdminOrdersResponseDto } from '../models/paginated-admin-orders-response-dto';
 import { PaginatedOrdersResponseDto } from '../models/paginated-orders-response-dto';
+import { RestaurantDashboardResponseDto } from '../models/restaurant-dashboard-response-dto';
 
 @Injectable({ providedIn: 'root' })
 export class OrdersService extends BaseService {
@@ -153,6 +156,39 @@ export class OrdersService extends BaseService {
   ordersControllerGetRestaurantOrders(params: OrdersControllerGetRestaurantOrders$Params, context?: HttpContext): Promise<Array<OrderResponseDto>> {
     const resp = this.ordersControllerGetRestaurantOrders$Response(params, context);
     return resp.then((r: StrictHttpResponse<Array<OrderResponseDto>>): Array<OrderResponseDto> => r.body);
+  }
+
+  /** Path part for operation `ordersControllerGetRestaurantDashboard()` */
+  static readonly OrdersControllerGetRestaurantDashboardPath = '/api/v1/orders/restaurant/{restaurantId}/dashboard';
+
+  /**
+   * Get restaurant dashboard metrics.
+   *
+   * Restricted to the restaurant's own owner/manager, or an admin. Every metric is computed server-side; the frontend only renders this response.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `ordersControllerGetRestaurantDashboard()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  ordersControllerGetRestaurantDashboard$Response(params: OrdersControllerGetRestaurantDashboard$Params, context?: HttpContext): Promise<StrictHttpResponse<RestaurantDashboardResponseDto>> {
+    const obs = ordersControllerGetRestaurantDashboard(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Get restaurant dashboard metrics.
+   *
+   * Restricted to the restaurant's own owner/manager, or an admin. Every metric is computed server-side; the frontend only renders this response.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `ordersControllerGetRestaurantDashboard$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  ordersControllerGetRestaurantDashboard(params: OrdersControllerGetRestaurantDashboard$Params, context?: HttpContext): Promise<RestaurantDashboardResponseDto> {
+    const resp = this.ordersControllerGetRestaurantDashboard$Response(params, context);
+    return resp.then((r: StrictHttpResponse<RestaurantDashboardResponseDto>): RestaurantDashboardResponseDto => r.body);
   }
 
   /** Path part for operation `ordersControllerGetAllForAdmin()` */
@@ -496,7 +532,7 @@ export class OrdersService extends BaseService {
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `ordersControllerCancelOrder()` instead.
    *
-   * This method doesn't expect any request body.
+   * This method sends `application/json` and handles request body of type `application/json`.
    */
   ordersControllerCancelOrder$Response(params: OrdersControllerCancelOrder$Params, context?: HttpContext): Promise<StrictHttpResponse<OrderResponseDto>> {
     const obs = ordersControllerCancelOrder(this.http, this.rootUrl, params, context);
@@ -511,7 +547,7 @@ export class OrdersService extends BaseService {
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `ordersControllerCancelOrder$Response()` instead.
    *
-   * This method doesn't expect any request body.
+   * This method sends `application/json` and handles request body of type `application/json`.
    */
   ordersControllerCancelOrder(params: OrdersControllerCancelOrder$Params, context?: HttpContext): Promise<OrderResponseDto> {
     const resp = this.ordersControllerCancelOrder$Response(params, context);

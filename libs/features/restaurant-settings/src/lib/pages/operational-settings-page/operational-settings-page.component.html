@@ -1,0 +1,92 @@
+<div class="settings-page">
+  <div class="settings-page-header">
+    <h1>Operational Settings</h1>
+    <nav class="settings-page-tabs">
+      <a routerLink="/settings/business">Business</a>
+      <a routerLink="/settings/operational" class="is-active">Operational</a>
+    </nav>
+  </div>
+
+  @if (facade.loading()) {
+    <lib-skeleton [count]="4" />
+  } @else if (facade.error()) {
+    <lib-error-state [message]="facade.error()!" (retry)="retry()" />
+  } @else {
+    @if (hasUnsavedChanges) {
+      <div class="settings-banner settings-banner--warning">You have unsaved changes.</div>
+    }
+    @if (facade.saveError(); as error) {
+      <div class="settings-banner settings-banner--error">{{ error }}</div>
+    }
+    @if (facade.savedAt() && !hasUnsavedChanges) {
+      <div class="settings-banner settings-banner--success">Settings saved.</div>
+    }
+
+    <form class="settings-form" [formGroup]="form" (ngSubmit)="onSubmit()">
+      <section class="settings-section">
+        <h2>Order Acceptance</h2>
+
+        <label class="settings-toggle">
+          <input type="checkbox" formControlName="autoAcceptOrders" />
+          <span>Automatically accept incoming orders</span>
+        </label>
+
+        <label class="settings-field">
+          <span>Acceptance Timeout (minutes)</span>
+          <input type="number" min="1" max="120" formControlName="acceptanceTimeoutMinutes" />
+          @if (form.controls.acceptanceTimeoutMinutes.invalid && form.controls.acceptanceTimeoutMinutes.touched) {
+            <small class="settings-field-error">Enter a value between 1 and 120 minutes.</small>
+          }
+        </label>
+      </section>
+
+      <section class="settings-section">
+        <h2>Temporary Closure</h2>
+
+        <label class="settings-toggle">
+          <input type="checkbox" formControlName="isTemporarilyClosed" />
+          <span>Temporarily close this restaurant</span>
+        </label>
+
+        @if (showClosureFields) {
+          <label class="settings-field">
+            <span>Reason</span>
+            <input type="text" formControlName="temporaryClosureReason" />
+          </label>
+
+          <label class="settings-field">
+            <span>Reopens at</span>
+            <input type="datetime-local" formControlName="temporaryClosureUntil" />
+          </label>
+        }
+      </section>
+
+      <section class="settings-section">
+        <h2>Notification Preferences</h2>
+
+        <label class="settings-toggle">
+          <input type="checkbox" formControlName="notifyOnNewOrder" />
+          <span>Notify on new orders</span>
+        </label>
+        <label class="settings-toggle">
+          <input type="checkbox" formControlName="notifyOnOrderCancelled" />
+          <span>Notify on cancelled orders</span>
+        </label>
+        <label class="settings-toggle">
+          <input type="checkbox" formControlName="notifyOnRefund" />
+          <span>Notify on refunds</span>
+        </label>
+        <label class="settings-toggle">
+          <input type="checkbox" formControlName="notifyOnCustomerMessage" />
+          <span>Notify on customer messages</span>
+        </label>
+      </section>
+
+      <div class="settings-actions">
+        <button type="submit" [disabled]="facade.saving() || !hasUnsavedChanges">
+          {{ facade.saving() ? 'Saving…' : 'Save Changes' }}
+        </button>
+      </div>
+    </form>
+  }
+</div>

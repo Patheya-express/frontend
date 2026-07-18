@@ -25,7 +25,7 @@ export class CuisinesService extends BaseService {
   /**
    * Get all cuisines.
    *
-   * Public — returns the full cuisine taxonomy, used for discovery filter chips.
+   * Public — returns the cuisine taxonomy, used for discovery filter chips and typeahead. Optionally filtered by a search prefix/substring.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `cuisinesControllerFindAll()` instead.
@@ -40,7 +40,7 @@ export class CuisinesService extends BaseService {
   /**
    * Get all cuisines.
    *
-   * Public — returns the full cuisine taxonomy, used for discovery filter chips.
+   * Public — returns the cuisine taxonomy, used for discovery filter chips and typeahead. Optionally filtered by a search prefix/substring.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `cuisinesControllerFindAll$Response()` instead.

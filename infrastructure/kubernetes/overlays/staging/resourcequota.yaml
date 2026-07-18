@@ -1,0 +1,20 @@
+# Staging runs 2 replicas/app (see overlays/staging/kustomization.yaml)
+# rather than development's 1 — double development's baseline, same
+# object-count ceilings.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: patheya-express-staging-quota
+spec:
+  hard:
+    requests.cpu: "4"
+    requests.memory: 4Gi
+    requests.ephemeral-storage: 4Gi
+    limits.cpu: "8"
+    limits.memory: 8Gi
+    limits.ephemeral-storage: 8Gi
+    pods: "30"
+    services: "10"
+    configmaps: "20"
+    secrets: "20"
+    persistentvolumeclaims: "5"

@@ -26,6 +26,10 @@ export class RestaurantFacade {
     this.store.setSearch(search);
   }
 
+  setCityFilter(city: string): void {
+    this.store.setCityFilter(city);
+  }
+
   setCuisineFilter(cuisine: string): void {
     this.store.setCuisineFilter(cuisine);
   }
@@ -34,8 +38,32 @@ export class RestaurantFacade {
     this.store.setOpenNowFilter(openNow);
   }
 
+  setVegFilter(veg: boolean): void {
+    this.store.setVegFilter(veg);
+  }
+
+  setVeganFilter(vegan: boolean): void {
+    this.store.setVeganFilter(vegan);
+  }
+
+  setOffersFilter(offers: boolean): void {
+    this.store.setOffersFilter(offers);
+  }
+
+  setMinRating(minRating: number | undefined): void {
+    this.store.setMinRating(minRating);
+  }
+
+  setMaxDeliveryTimeMinutes(maxDeliveryTimeMinutes: number | undefined): void {
+    this.store.setMaxDeliveryTimeMinutes(maxDeliveryTimeMinutes);
+  }
+
   setSort(sortBy: RestaurantFilters['sortBy'], sortOrder: RestaurantFilters['sortOrder']): void {
     this.store.setSort(sortBy, sortOrder);
+  }
+
+  clearFilters(): void {
+    this.store.clearFilters();
   }
 
   setPage(page: number): void {

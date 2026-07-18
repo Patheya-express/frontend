@@ -14,6 +14,16 @@ export interface RestaurantSummaryDto {
    */
   distanceKm?: number;
   featured: boolean;
+
+  /**
+   * Derived from this restaurant's menu — true if at least one item is marked vegetarian.
+   */
+  hasVegOptions: boolean;
+
+  /**
+   * Derived from this restaurant's menu — true if at least one item is marked vegan.
+   */
+  hasVeganOptions: boolean;
   id: string;
   isOpenNow: boolean;
   logoUrl?: string;

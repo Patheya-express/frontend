@@ -1,0 +1,119 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: patheya-frontend
+
+# namespace.yaml deliberately NOT listed here — see overlays/development/kustomization.yaml's
+# comment; same fix, same reason (Terraform-owned "patheya-frontend", not "patheya-express-staging").
+resources:
+  - ../../base
+  - resourcequota.yaml
+  - limitrange.yaml
+
+labels:
+  - pairs:
+      environment: staging
+    includeSelectors: false
+    includeTemplates: true
+
+replicas:
+  - name: customer-app
+    count: 2
+  - name: restaurant-app
+    count: 2
+  - name: admin-app
+    count: 2
+  - name: delivery-app
+    count: 2
+
+images:
+  - name: ghcr.io/patheya-express/customer-app
+    newTag: staging
+  - name: ghcr.io/patheya-express/restaurant-app
+    newTag: staging
+  - name: ghcr.io/patheya-express/admin-app
+    newTag: staging
+  - name: ghcr.io/patheya-express/delivery-app
+    newTag: staging
+
+patches:
+  - target:
+      kind: Ingress
+      name: customer-app
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: staging.customer.patheyaexpress.com
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: staging.customer.patheyaexpress.com
+  - target:
+      kind: Ingress
+      name: restaurant-app
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: staging.restaurant.patheyaexpress.com
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: staging.restaurant.patheyaexpress.com
+  - target:
+      kind: Ingress
+      name: admin-app
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: staging.admin.patheyaexpress.com
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: staging.admin.patheyaexpress.com
+  - target:
+      kind: Ingress
+      name: delivery-app
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: staging.delivery.patheyaexpress.com
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: staging.delivery.patheyaexpress.com
+  # Staging keeps a lower HPA floor than production, matching the
+  # `replicas:` override above.
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: customer-app
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 2
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: restaurant-app
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 2
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: admin-app
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 2
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: delivery-app
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 2
+  # kustomize's namespace transformer doesn't rewrite a RoleBinding's
+  # subjects[].namespace — see the matching comment in
+  # overlays/development/kustomization.yaml for how this was confirmed.
+  - target:
+      kind: RoleBinding
+      name: ci-deployer
+    patch: |-
+      - op: replace
+        path: /subjects/0/namespace
+        value: patheya-frontend

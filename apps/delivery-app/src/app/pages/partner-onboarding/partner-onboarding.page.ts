@@ -66,7 +66,10 @@ export class PartnerOnboardingPageComponent {
         licenseNumber: licenseNumber || undefined,
       });
 
-      await this.router.navigateByUrl('/dashboard');
+      // The wizard (guarded by onboardingGuard) is the actual next step for a freshly-
+      // registered partner — navigating straight to /dashboard would just bounce through
+      // that guard's redirect anyway, since verification can't be APPROVED yet.
+      await this.router.navigateByUrl('/onboarding');
     } catch {
       this.errorMessage.set('Account created, but saving your vehicle details failed. Please try again.');
     } finally {

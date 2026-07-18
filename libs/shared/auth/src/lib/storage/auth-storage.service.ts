@@ -36,10 +36,6 @@ export class AuthStorageService {
     localStorage.setItem(USER_KEY, JSON.stringify(session.user));
   }
 
-  updateAccessToken(accessToken: string): void {
-    localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-  }
-
   clear(): void {
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);

@@ -1,0 +1,117 @@
+<div class="profile-page">
+  <h1>Profile</h1>
+
+  @if (facade.loading()) {
+    <lib-skeleton [count]="3" />
+  } @else if (facade.error()) {
+    <lib-error-state [message]="facade.error()!" (retry)="retry()" />
+  } @else if (facade.profile(); as profile) {
+    <section class="profile-view-only">
+      <lib-status-chip [label]="verificationFacade.verification()?.stage ?? 'DRAFT'" [tone]="stageTone(verificationFacade.verification()?.stage)" />
+      <span>Partner ID: {{ profile.id }}</span>
+      <span>Joined {{ profile.createdAt | date: 'mediumDate' }}</span>
+      <span>Vehicle: {{ profile.vehicleType }} · {{ profile.vehicleNumber }}</span>
+    </section>
+
+    @if (facade.saveError()) {
+      <p class="profile-error" role="alert">{{ facade.saveError() }}</p>
+    }
+
+    <form class="profile-section" [formGroup]="personalForm" (ngSubmit)="onSubmitPersonal()">
+      <h2>Personal Details</h2>
+      <label>
+        Date of Birth
+        <input type="date" formControlName="dateOfBirth" />
+      </label>
+      <label>
+        Gender
+        <select formControlName="gender">
+          <option value="">Prefer not to say</option>
+          @for (gender of genders; track gender) {
+            <option [value]="gender">{{ gender }}</option>
+          }
+        </select>
+      </label>
+      <label>
+        Languages Spoken
+        <input type="text" formControlName="languagesSpoken" placeholder="English, Hindi, Telugu" />
+      </label>
+      <button type="submit" [disabled]="facade.saving()">Save</button>
+    </form>
+
+    <form class="profile-section" [formGroup]="currentAddressForm" (ngSubmit)="onSubmitCurrentAddress()">
+      <h2>Current Address</h2>
+      <lib-map-picker [initialPosition]="initialCurrentPosition" (locationChange)="onCurrentLocationPicked($event)" />
+      <label>
+        Address Line 1
+        <input type="text" formControlName="currentAddressLine1" />
+      </label>
+      <label>
+        Address Line 2
+        <input type="text" formControlName="currentAddressLine2" />
+      </label>
+      <label>
+        City
+        <input type="text" formControlName="currentCity" />
+      </label>
+      <label>
+        State
+        <input type="text" formControlName="currentState" />
+      </label>
+      <label>
+        Postal Code
+        <input type="text" formControlName="currentPostalCode" />
+      </label>
+      <button type="submit" [disabled]="facade.saving()">Save</button>
+    </form>
+
+    <form class="profile-section" [formGroup]="permanentAddressForm" (ngSubmit)="onSubmitPermanentAddress()">
+      <h2>Permanent Address</h2>
+      <label class="checkbox-label">
+        <input type="checkbox" formControlName="sameAsPermanentAddress" />
+        Same as Current Address
+      </label>
+      @if (!permanentAddressForm.controls.sameAsPermanentAddress.value) {
+        <lib-map-picker [initialPosition]="initialPermanentPosition" (locationChange)="onPermanentLocationPicked($event)" />
+        <label>
+          Address Line 1
+          <input type="text" formControlName="permanentAddressLine1" />
+        </label>
+        <label>
+          Address Line 2
+          <input type="text" formControlName="permanentAddressLine2" />
+        </label>
+        <label>
+          City
+          <input type="text" formControlName="permanentCity" />
+        </label>
+        <label>
+          State
+          <input type="text" formControlName="permanentState" />
+        </label>
+        <label>
+          Postal Code
+          <input type="text" formControlName="permanentPostalCode" />
+        </label>
+      }
+      <button type="submit" [disabled]="facade.saving()">Save</button>
+    </form>
+
+    <form class="profile-section" [formGroup]="emergencyContactForm" (ngSubmit)="onSubmitEmergencyContact()">
+      <h2>Emergency Contact</h2>
+      <label>
+        Name
+        <input type="text" formControlName="emergencyContactName" />
+      </label>
+      <label>
+        Phone
+        <input type="text" formControlName="emergencyContactPhone" />
+      </label>
+      <label>
+        Relation
+        <input type="text" formControlName="emergencyContactRelation" />
+      </label>
+      <button type="submit" [disabled]="facade.saving()">Save</button>
+    </form>
+  }
+</div>

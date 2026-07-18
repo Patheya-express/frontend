@@ -1,0 +1,23 @@
+# Binds the cluster-scoped patheya-frontend-viewer ClusterRole (defined in
+# infrastructure/kubernetes/platform/rbac, applied separately — apply
+# platform/ before this overlay, or the ClusterRole simply won't exist yet
+# and this grants nothing) with namespace-scoped effect, so read access
+# doesn't leak into namespaces this platform doesn't own.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: frontend-viewer
+  labels:
+    app.kubernetes.io/part-of: patheya-express-platform
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: patheya-frontend-viewer
+subjects:
+  # Placeholder — needs a real identity provider's group-claim mapping
+  # (--oidc-group-claim on the API server, or the cloud provider's IAM ->
+  # Kubernetes group mapping for a managed cluster) before this binds to
+  # any actual user. Grants nothing on its own until that exists.
+  - kind: Group
+    name: "patheya-express:oncall"
+    apiGroup: rbac.authorization.k8s.io

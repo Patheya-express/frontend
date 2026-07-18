@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: patheya-express-dev
+  labels:
+    app.kubernetes.io/part-of: patheya-express
+    environment: development
+    # Every app pod already runs non-root, drops all capabilities, and
+    # forbids privilege escalation (infrastructure/kubernetes/base/*/deployment.yaml,
+    # Phase 0) — enforcing "restricted" here just makes the cluster reject
+    # anything that ever regresses on that, instead of relying on nobody
+    # ever removing a securityContext field by accident.
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest

@@ -41,7 +41,31 @@
               "maximumError": "8kb"
             }
           ],
-          "outputHashing": "all"
+          "outputHashing": "all",
+          "fileReplacements": [
+            {
+              "replace": "apps/admin-app/src/environments/environment.ts",
+              "with": "apps/admin-app/src/environments/environment.prod.ts"
+            }
+          ]
+        },
+        "staging": {
+          "outputHashing": "all",
+          "fileReplacements": [
+            {
+              "replace": "apps/admin-app/src/environments/environment.ts",
+              "with": "apps/admin-app/src/environments/environment.staging.ts"
+            }
+          ]
+        },
+        "qa": {
+          "outputHashing": "all",
+          "fileReplacements": [
+            {
+              "replace": "apps/admin-app/src/environments/environment.ts",
+              "with": "apps/admin-app/src/environments/environment.qa.ts"
+            }
+          ]
         },
         "development": {
           "optimization": false,
@@ -57,6 +81,12 @@
       "configurations": {
         "production": {
           "buildTarget": "admin-app:build:production"
+        },
+        "staging": {
+          "buildTarget": "admin-app:build:staging"
+        },
+        "qa": {
+          "buildTarget": "admin-app:build:qa"
         },
         "development": {
           "buildTarget": "admin-app:build:development"

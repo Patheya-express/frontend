@@ -1,0 +1,26 @@
+# Every container in this platform already sets explicit requests/limits
+# (base/*/deployment.yaml) — this LimitRange is a namespace-wide safety
+# net for anything added later that forgets to, not a correction to
+# anything existing today. `default`/`defaultRequest` only apply when a
+# container omits that field entirely.
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: patheya-express-staging-limits
+spec:
+  limits:
+    - type: Container
+      default:
+        cpu: 250m
+        memory: 128Mi
+        ephemeral-storage: 128Mi
+      defaultRequest:
+        cpu: 25m
+        memory: 32Mi
+        ephemeral-storage: 32Mi
+      min:
+        cpu: 5m
+        memory: 8Mi
+      max:
+        cpu: "1"
+        memory: 512Mi

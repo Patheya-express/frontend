@@ -1,0 +1,286 @@
+<div class="verification-page">
+  <h1>Restaurant Verification</h1>
+
+  <div class="verification-layout">
+    <section class="restaurant-list-panel">
+      <lib-search-input
+        placeholder="Search restaurants…"
+        [value]="facade.search()"
+        (valueChange)="onSearchChange($event)"
+      />
+
+      @if (facade.loading()) {
+        <lib-skeleton [count]="5" />
+      } @else if (facade.error()) {
+        <lib-error-state [message]="facade.error()!" />
+      } @else if (facade.restaurants().length === 0) {
+        <lib-empty-state message="No restaurants match your search." />
+      } @else {
+        <ul class="restaurant-list">
+          @for (restaurant of facade.restaurants(); track restaurant.id) {
+            <li>
+              <button
+                type="button"
+                class="restaurant-list-item"
+                [class.active]="facade.selectedRestaurant()?.id === restaurant.id"
+                (click)="onSelect(restaurant.id)"
+              >
+                <strong>{{ restaurant.name }}</strong>
+                <lib-status-chip [label]="restaurant.status" [tone]="statusTone(restaurant.status)" />
+              </button>
+            </li>
+          }
+        </ul>
+
+        <lib-pagination
+          [page]="facade.page()"
+          [totalPages]="facade.totalPages()"
+          [total]="facade.total()"
+          (pageChange)="onPageChange($event)"
+        />
+      }
+    </section>
+
+    <section class="detail-panel">
+      @if (!facade.selectedRestaurant()) {
+        <lib-empty-state message="Select a restaurant to review its verification status." />
+      } @else if (facade.detailLoading()) {
+        <lib-skeleton [count]="4" />
+      } @else {
+        @if (facade.actionError(); as actionError) {
+          <div class="form-alert" role="alert">{{ actionError }}</div>
+        }
+
+        <h2>{{ facade.selectedRestaurant()!.name }}</h2>
+
+        <!-- Restaurant health overview -->
+        <div class="detail-section">
+          <h3>Health Overview</h3>
+          @if (facade.healthOverview(); as health) {
+            <div class="health-grid">
+              <span>{{ health.activeBranchCount }}/{{ health.branchCount }} branches active</span>
+              <span>{{ health.activeStaffCount }} active staff</span>
+              @if (health.pendingStaffCount > 0) {
+                <span>{{ health.pendingStaffCount }} pending invitations</span>
+              }
+              @if (health.complianceStatus) {
+                <lib-status-chip [label]="health.complianceStatus" [tone]="statusTone(health.complianceStatus)" />
+              }
+              @if (health.documentsExpiringSoon > 0) {
+                <span class="health-warning">{{ health.documentsExpiringSoon }} document(s) expiring within 30 days</span>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Onboarding -->
+        <div class="detail-section">
+          <h3>Onboarding</h3>
+          @if (facade.onboarding(); as onboarding) {
+            <p>
+              <lib-status-chip [label]="onboarding.status" [tone]="statusTone(onboarding.status)" />
+              <span class="muted">{{ onboarding.progressPercent }}% complete</span>
+            </p>
+
+            @if (onboarding.changesRequested && onboarding.changesRequested.length > 0) {
+              <ul class="changes-requested-list">
+                @for (item of onboarding.changesRequested; track item.section) {
+                  <li><strong>{{ item.section }}</strong>: {{ item.reason }}</li>
+                }
+              </ul>
+            }
+
+            <div class="request-changes-panel">
+              <p class="muted">Flag sections that need correction. The owner will see these on their next login.</p>
+              @for (section of changeSections; track section.key) {
+                <div class="request-changes-row">
+                  <span>{{ section.label }}</span>
+                  <input
+                    type="text"
+                    placeholder="Reason (leave blank to skip)"
+                    [(ngModel)]="changeReasons[section.key]"
+                  />
+                </div>
+              }
+              <button type="button" (click)="onRequestChanges()" [disabled]="!!facade.processingId()">
+                Request Changes
+              </button>
+            </div>
+          } @else {
+            <p class="muted">Onboarding has not started for this restaurant.</p>
+          }
+        </div>
+
+        <!-- Verification stage -->
+        <div class="detail-section">
+          <h3>Verification Stage</h3>
+          @if (facade.verification(); as verification) {
+            <p>
+              <lib-status-chip [label]="verification.stage" [tone]="statusTone(verification.stage)" />
+            </p>
+            @if (verification.rejectedReason) {
+              <p class="reason">Reason: {{ verification.rejectedReason }}</p>
+            }
+            <div class="action-row">
+              <button type="button" (click)="onAdvance()" [disabled]="!!facade.processingId()">
+                Advance
+              </button>
+              <button type="button" (click)="onSuspend()" [disabled]="!!facade.processingId()">
+                Suspend
+              </button>
+              <button type="button" (click)="onReinstate()" [disabled]="!!facade.processingId()">
+                Reinstate
+              </button>
+            </div>
+            <div class="reject-row">
+              <input type="text" placeholder="Rejection reason" [(ngModel)]="rejectReason" />
+              <button type="button" (click)="onReject()" [disabled]="!!facade.processingId()">
+                Reject
+              </button>
+            </div>
+          }
+        </div>
+
+        <!-- Documents -->
+        <div class="detail-section">
+          <h3>Documents</h3>
+          @if (facade.documents().length === 0) {
+            <p class="muted">No documents uploaded.</p>
+          } @else {
+            <ul class="document-list">
+              @for (document of facade.documents(); track document.id) {
+                <li>
+                  <span>{{ document.documentType }}</span>
+                  <lib-status-chip [label]="document.status" [tone]="statusTone(document.status)" />
+                  <div class="action-row">
+                    <button
+                      type="button"
+                      (click)="onVerifyDocument(document.id)"
+                      [disabled]="facade.processingId() === document.id"
+                    >
+                      Verify
+                    </button>
+                    <button
+                      type="button"
+                      (click)="onRejectDocument(document.id)"
+                      [disabled]="facade.processingId() === document.id"
+                    >
+                      Reject
+                    </button>
+                  </div>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+
+        <!-- Tax profile -->
+        <div class="detail-section">
+          <h3>Tax Profile</h3>
+          @if (facade.taxProfile(); as tax) {
+            <p>
+              GST: <lib-status-chip [label]="tax.gstVerificationStatus" [tone]="statusTone(tax.gstVerificationStatus)" />
+              <button type="button" (click)="onVerifyGst()">Verify</button>
+              <button type="button" (click)="onRejectGst()">Reject</button>
+            </p>
+            <p>
+              FSSAI: <lib-status-chip [label]="tax.fssaiVerificationStatus" [tone]="statusTone(tax.fssaiVerificationStatus)" />
+              <button type="button" (click)="onVerifyFssai()">Verify</button>
+              <button type="button" (click)="onRejectFssai()">Reject</button>
+            </p>
+          } @else {
+            <p class="muted">No tax profile submitted.</p>
+          }
+        </div>
+
+        <!-- Bank account -->
+        <div class="detail-section">
+          <h3>Bank Account</h3>
+          @if (facade.bankAccount(); as account) {
+            <p>
+              {{ account.bankName }} — {{ account.accountNumberLast4 }}
+              <lib-status-chip [label]="account.verificationStatus" [tone]="statusTone(account.verificationStatus)" />
+              <button type="button" (click)="onVerifyBank()">Verify</button>
+              <button type="button" (click)="onRejectBank()">Reject</button>
+            </p>
+          } @else {
+            <p class="muted">No bank account submitted.</p>
+          }
+        </div>
+
+        <!-- Branches -->
+        <div class="detail-section">
+          <h3>Branches ({{ facade.branches().length }})</h3>
+          @if (facade.branches().length === 0) {
+            <p class="muted">No branches yet.</p>
+          } @else {
+            <ul class="summary-list">
+              @for (branch of facade.branches(); track branch.id) {
+                <li>
+                  <span>{{ branch.name }}</span>
+                  <span>{{ branch.city }}</span>
+                  @if (branch.isPrimary) {
+                    <lib-status-chip label="Primary" tone="info" />
+                  }
+                  <lib-status-chip [label]="branch.isActive ? 'Active' : 'Inactive'" [tone]="branch.isActive ? 'success' : 'neutral'" />
+                </li>
+              }
+            </ul>
+          }
+        </div>
+
+        <!-- Staff -->
+        <div class="detail-section">
+          <h3>Staff ({{ facade.staff().length }})</h3>
+          @if (facade.staff().length === 0) {
+            <p class="muted">No staff on record.</p>
+          } @else {
+            <ul class="summary-list">
+              @for (member of facade.staff(); track member.id) {
+                <li>
+                  <span>{{ member.user?.firstName }} {{ member.user?.lastName }}</span>
+                  <span>{{ member.role }}</span>
+                  <lib-status-chip [label]="member.status" [tone]="statusTone(member.status)" />
+                </li>
+              }
+            </ul>
+          }
+        </div>
+
+        <!-- Media preview -->
+        <div class="detail-section">
+          <h3>Media</h3>
+          @if (facade.media().length === 0) {
+            <p class="muted">No gallery media uploaded.</p>
+          } @else {
+            <div class="media-grid">
+              @for (item of facade.media(); track item.id) {
+                @if (item.type !== 'VIDEO') {
+                  <img [src]="resolveUrl(item.url)" [alt]="item.type" [title]="item.type" />
+                }
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Settings summary -->
+        <div class="detail-section">
+          <h3>Settings Summary</h3>
+          @if (facade.settings(); as settings) {
+            <div class="health-grid">
+              <span>Currency: {{ settings.currency }}</span>
+              <span>Min. Order: {{ settings.minimumOrderAmount }}</span>
+              <span>Auto-Accept: {{ settings.autoAcceptOrders ? 'On' : 'Off' }}</span>
+              <span>Acceptance Timeout: {{ settings.acceptanceTimeoutMinutes }}m</span>
+              @if (settings.isTemporarilyClosed) {
+                <lib-status-chip label="Temporarily Closed" tone="error" />
+              }
+            </div>
+          } @else {
+            <p class="muted">No settings configured yet.</p>
+          }
+        </div>
+      }
+    </section>
+  </div>
+</div>

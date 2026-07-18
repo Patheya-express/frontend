@@ -1,0 +1,82 @@
+<div class="verification-page">
+  <h1>Verification Status</h1>
+
+  @if (facade.loading()) {
+    <lib-skeleton [count]="3" />
+  } @else if (facade.error()) {
+    <lib-error-state [message]="facade.error()!" (retry)="retry()" />
+  } @else {
+    @if (facade.verification(); as verification) {
+      <div class="verification-summary">
+        <lib-status-chip [label]="verification.stage" [tone]="stageTone(verification.stage)" />
+        @if (facade.onboarding()?.submittedAt) {
+          <span>Submitted {{ facade.onboarding()!.submittedAt | date: 'medium' }}</span>
+        }
+      </div>
+
+      @if (facade.isApproved()) {
+        <div class="verification-ready">
+          <h2>Ready to Go Online</h2>
+          <p>Your application has been approved. You can now go online from the dashboard and start receiving orders.</p>
+          <a routerLink="/dashboard">Go to Dashboard</a>
+        </div>
+      } @else if (facade.isSuspended()) {
+        <div class="verification-banner error">
+          <h2>Account Suspended</h2>
+          <p>Your delivery partner account has been suspended. Contact support for details.</p>
+        </div>
+      } @else if (facade.isRejected()) {
+        <div class="verification-banner error">
+          <h2>Application Rejected</h2>
+          @if (verification.rejectedReason) {
+            <p>{{ verification.rejectedReason }}</p>
+          }
+        </div>
+      } @else {
+        <div class="verification-banner">
+          <h2>Verification Required</h2>
+          <p>Your application is being reviewed. You'll be notified as soon as a decision is made.</p>
+        </div>
+      }
+
+      @if (facade.onboarding()?.changesRequested?.length) {
+        <section class="verification-section">
+          <h2>Changes Requested</h2>
+          <ul>
+            @for (item of facade.onboarding()!.changesRequested; track item.section) {
+              <li><strong>{{ item.section }}</strong>: {{ item.reason }}</li>
+            }
+          </ul>
+          <a routerLink="/onboarding">Update My Application</a>
+        </section>
+      }
+
+      @if (facade.compliance(); as compliance) {
+        <section class="verification-section">
+          <h2>Compliance Summary</h2>
+          <p>{{ compliance.documentsVerified }} / {{ compliance.documentsTotal }} documents verified.</p>
+          @if (compliance.missingDocumentTypes.length > 0) {
+            <p>Missing: {{ compliance.missingDocumentTypes.join(', ') }}</p>
+          }
+        </section>
+      }
+
+      @if (facade.history().length > 0) {
+        <section class="verification-section">
+          <h2>Timeline</h2>
+          <ul class="verification-timeline">
+            @for (entry of facade.history(); track entry.id) {
+              <li>
+                <span class="timeline-stage">{{ entry.fromStage ?? '—' }} → {{ entry.toStage }}</span>
+                <span class="timeline-date">{{ entry.createdAt | date: 'medium' }}</span>
+                @if (entry.reason) {
+                  <p>{{ entry.reason }}</p>
+                }
+              </li>
+            }
+          </ul>
+        </section>
+      }
+    }
+  }
+</div>

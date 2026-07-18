@@ -1,0 +1,26 @@
+<div class="wallet-apply-widget">
+  @if (facade.balance() > 0) {
+    <label class="wallet-apply-toggle">
+      <input
+        type="checkbox"
+        [checked]="useWallet()"
+        [disabled]="facade.applying()"
+        (change)="onToggle($any($event.target).checked)"
+      />
+      <span>
+        Pay &#8377;{{ maxApplicable.toFixed(2) }} using wallet
+        <span class="wallet-apply-balance">(balance: &#8377;{{ facade.balance().toFixed(2) }})</span>
+      </span>
+    </label>
+
+    @if (appliedAmount() !== null) {
+      <p class="wallet-apply-confirmation">
+        &#8377;{{ appliedAmount()!.toFixed(2) }} applied from your wallet.
+      </p>
+    }
+
+    @if (facade.applyError()) {
+      <p class="wallet-apply-error">{{ facade.applyError() }}</p>
+    }
+  }
+</div>

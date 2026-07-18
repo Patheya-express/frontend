@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Kept in sync with package.json's "packageManager" field manually — pnpm
+  # has no native "read version from lockfile" action input, and corepack
+  # reads package.json itself once checked out, so this only needs to match.
+  PNPM_VERSION: 11.5.3
+  NODE_VERSION: 24
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Sets NX_BASE/NX_HEAD correctly for both PR diffs and pushes to main
+      # (plain `--base=origin/main` breaks on a push *to* main, since HEAD
+      # is already on that branch and there'd be nothing to diff against).
+      - uses: nrwl/nx-set-shas@v4
+      - name: nx affected -- lint
+        run: pnpm exec nx affected --target=lint
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: nrwl/nx-set-shas@v4
+      - name: nx affected -- test
+        run: pnpm exec nx affected --target=test --ci --code-coverage
+
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [customer-app, restaurant-app, admin-app, delivery-app]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build ${{ matrix.app }} (production configuration)
+        run: pnpm exec nx build ${{ matrix.app }} --configuration=production

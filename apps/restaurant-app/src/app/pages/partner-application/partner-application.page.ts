@@ -74,7 +74,7 @@ export class PartnerApplicationPageComponent {
         phone: phone || undefined,
       });
 
-      await this.router.navigateByUrl('/dashboard');
+      await this.router.navigateByUrl('/onboarding');
     } catch {
       this.errorMessage.set('Account created, but saving your restaurant details failed. Please try again.');
     } finally {

@@ -41,7 +41,31 @@
               "maximumError": "8kb"
             }
           ],
-          "outputHashing": "all"
+          "outputHashing": "all",
+          "fileReplacements": [
+            {
+              "replace": "apps/restaurant-app/src/environments/environment.ts",
+              "with": "apps/restaurant-app/src/environments/environment.prod.ts"
+            }
+          ]
+        },
+        "staging": {
+          "outputHashing": "all",
+          "fileReplacements": [
+            {
+              "replace": "apps/restaurant-app/src/environments/environment.ts",
+              "with": "apps/restaurant-app/src/environments/environment.staging.ts"
+            }
+          ]
+        },
+        "qa": {
+          "outputHashing": "all",
+          "fileReplacements": [
+            {
+              "replace": "apps/restaurant-app/src/environments/environment.ts",
+              "with": "apps/restaurant-app/src/environments/environment.qa.ts"
+            }
+          ]
         },
         "development": {
           "optimization": false,
@@ -57,6 +81,12 @@
       "configurations": {
         "production": {
           "buildTarget": "restaurant-app:build:production"
+        },
+        "staging": {
+          "buildTarget": "restaurant-app:build:staging"
+        },
+        "qa": {
+          "buildTarget": "restaurant-app:build:qa"
         },
         "development": {
           "buildTarget": "restaurant-app:build:development"

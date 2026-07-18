@@ -1,0 +1,589 @@
+<div class="wizard-page">
+  @if (facade.initializing()) {
+    <lib-skeleton [count]="6" />
+  } @else if (facade.error()) {
+    <lib-error-state [message]="facade.error()!" (retry)="retry()" />
+  } @else {
+    <aside class="wizard-sidebar">
+      <div class="wizard-progress">
+        <div class="wizard-progress-label">
+          <span>{{ facade.progressPercent() }}% complete</span>
+        </div>
+        <div class="wizard-progress-track">
+          <div class="wizard-progress-fill" [style.width.%]="facade.progressPercent()"></div>
+        </div>
+      </div>
+
+      @if (facade.status() === 'CHANGES_REQUESTED') {
+        <div class="wizard-banner wizard-banner--warning">
+          The admin team requested changes on some sections. Please review and resubmit.
+        </div>
+      }
+
+      <ol class="wizard-steps">
+        @for (item of steps; track item.step) {
+          <li
+            class="wizard-step"
+            [class.is-active]="facade.activeStep() === item.step"
+            [class.is-complete]="isStepComplete(item.step)"
+            [class.is-locked]="!isStepUnlocked(item.step)"
+            [class.has-changes]="sectionHasRequestedChanges(item.key)"
+          >
+            <button type="button" [disabled]="!isStepUnlocked(item.step)" (click)="goToStep(item.step)">
+              <span class="wizard-step-index">{{ item.step }}</span>
+              <span class="wizard-step-label">{{ item.label }}</span>
+              @if (sectionHasRequestedChanges(item.key)) {
+                <span class="wizard-step-flag">Changes requested</span>
+              }
+            </button>
+          </li>
+        }
+      </ol>
+    </aside>
+
+    <section class="wizard-content">
+      @if (facade.saveError(); as error) {
+        <div class="wizard-banner wizard-banner--error">{{ error }}</div>
+      }
+
+      @switch (facade.activeStep()) {
+        @case (1) {
+          <form class="wizard-form" [formGroup]="businessForm" (ngSubmit)="onSubmitBusiness()">
+            <h1>Business Details</h1>
+            <p class="wizard-hint">The legal identity of the company operating this restaurant.</p>
+
+            <label class="wizard-field">
+              <span>Legal Business Name</span>
+              <input type="text" formControlName="legalBusinessName" />
+            </label>
+
+            <label class="wizard-field">
+              <span>Business Email</span>
+              <input type="email" formControlName="businessEmail" />
+            </label>
+
+            <label class="wizard-field">
+              <span>Business Phone</span>
+              <input type="tel" formControlName="businessPhone" />
+            </label>
+
+            <label class="wizard-field">
+              <span>Website</span>
+              <input type="url" formControlName="website" placeholder="https://" />
+            </label>
+
+            <div class="wizard-actions">
+              <button type="submit">Save &amp; Continue</button>
+            </div>
+          </form>
+        }
+
+        @case (2) {
+          <form class="wizard-form" [formGroup]="restaurantForm" (ngSubmit)="onSubmitRestaurant()">
+            <h1>Restaurant Details</h1>
+            <p class="wizard-hint">
+              How your restaurant appears to customers. Cuisine selection becomes available after your
+              application is approved.
+            </p>
+
+            <label class="wizard-field">
+              <span>Restaurant Name</span>
+              <input type="text" formControlName="name" />
+            </label>
+
+            <label class="wizard-field">
+              <span>Brand Name</span>
+              <input type="text" formControlName="brandName" />
+            </label>
+
+            <label class="wizard-field">
+              <span>Trade Name</span>
+              <input type="text" formControlName="tradeName" />
+            </label>
+
+            <label class="wizard-field">
+              <span>Description</span>
+              <textarea rows="3" formControlName="description"></textarea>
+            </label>
+
+            <div class="wizard-field-row">
+              <label class="wizard-field">
+                <span>Public Email</span>
+                <input type="email" formControlName="email" />
+              </label>
+              <label class="wizard-field">
+                <span>Public Phone</span>
+                <input type="tel" formControlName="phone" />
+              </label>
+            </div>
+
+            <div class="wizard-field-row">
+              <label class="wizard-field">
+                <span>Support Email</span>
+                <input type="email" formControlName="supportEmail" />
+              </label>
+              <label class="wizard-field">
+                <span>Support Phone</span>
+                <input type="tel" formControlName="supportPhone" />
+              </label>
+            </div>
+
+            <div class="wizard-actions">
+              <button type="submit">Save &amp; Continue</button>
+            </div>
+          </form>
+        }
+
+        @case (3) {
+          <form class="wizard-form" [formGroup]="locationForm" (ngSubmit)="onSubmitLocation()">
+            <h1>Location</h1>
+            <p class="wizard-hint">Your restaurant's physical address and map pin.</p>
+
+            <lib-map-picker [initialPosition]="initialMapPosition" (locationChange)="onLocationPicked($event)" />
+
+            <label class="wizard-field">
+              <span>Address Line 1</span>
+              <input type="text" formControlName="addressLine1" />
+            </label>
+
+            <label class="wizard-field">
+              <span>Address Line 2</span>
+              <input type="text" formControlName="addressLine2" />
+            </label>
+
+            <label class="wizard-field">
+              <span>Landmark</span>
+              <input type="text" formControlName="landmark" />
+            </label>
+
+            <div class="wizard-field-row">
+              <label class="wizard-field">
+                <span>City</span>
+                <input type="text" formControlName="city" />
+              </label>
+              <label class="wizard-field">
+                <span>State</span>
+                <input type="text" formControlName="state" />
+              </label>
+              <label class="wizard-field">
+                <span>Postal Code</span>
+                <input type="text" formControlName="postalCode" />
+              </label>
+            </div>
+
+            <div class="wizard-field-row">
+              <label class="wizard-field">
+                <span>Latitude</span>
+                <input type="number" step="0.000001" formControlName="latitude" />
+              </label>
+              <label class="wizard-field">
+                <span>Longitude</span>
+                <input type="number" step="0.000001" formControlName="longitude" />
+              </label>
+            </div>
+            <p class="wizard-hint">
+              These are filled in automatically from the map above — adjust them manually only if needed.
+            </p>
+
+            <div class="wizard-actions">
+              <button type="submit">Save &amp; Continue</button>
+            </div>
+          </form>
+        }
+
+        @case (4) {
+          <form class="wizard-form" [formGroup]="branchForm" (ngSubmit)="onSubmitBranch()">
+            <h1>Branch Details</h1>
+            <p class="wizard-hint">Operational details for your primary branch.</p>
+
+            <label class="wizard-field">
+              <span>Branch Name</span>
+              <input type="text" formControlName="name" />
+            </label>
+
+            <div class="wizard-field-row">
+              <label class="wizard-field">
+                <span>Delivery Radius (km)</span>
+                <input type="number" min="0.1" step="0.1" formControlName="deliveryRadiusKm" />
+              </label>
+              <label class="wizard-field">
+                <span>Timezone</span>
+                <input type="text" formControlName="timezone" />
+              </label>
+            </div>
+
+            <label class="wizard-field">
+              <span>Branch Phone</span>
+              <input type="tel" formControlName="phone" />
+            </label>
+
+            <div class="wizard-field-row">
+              <label class="wizard-field">
+                <span>Emergency Contact Name</span>
+                <input type="text" formControlName="emergencyContactName" />
+              </label>
+              <label class="wizard-field">
+                <span>Emergency Contact Phone</span>
+                <input type="tel" formControlName="emergencyContactPhone" />
+              </label>
+            </div>
+
+            <div class="wizard-actions">
+              <button type="submit">Save &amp; Continue</button>
+            </div>
+          </form>
+        }
+
+        @case (5) {
+          <div class="wizard-form">
+            <h1>Operating Hours</h1>
+            <p class="wizard-hint">Set your weekly schedule. Split shifts and closed days are supported.</p>
+            <lib-operating-hours-editor
+              [hours]="facade.operatingHours()"
+              [saving]="facade.saving()"
+              [error]="facade.saveError()"
+              (save)="onSaveHours($event)"
+            />
+          </div>
+        }
+
+        @case (6) {
+          <form class="wizard-form" [formGroup]="bankForm" (ngSubmit)="onSubmitBank()">
+            <h1>Bank Details</h1>
+            <p class="wizard-hint">Used to send your payouts. Stored securely — only the last 4 digits are ever shown back to you.</p>
+
+            <label class="wizard-field">
+              <span>Account Holder Name</span>
+              <input type="text" formControlName="accountHolderName" />
+            </label>
+
+            <label class="wizard-field">
+              <span>Account Number</span>
+              <input type="text" formControlName="accountNumber" />
+              @if (facade.bankAccount(); as bank) {
+                <small class="wizard-field-hint">Currently on file: •••• {{ bank.accountNumberLast4 }}. Re-enter to change.</small>
+              }
+              @if (bankForm.controls.accountNumber.invalid && bankForm.controls.accountNumber.touched) {
+                <small class="wizard-field-error">Enter at least 6 digits.</small>
+              }
+            </label>
+
+            <div class="wizard-field-row">
+              <label class="wizard-field">
+                <span>Bank Name</span>
+                <input type="text" formControlName="bankName" />
+              </label>
+              <label class="wizard-field">
+                <span>Branch Name</span>
+                <input type="text" formControlName="branchName" />
+              </label>
+            </div>
+
+            <div class="wizard-field-row">
+              <label class="wizard-field">
+                <span>IFSC Code</span>
+                <input type="text" formControlName="ifsc" (input)="onIfscInput($event)" placeholder="HDFC0000123" />
+                @if (bankForm.controls.ifsc.invalid && bankForm.controls.ifsc.touched) {
+                  <small class="wizard-field-error">Enter a valid 11-character IFSC code, e.g. HDFC0000123.</small>
+                }
+              </label>
+              <label class="wizard-field">
+                <span>UPI ID</span>
+                <input type="text" formControlName="upiId" />
+              </label>
+            </div>
+
+            <div class="wizard-actions">
+              <button type="submit">Save &amp; Continue</button>
+            </div>
+          </form>
+        }
+
+        @case (7) {
+          <form class="wizard-form" [formGroup]="gstForm" (ngSubmit)="onSubmitGst()">
+            <h1>GST Details</h1>
+
+            <label class="wizard-field">
+              <span>GSTIN</span>
+              <input type="text" formControlName="gstin" />
+            </label>
+
+            <label class="wizard-field">
+              <span>GST Legal Name</span>
+              <input type="text" formControlName="gstLegalName" />
+            </label>
+
+            <label class="wizard-field">
+              <span>Registered Address</span>
+              <textarea rows="2" formControlName="gstRegisteredAddress"></textarea>
+            </label>
+
+            <div class="wizard-field-row">
+              <label class="wizard-field">
+                <span>Registration State</span>
+                <input type="text" formControlName="gstRegistrationState" />
+              </label>
+              <label class="wizard-field">
+                <span>Business Category</span>
+                <input type="text" formControlName="gstBusinessCategory" />
+              </label>
+            </div>
+
+            <label class="wizard-field">
+              <span>Business Type</span>
+              <select formControlName="businessType">
+                @for (type of businessTypes; track type) {
+                  <option [value]="type">{{ type }}</option>
+                }
+              </select>
+            </label>
+
+            <div class="wizard-upload">
+              <lib-file-upload
+                label="Upload GST Certificate (optional)"
+                accept="image/png,image/jpeg,application/pdf"
+                [uploading]="isUploading('document:GST')"
+                (fileSelected)="onDocumentSelected('GST', $event)"
+              />
+              @if (hasDocument('GST')) {
+                <span class="wizard-upload-confirmed">Uploaded</span>
+              }
+            </div>
+
+            <div class="wizard-actions">
+              <button type="submit">Save &amp; Continue</button>
+            </div>
+          </form>
+        }
+
+        @case (8) {
+          <form class="wizard-form" [formGroup]="fssaiForm" (ngSubmit)="onSubmitFssai()">
+            <h1>FSSAI Details</h1>
+
+            <label class="wizard-field">
+              <span>FSSAI Number</span>
+              <input type="text" formControlName="fssaiNumber" />
+            </label>
+
+            <label class="wizard-field">
+              <span>License Type</span>
+              <input type="text" formControlName="fssaiLicenseType" />
+            </label>
+
+            <div class="wizard-field-row">
+              <label class="wizard-field">
+                <span>Issue Date</span>
+                <input type="date" formControlName="fssaiIssueDate" />
+              </label>
+              <label class="wizard-field">
+                <span>Expiry Date</span>
+                <input type="date" formControlName="fssaiExpiryAt" />
+              </label>
+            </div>
+
+            <div class="wizard-upload">
+              <lib-file-upload
+                label="Upload FSSAI Certificate (optional)"
+                accept="image/png,image/jpeg,application/pdf"
+                [uploading]="isUploading('document:FSSAI')"
+                (fileSelected)="onDocumentSelected('FSSAI', $event)"
+              />
+              @if (hasDocument('FSSAI')) {
+                <span class="wizard-upload-confirmed">Uploaded</span>
+              }
+            </div>
+
+            <div class="wizard-actions">
+              <button type="submit">Save &amp; Continue</button>
+            </div>
+          </form>
+        }
+
+        @case (9) {
+          <form class="wizard-form" [formGroup]="panForm" (ngSubmit)="onSubmitPan()">
+            <h1>PAN Details</h1>
+
+            <label class="wizard-field">
+              <span>PAN</span>
+              <input type="text" formControlName="pan" />
+            </label>
+
+            <label class="wizard-field">
+              <span>CIN (if registered company)</span>
+              <input type="text" formControlName="cin" />
+            </label>
+
+            <div class="wizard-upload">
+              <lib-file-upload
+                label="Upload PAN Card (optional)"
+                accept="image/png,image/jpeg,application/pdf"
+                [uploading]="isUploading('document:PAN_CARD')"
+                (fileSelected)="onDocumentSelected('PAN_CARD', $event)"
+              />
+              @if (hasDocument('PAN_CARD')) {
+                <span class="wizard-upload-confirmed">Uploaded</span>
+              }
+            </div>
+
+            <div class="wizard-actions">
+              <button type="submit">Save &amp; Continue</button>
+            </div>
+          </form>
+        }
+
+        @case (10) {
+          <div class="wizard-form">
+            <h1>Restaurant Media</h1>
+            <p class="wizard-hint">Logo, banner, interior, exterior, and kitchen photos are all required.</p>
+
+            <div class="wizard-media-row">
+              <lib-file-upload
+                label="Restaurant Logo"
+                accept="image/png,image/jpeg,image/webp"
+                [uploading]="isUploading('logo')"
+                [previewUrl]="resolveUrl(facade.restaurant()?.logoUrl)"
+                (fileSelected)="onLogoSelected($event)"
+              />
+              <lib-file-upload
+                label="Restaurant Banner"
+                accept="image/png,image/jpeg,image/webp"
+                [uploading]="isUploading('banner')"
+                [previewUrl]="resolveUrl(facade.restaurant()?.bannerUrl)"
+                (fileSelected)="onBannerSelected($event)"
+              />
+            </div>
+
+            <div class="wizard-media-row">
+              @for (type of mandatoryMediaTypes; track type) {
+                <lib-file-upload
+                  [label]="type + ' photo'"
+                  accept="image/png,image/jpeg,image/webp"
+                  [uploading]="isUploading('media:' + type)"
+                  (fileSelected)="onMediaSelected(type, $event)"
+                />
+              }
+            </div>
+
+            @if (facade.media().length > 0) {
+              <div class="wizard-media-grid">
+                @for (item of facade.media(); track item.id) {
+                  <div class="wizard-media-item">
+                    <img [src]="resolveUrl(item.url)" [alt]="item.type" />
+                    <span>{{ item.type }}</span>
+                  </div>
+                }
+              </div>
+            }
+
+            <div class="wizard-actions">
+              <button type="button" [disabled]="!facade.mandatoryMediaSatisfied()" (click)="onContinueMedia()">
+                Save &amp; Continue
+              </button>
+            </div>
+          </div>
+        }
+
+        @case (11) {
+          <div class="wizard-form">
+            <h1>Compliance Documents</h1>
+            <p class="wizard-hint">Trade License and Shop Establishment certificate are required. Others are optional.</p>
+
+            <div class="wizard-media-row">
+              @for (type of mandatoryDocumentTypes; track type) {
+                <div class="wizard-upload">
+                  <lib-file-upload
+                    [label]="type + ' (required)'"
+                    accept="image/png,image/jpeg,application/pdf"
+                    [uploading]="isUploading('document:' + type)"
+                    (fileSelected)="onDocumentSelected(type, $event)"
+                  />
+                  @if (hasDocument(type)) {
+                    <span class="wizard-upload-confirmed">Uploaded</span>
+                  }
+                </div>
+              }
+            </div>
+
+            <div class="wizard-media-row">
+              @for (type of optionalDocumentTypes; track type) {
+                <div class="wizard-upload">
+                  <lib-file-upload
+                    [label]="type + ' (optional)'"
+                    accept="image/png,image/jpeg,application/pdf"
+                    [uploading]="isUploading('document:' + type)"
+                    (fileSelected)="onDocumentSelected(type, $event)"
+                  />
+                  @if (hasDocument(type)) {
+                    <span class="wizard-upload-confirmed">Uploaded</span>
+                  }
+                </div>
+              }
+            </div>
+
+            <div class="wizard-actions">
+              <button type="button" [disabled]="!facade.mandatoryDocumentsSatisfied()" (click)="onContinueDocuments()">
+                Save &amp; Continue
+              </button>
+            </div>
+          </div>
+        }
+
+        @case (12) {
+          <div class="wizard-form">
+            <h1>Review &amp; Submit</h1>
+            <p class="wizard-hint">Please review your application before submitting for admin review.</p>
+
+            <div class="wizard-review-grid">
+              <div class="wizard-review-item">
+                <span>Restaurant</span>
+                <strong>{{ facade.restaurant()?.name }}</strong>
+              </div>
+              <div class="wizard-review-item">
+                <span>Branch</span>
+                <strong>{{ facade.branch()?.name }}</strong>
+              </div>
+              <div class="wizard-review-item">
+                <span>Address</span>
+                <strong>{{ facade.branch()?.addressLine1 }}, {{ facade.branch()?.city }}</strong>
+              </div>
+              <div class="wizard-review-item">
+                <span>Bank Account</span>
+                <strong>{{ facade.bankAccount()?.bankName }} •••• {{ facade.bankAccount()?.accountNumberLast4 }}</strong>
+              </div>
+              <div class="wizard-review-item">
+                <span>GSTIN</span>
+                <strong>{{ facade.taxProfile()?.gstin || 'Not provided' }}</strong>
+              </div>
+              <div class="wizard-review-item">
+                <span>FSSAI Number</span>
+                <strong>{{ facade.taxProfile()?.fssaiNumber || 'Not provided' }}</strong>
+              </div>
+              <div class="wizard-review-item">
+                <span>PAN</span>
+                <strong>{{ facade.taxProfile()?.pan || 'Not provided' }}</strong>
+              </div>
+              <div class="wizard-review-item">
+                <span>Progress</span>
+                <strong>{{ facade.progressPercent() }}% complete</strong>
+              </div>
+            </div>
+
+            <label class="wizard-checkbox">
+              <input type="checkbox" [formControl]="acceptTerms" />
+              <span>I confirm the information above is accurate and I accept the Partner Terms &amp; Conditions.</span>
+            </label>
+            @if (acceptTerms.invalid && acceptTerms.touched) {
+              <small class="wizard-field-error">You must accept the terms to submit.</small>
+            }
+
+            <div class="wizard-actions">
+              <button type="button" [disabled]="facade.saving()" (click)="onSubmitApplication()">
+                {{ facade.saving() ? 'Submitting…' : 'Submit for Review' }}
+              </button>
+            </div>
+          </div>
+        }
+      }
+    </section>
+  }
+</div>

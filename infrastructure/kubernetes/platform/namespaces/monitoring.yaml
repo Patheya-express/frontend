@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    app.kubernetes.io/part-of: patheya-express-platform
+    purpose: monitoring
+    # Prometheus/Grafana/exporters run as regular, non-root, non-privileged
+    # workloads — same bar as our own app pods (see
+    # infrastructure/kubernetes/overlays/*/namespace.yaml, which enforce
+    # the same "restricted" level).
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest

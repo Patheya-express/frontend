@@ -26,4 +26,11 @@
       <span class="payment-option-subtitle">Pay in cash when your order arrives</span>
     </button>
   </div>
+
+  @if (paymentMode() === 'ONLINE' && walletFacade.balance() > 0) {
+    <label class="payment-wallet-toggle">
+      <input type="checkbox" [checked]="useWallet()" (change)="onUseWalletToggle($any($event.target).checked)" />
+      Use wallet balance (&#8377;{{ walletFacade.balance().toFixed(2) }} available)
+    </label>
+  }
 </section>

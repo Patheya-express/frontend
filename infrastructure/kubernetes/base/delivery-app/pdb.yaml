@@ -1,0 +1,20 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: delivery-app
+  labels:
+    app.kubernetes.io/name: delivery-app
+    app.kubernetes.io/part-of: patheya-express
+    app.kubernetes.io/component: frontend
+spec:
+  # A percentage scales sensibly across every environment's replica count
+  # without needing a per-overlay patch: dev's 1 replica -> 0 disruptions
+  # allowed (rounds up to needing the 1 it has); staging's 2 -> 1 allowed;
+  # production's 3 -> 1 allowed at a time. A fixed `minAvailable: 1` would
+  # under-protect production (2 simultaneous voluntary disruptions) and a
+  # fixed `maxUnavailable` would over-restrict development (0 replicas to
+  # spare means node drains never complete there).
+  minAvailable: 50%
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: delivery-app

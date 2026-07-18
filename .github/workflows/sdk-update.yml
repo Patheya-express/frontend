@@ -1,0 +1,64 @@
+name: sdk-update
+
+# platform-standards.md Section 15/21: the api-sdk lib is generated from the backend's published
+# OpenAPI document "in CI, never hand-maintained... drift between the generator's output and a
+# hand-edit is treated as a bug." Listens for the backend's release workflow announcing a new
+# openapi.json (via repository_dispatch, not a cross-repo push) and opens a PR here with the
+# regenerated SDK — never auto-merged, since generated-code review still matters (Section 3 applies
+# to this PR like any other).
+
+on:
+  repository_dispatch:
+    types: [openapi-updated]
+  workflow_dispatch:
+    inputs:
+      release-tag:
+        description: "Backend release tag to pull openapi.json from (manual trigger only), e.g. v1.4.2."
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.5.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Download OpenAPI document from the backend release
+        env:
+          GH_TOKEN: ${{ secrets.PLATFORM_RELEASE_READ_TOKEN }}
+          RELEASE_TAG: ${{ github.event.client_payload.release_tag || inputs.release-tag }}
+        run: |
+          gh release download "$RELEASE_TAG" \
+            --repo Patheya-express/patheya-express-platform \
+            --pattern openapi.json \
+            --output libs/shared/api-sdk/openapi.json \
+            --clobber
+
+      - name: Regenerate SDK
+        run: pnpm run generate:sdk
+
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          branch: ci/sdk-update
+          delete-branch: true
+          commit-message: "chore(api-sdk): regenerate from updated backend OpenAPI document"
+          title: "chore(api-sdk): regenerate from updated backend OpenAPI document"
+          body: |
+            Automated — triggered by a new backend release publishing an updated OpenAPI document.
+            Review the diff like any other generated-code change (platform-standards.md Section 21:
+            drift between the generator's output and a hand-edit is a bug in the generated file, not
+            a valid patch — so this PR should normally be a clean regeneration, not something to
+            hand-edit before merging).
+          labels: api-sdk,automated

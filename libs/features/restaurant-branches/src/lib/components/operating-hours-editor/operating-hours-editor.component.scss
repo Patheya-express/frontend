@@ -1,0 +1,144 @@
+.hours-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.hours-editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.hours-editor-24x7 {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.hours-editor-status {
+  font-size: var(--font-size-sm);
+
+  &--warning {
+    color: var(--color-warning, #856404);
+  }
+
+  &--success {
+    color: var(--color-success, #155724);
+  }
+}
+
+.hours-editor-error {
+  color: var(--color-error, #b00020);
+  font-size: var(--font-size-sm);
+}
+
+.hours-editor-days {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.hours-editor-day {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.hours-editor-day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.hours-editor-closed-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.hours-editor-shifts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.hours-editor-shift {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+
+  input[type='time'] {
+    padding: var(--space-1) var(--space-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+  }
+}
+
+.hours-editor-remove-shift {
+  border: none;
+  background: transparent;
+  color: var(--color-error, #b00020);
+  cursor: pointer;
+}
+
+.hours-editor-add-shift {
+  border: none;
+  background: transparent;
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  padding: 0;
+}
+
+.hours-editor-copy {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+
+  summary {
+    cursor: pointer;
+  }
+}
+
+.hours-editor-copy-targets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin: var(--space-2) 0;
+
+  label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+}
+
+.hours-editor-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.hours-editor-save {
+  padding: var(--space-2) var(--space-5);
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}

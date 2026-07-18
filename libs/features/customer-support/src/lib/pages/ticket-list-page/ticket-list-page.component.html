@@ -1,0 +1,49 @@
+<div class="ticket-list-page">
+  <header class="ticket-list-header">
+    <h1>Support Tickets</h1>
+    <div class="ticket-list-actions">
+      <a routerLink="/support/faqs" class="ticket-list-secondary-link">Help Center</a>
+      <a routerLink="/support/tickets/new" class="ticket-list-new-btn">New ticket</a>
+    </div>
+  </header>
+
+  <div class="ticket-list-filters">
+    <select (change)="onStatusChange($any($event.target).value)">
+      <option value="" [selected]="!facade.statusFilter()">All statuses</option>
+      @for (option of statusOptions; track option.value) {
+        <option [value]="option.value" [selected]="facade.statusFilter() === option.value">{{ option.label }}</option>
+      }
+    </select>
+  </div>
+
+  @if (facade.loading() && facade.tickets().length === 0) {
+    <lib-skeleton [count]="4" />
+  } @else if (facade.error()) {
+    <lib-error-state [message]="facade.error()!" (retry)="retry()" />
+  } @else if (facade.tickets().length === 0) {
+    <lib-empty-state
+      title="No support tickets"
+      message="Need help with an order, payment, or your account? Create a ticket and we'll get back to you."
+      actionLabel="New ticket"
+    />
+  } @else {
+    <ul class="ticket-list">
+      @for (ticket of facade.tickets(); track ticket.id) {
+        <li>
+          <a class="ticket-list-item" [routerLink]="['/support/tickets', ticket.id]">
+            <div class="ticket-item-main">
+              <span class="ticket-item-number">{{ ticket.ticketNumber }}</span>
+              <span class="ticket-item-subject">{{ ticket.subject }}</span>
+            </div>
+            <div class="ticket-item-meta">
+              <span class="ticket-item-priority" [attr.data-priority]="ticket.priority">{{ ticket.priority }}</span>
+              <span class="ticket-item-status" [attr.data-status]="ticket.status">{{ statusLabel(ticket.status) }}</span>
+            </div>
+          </a>
+        </li>
+      }
+    </ul>
+
+    <lib-pagination [page]="facade.page()" [totalPages]="facade.totalPages()" [total]="facade.total()" (pageChange)="onPageChange($event)" />
+  }
+</div>

@@ -1,0 +1,57 @@
+# PriorityClass is cluster-scoped — defined once here, referenced by name
+# from any namespace's pod spec (see
+# infrastructure/kubernetes/base/*/deployment.yaml's `priorityClassName`).
+# Values are spaced by 100000 so there's room to insert intermediate tiers
+# later without renumbering everything.
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: patheya-critical-priority
+  labels:
+    app.kubernetes.io/part-of: patheya-express-platform
+value: 300000
+globalDefault: false
+description: >-
+  Reserved for platform-critical infrastructure (ingress controller,
+  cert-manager, metrics-server — see infrastructure/kubernetes/platform).
+  Not used by any frontend app Deployment today.
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: patheya-high-priority
+  labels:
+    app.kubernetes.io/part-of: patheya-express-platform
+value: 200000
+globalDefault: false
+description: >-
+  Apps on a customer- or partner-facing critical path: customer-app,
+  restaurant-app, delivery-app (see infrastructure/kubernetes/base/*/deployment.yaml
+  and infrastructure/docs/scaling-strategy.md for the per-app rationale).
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: patheya-normal-priority
+  labels:
+    app.kubernetes.io/part-of: patheya-express-platform
+value: 100000
+globalDefault: true
+description: >-
+  Default tier for everything else, including admin-app (internal-only,
+  not on a customer revenue path). globalDefault: true so any future
+  workload that forgets to set priorityClassName lands here rather than at
+  Kubernetes' own implicit 0 — visible and intentional, not invisible.
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: patheya-low-priority
+  labels:
+    app.kubernetes.io/part-of: patheya-express-platform
+value: 50000
+globalDefault: false
+description: >-
+  Best-effort/batch work (future: one-off migration jobs, report
+  generation) that should be the first evicted under node pressure. Not
+  used by any frontend app Deployment today.

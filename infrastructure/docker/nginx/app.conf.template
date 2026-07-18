@@ -1,0 +1,88 @@
+# Per-app server block. Copied into every frontend image as
+# /etc/nginx/conf.d/default.conf. All four apps are structurally identical
+# (static Angular SPA) so one template covers admin/customer/delivery/restaurant.
+#
+# Runs on an unprivileged port (8080) since the container runs as a non-root
+# user and can't bind <1024.
+
+server {
+  listen 8080;
+  server_name _;
+  root /usr/share/nginx/html;
+  index index.html;
+
+  include /etc/nginx/security-headers.conf;
+
+  limit_req zone=static_zone burst=30 nodelay;
+
+  # Liveness: process is up and serving traffic. No dependency checks —
+  # mirrors the backend's split between /health/live and /health/ready.
+  location = /healthz {
+    access_log off;
+    include /etc/nginx/security-headers.conf;
+    default_type text/plain;
+    return 200 "ok\n";
+  }
+
+  # Readiness: the built app was actually copied into the image.
+  location = /readyz {
+    access_log off;
+    include /etc/nginx/security-headers.conf;
+    default_type text/plain;
+    try_files /index.html =503;
+    return 200 "ready\n";
+  }
+
+  # nginx's own request/connection counters, scraped by the
+  # nginx-prometheus-exporter sidecar over the pod's shared loopback
+  # interface (see infrastructure/kubernetes/base/*/deployment.yaml and
+  # infrastructure/monitoring) — never reachable from outside the pod.
+  location = /stub_status {
+    access_log off;
+    stub_status;
+    allow 127.0.0.1;
+    deny all;
+  }
+
+  # Immutable, content-hashed build artifacts (outputHashing: "all" in every
+  # app's production build config) — safe to cache for a year.
+  location ~* \.(?:js|css|woff2?|ttf|otf|eot)$ {
+    include /etc/nginx/security-headers.conf;
+    add_header Cache-Control "public, max-age=31536000, immutable" always;
+    try_files $uri =404;
+  }
+
+  location ~* \.(?:png|jpg|jpeg|gif|ico|svg|webp|avif)$ {
+    include /etc/nginx/security-headers.conf;
+    add_header Cache-Control "public, max-age=2592000" always;
+    try_files $uri =404;
+  }
+
+  # index.html must never be cached — it's the entry point that references
+  # the current content-hashed bundle names.
+  location = /index.html {
+    include /etc/nginx/security-headers.conf;
+    add_header Cache-Control "no-store" always;
+  }
+
+  # SPA fallback: Angular Router (HTML5 mode) owns every non-file route.
+  # No location-local add_header here, so it inherits the server block's
+  # `include /etc/nginx/security-headers.conf` directly.
+  location / {
+    try_files $uri $uri/ /index.html;
+  }
+
+  # Deny access to source maps in production images by default.
+  location ~* \.map$ {
+    deny all;
+  }
+
+  error_page 404 /index.html;
+  error_page 500 502 503 504 /50x.html;
+  location = /50x.html {
+    internal;
+    include /etc/nginx/security-headers.conf;
+    default_type text/plain;
+    return 500 "upstream error\n";
+  }
+}

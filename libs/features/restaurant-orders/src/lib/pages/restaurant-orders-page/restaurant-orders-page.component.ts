@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { EmptyStateComponent, ErrorStateComponent, SkeletonComponent } from '@patheya-express-frontend/ui';
+import { EmptyStateComponent, ErrorStateComponent, SkeletonComponent, StatusChipComponent } from '@patheya-express-frontend/ui';
 import { RestaurantOrdersFacade } from '../../facades/restaurant-orders.facade';
 import { RESTAURANT_ORDER_FILTERS, RestaurantOrderFilter } from '../../store/restaurant-orders.store';
 import { OrderCardComponent } from '../../components/order-card/order-card.component';
@@ -7,7 +7,7 @@ import { OrderCardComponent } from '../../components/order-card/order-card.compo
 @Component({
   selector: 'lib-restaurant-orders-page',
   standalone: true,
-  imports: [SkeletonComponent, EmptyStateComponent, ErrorStateComponent, OrderCardComponent],
+  imports: [SkeletonComponent, EmptyStateComponent, ErrorStateComponent, OrderCardComponent, StatusChipComponent],
   templateUrl: './restaurant-orders-page.component.html',
   styleUrl: './restaurant-orders-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -21,6 +21,7 @@ export class RestaurantOrdersPageComponent implements OnInit, OnDestroy {
   protected readonly loading = this.facade.loading;
   protected readonly error = this.facade.error;
   protected readonly actionError = this.facade.actionError;
+  protected readonly realtimeConnected = this.facade.realtimeConnected;
 
   ngOnInit(): void {
     this.facade.initialize();

@@ -2,11 +2,52 @@
   <h1>Restaurants</h1>
 
   <div class="restaurant-discovery-toolbar">
-    <lib-search-input
-      placeholder="Search restaurants"
-      [value]="facade.filters().search"
-      (valueChange)="onSearch($event)"
-    />
+    <div class="restaurant-discovery-search-wrap" (focusin)="onSearchFocus()" (focusout)="onSearchBlur()">
+      <lib-search-input
+        placeholder="Search restaurants, cuisines or dishes"
+        [value]="facade.filters().search"
+        (valueChange)="onSearch($event)"
+      />
+
+      @if (showSuggestions()) {
+        <div class="restaurant-discovery-suggestions-panel">
+          @if (suggestions().length > 0) {
+            <ul class="restaurant-discovery-suggestions-list">
+              @for (suggestion of suggestions(); track suggestion.id + suggestion.type) {
+                <li>
+                  <button type="button" (click)="selectSuggestion(suggestion)">
+                    <span class="suggestion-type">{{ suggestion.type }}</span>
+                    {{ suggestion.label }}
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+
+          @if (recentSearches().length > 0) {
+            <div class="restaurant-discovery-chip-group">
+              <span class="chip-group-label">Recent</span>
+              @for (recent of recentSearches(); track recent.id) {
+                <button type="button" class="restaurant-discovery-chip" (click)="selectChip(recent.query)">
+                  {{ recent.query }}
+                </button>
+              }
+            </div>
+          }
+
+          @if (trendingSearches().length > 0) {
+            <div class="restaurant-discovery-chip-group">
+              <span class="chip-group-label">Trending</span>
+              @for (trend of trendingSearches(); track trend.query) {
+                <button type="button" class="restaurant-discovery-chip" (click)="selectChip(trend.query)">
+                  {{ trend.query }}
+                </button>
+              }
+            </div>
+          }
+        </div>
+      }
+    </div>
 
     <select class="restaurant-discovery-filter-select" (change)="onCuisineFilterChange($any($event.target).value)">
       <option value="" [selected]="!facade.filters().cuisine">All cuisines</option>
@@ -17,7 +58,15 @@
       }
     </select>
 
-    <label class="restaurant-discovery-open-now">
+    <input
+      type="text"
+      class="restaurant-discovery-city-input"
+      placeholder="City"
+      [value]="facade.filters().city"
+      (change)="onCityChange($any($event.target).value)"
+    />
+
+    <label class="restaurant-discovery-toggle">
       <input
         type="checkbox"
         [checked]="facade.filters().openNow"
@@ -26,14 +75,58 @@
       Open now
     </label>
 
+    <label class="restaurant-discovery-toggle">
+      <input type="checkbox" [checked]="facade.filters().veg" (change)="onVegToggle($any($event.target).checked)" />
+      Veg
+    </label>
+
+    <label class="restaurant-discovery-toggle">
+      <input
+        type="checkbox"
+        [checked]="facade.filters().vegan"
+        (change)="onVeganToggle($any($event.target).checked)"
+      />
+      Vegan
+    </label>
+
+    <label class="restaurant-discovery-toggle">
+      <input
+        type="checkbox"
+        [checked]="facade.filters().offers"
+        (change)="onOffersToggle($any($event.target).checked)"
+      />
+      Offers
+    </label>
+
+    <select class="restaurant-discovery-filter-select" (change)="onMinRatingChange($any($event.target).value)">
+      <option value="" [selected]="!facade.filters().minRating">Any rating</option>
+      <option value="3" [selected]="facade.filters().minRating === 3">3+ stars</option>
+      <option value="4" [selected]="facade.filters().minRating === 4">4+ stars</option>
+      <option value="4.5" [selected]="facade.filters().minRating === 4.5">4.5+ stars</option>
+    </select>
+
+    <select
+      class="restaurant-discovery-filter-select"
+      (change)="onMaxDeliveryTimeChange($any($event.target).value)"
+    >
+      <option value="" [selected]="!facade.filters().maxDeliveryTimeMinutes">Any delivery time</option>
+      <option value="30" [selected]="facade.filters().maxDeliveryTimeMinutes === 30">Under 30 min</option>
+      <option value="45" [selected]="facade.filters().maxDeliveryTimeMinutes === 45">Under 45 min</option>
+      <option value="60" [selected]="facade.filters().maxDeliveryTimeMinutes === 60">Under 60 min</option>
+    </select>
+
     <select
       class="restaurant-discovery-filter-select"
       (change)="onSortChange($any($event.target).value)"
     >
       <option value="name:asc" [selected]="facade.filters().sortBy === 'name'">Name (A-Z)</option>
       <option value="rating:desc" [selected]="facade.filters().sortBy === 'rating'">Highest rated</option>
+      <option value="popularity:desc" [selected]="facade.filters().sortBy === 'popularity'">Most popular</option>
+      <option value="deliveryTime:asc" [selected]="facade.filters().sortBy === 'deliveryTime'">Fastest delivery</option>
       <option value="createdAt:desc" [selected]="facade.filters().sortBy === 'createdAt'">Newest</option>
     </select>
+
+    <button type="button" class="restaurant-discovery-clear-filters" (click)="clearFilters()">Clear filters</button>
   </div>
 
   @if (facade.loading()) {

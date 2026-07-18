@@ -1,0 +1,111 @@
+<div class="settings-page">
+  <div class="settings-page-header">
+    <h1>Business Settings</h1>
+    <nav class="settings-page-tabs">
+      <a routerLink="/settings/business" class="is-active">Business</a>
+      <a routerLink="/settings/operational">Operational</a>
+    </nav>
+  </div>
+
+  @if (facade.loading()) {
+    <lib-skeleton [count]="4" />
+  } @else if (facade.error()) {
+    <lib-error-state [message]="facade.error()!" (retry)="retry()" />
+  } @else {
+    @if (hasUnsavedChanges) {
+      <div class="settings-banner settings-banner--warning">You have unsaved changes.</div>
+    }
+    @if (facade.saveError(); as error) {
+      <div class="settings-banner settings-banner--error">{{ error }}</div>
+    }
+    @if (facade.savedAt() && !hasUnsavedChanges) {
+      <div class="settings-banner settings-banner--success">Settings saved.</div>
+    }
+
+    <form class="settings-form" [formGroup]="form" (ngSubmit)="onSubmit()">
+      <section class="settings-section">
+        <h2>Ordering</h2>
+
+        <label class="settings-field">
+          <span>Currency</span>
+          <input type="text" formControlName="currency" maxlength="3" />
+          @if (form.controls.currency.invalid && form.controls.currency.touched) {
+            <small class="settings-field-error">Currency is required.</small>
+          }
+        </label>
+
+        <label class="settings-field">
+          <span>Minimum Order Amount</span>
+          <input type="number" min="0" formControlName="minimumOrderAmount" />
+          @if (form.controls.minimumOrderAmount.invalid && form.controls.minimumOrderAmount.touched) {
+            <small class="settings-field-error">Enter a valid non-negative amount.</small>
+          }
+        </label>
+
+        <label class="settings-field">
+          <span>Preparation Time Default (minutes)</span>
+          <input type="number" min="0" formControlName="orderPreparationDefaultMinutes" />
+        </label>
+
+        <label class="settings-field">
+          <span>Delivery Radius Override (km)</span>
+          <input type="number" min="0" step="0.1" formControlName="deliveryRadiusOverrideKm" />
+        </label>
+      </section>
+
+      <section class="settings-section">
+        <h2>Charges</h2>
+
+        <div class="settings-charge-row">
+          <label class="settings-field">
+            <span>Service Charge Type</span>
+            <select formControlName="serviceChargeType">
+              @for (type of chargeTypes; track type) {
+                <option [value]="type">{{ type }}</option>
+              }
+            </select>
+          </label>
+          <label class="settings-field">
+            <span>Service Charge Value</span>
+            <input type="number" min="0" formControlName="serviceChargeValue" />
+          </label>
+        </div>
+
+        <div class="settings-charge-row">
+          <label class="settings-field">
+            <span>Packing Charge Type</span>
+            <select formControlName="packingChargeType">
+              @for (type of chargeTypes; track type) {
+                <option [value]="type">{{ type }}</option>
+              }
+            </select>
+          </label>
+          <label class="settings-field">
+            <span>Packing Charge Value</span>
+            <input type="number" min="0" formControlName="packingChargeValue" />
+          </label>
+        </div>
+      </section>
+
+      <section class="settings-section">
+        <h2>Notes</h2>
+
+        <label class="settings-field">
+          <span>Restaurant Notes (internal)</span>
+          <textarea rows="3" formControlName="restaurantNotes"></textarea>
+        </label>
+
+        <label class="settings-field">
+          <span>Special Instructions (shown to staff)</span>
+          <textarea rows="3" formControlName="specialInstructions"></textarea>
+        </label>
+      </section>
+
+      <div class="settings-actions">
+        <button type="submit" [disabled]="facade.saving() || !hasUnsavedChanges">
+          {{ facade.saving() ? 'Saving…' : 'Save Changes' }}
+        </button>
+      </div>
+    </form>
+  }
+</div>

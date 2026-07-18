@@ -2,11 +2,14 @@ import { Injectable, inject } from '@angular/core';
 import {
   AuthService as GeneratedAuthService,
   type AuthUserDto,
+  type ForgotPasswordDto,
   type LoginDto,
   type LogoutResponseDto,
+  type PasswordResetMessageDto,
   type RefreshResponseDto,
   type RegisterDto,
   type RegisterResponseDto,
+  type ResetPasswordDto,
 } from '@patheya-express-frontend/api-sdk';
 
 // The API gateway wraps every response in a { success, timestamp, data } envelope via a
@@ -57,6 +60,16 @@ export class AuthService {
 
   async logout(refreshToken: string): Promise<LogoutResponseDto> {
     const response = await this.authService.authControllerLogout({ body: { refreshToken } });
+    return unwrap(response);
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto): Promise<PasswordResetMessageDto> {
+    const response = await this.authService.authControllerForgotPassword({ body: dto });
+    return unwrap(response);
+  }
+
+  async resetPassword(dto: ResetPasswordDto): Promise<PasswordResetMessageDto> {
+    const response = await this.authService.authControllerResetPassword({ body: dto });
     return unwrap(response);
   }
 }

@@ -11,6 +11,8 @@ import { StrictHttpResponse } from '../strict-http-response';
 
 import { authControllerAdminOnly } from '../fn/auth/auth-controller-admin-only';
 import { AuthControllerAdminOnly$Params } from '../fn/auth/auth-controller-admin-only';
+import { authControllerForgotPassword } from '../fn/auth/auth-controller-forgot-password';
+import { AuthControllerForgotPassword$Params } from '../fn/auth/auth-controller-forgot-password';
 import { authControllerGetProfile } from '../fn/auth/auth-controller-get-profile';
 import { AuthControllerGetProfile$Params } from '../fn/auth/auth-controller-get-profile';
 import { authControllerLogin } from '../fn/auth/auth-controller-login';
@@ -25,8 +27,11 @@ import { authControllerRegisterDeliveryPartner } from '../fn/auth/auth-controlle
 import { AuthControllerRegisterDeliveryPartner$Params } from '../fn/auth/auth-controller-register-delivery-partner';
 import { authControllerRegisterRestaurantOwner } from '../fn/auth/auth-controller-register-restaurant-owner';
 import { AuthControllerRegisterRestaurantOwner$Params } from '../fn/auth/auth-controller-register-restaurant-owner';
+import { authControllerResetPassword } from '../fn/auth/auth-controller-reset-password';
+import { AuthControllerResetPassword$Params } from '../fn/auth/auth-controller-reset-password';
 import { AuthUserDto } from '../models/auth-user-dto';
 import { LogoutResponseDto } from '../models/logout-response-dto';
+import { PasswordResetMessageDto } from '../models/password-reset-message-dto';
 import { RefreshResponseDto } from '../models/refresh-response-dto';
 import { RegisterResponseDto } from '../models/register-response-dto';
 
@@ -265,6 +270,72 @@ export class AuthService extends BaseService {
   authControllerLogout(params: AuthControllerLogout$Params, context?: HttpContext): Promise<LogoutResponseDto> {
     const resp = this.authControllerLogout$Response(params, context);
     return resp.then((r: StrictHttpResponse<LogoutResponseDto>): LogoutResponseDto => r.body);
+  }
+
+  /** Path part for operation `authControllerForgotPassword()` */
+  static readonly AuthControllerForgotPasswordPath = '/api/v1/auth/forgot-password';
+
+  /**
+   * Request a password reset link.
+   *
+   * Always returns the same message whether or not the email matches an account, to avoid revealing account existence.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `authControllerForgotPassword()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  authControllerForgotPassword$Response(params: AuthControllerForgotPassword$Params, context?: HttpContext): Promise<StrictHttpResponse<PasswordResetMessageDto>> {
+    const obs = authControllerForgotPassword(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Request a password reset link.
+   *
+   * Always returns the same message whether or not the email matches an account, to avoid revealing account existence.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `authControllerForgotPassword$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  authControllerForgotPassword(params: AuthControllerForgotPassword$Params, context?: HttpContext): Promise<PasswordResetMessageDto> {
+    const resp = this.authControllerForgotPassword$Response(params, context);
+    return resp.then((r: StrictHttpResponse<PasswordResetMessageDto>): PasswordResetMessageDto => r.body);
+  }
+
+  /** Path part for operation `authControllerResetPassword()` */
+  static readonly AuthControllerResetPasswordPath = '/api/v1/auth/reset-password';
+
+  /**
+   * Reset password using a token from the emailed reset link.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `authControllerResetPassword()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  authControllerResetPassword$Response(params: AuthControllerResetPassword$Params, context?: HttpContext): Promise<StrictHttpResponse<PasswordResetMessageDto>> {
+    const obs = authControllerResetPassword(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Reset password using a token from the emailed reset link.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `authControllerResetPassword$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  authControllerResetPassword(params: AuthControllerResetPassword$Params, context?: HttpContext): Promise<PasswordResetMessageDto> {
+    const resp = this.authControllerResetPassword$Response(params, context);
+    return resp.then((r: StrictHttpResponse<PasswordResetMessageDto>): PasswordResetMessageDto => r.body);
   }
 
   /** Path part for operation `authControllerAdminOnly()` */

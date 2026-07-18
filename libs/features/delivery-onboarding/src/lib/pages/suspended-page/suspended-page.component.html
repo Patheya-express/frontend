@@ -1,0 +1,12 @@
+<div class="suspended-page">
+  <div class="suspended-card">
+    <h1>Account Suspended</h1>
+    <p>Your delivery partner account has been suspended. You cannot go online or receive orders while suspended.</p>
+    @if (facade.verification()?.rejectedReason) {
+      <p class="suspended-reason">{{ facade.verification()!.rejectedReason }}</p>
+    }
+    <p class="suspended-support">
+      Contact <a [href]="'mailto:' + supportEmail">{{ supportEmail }}</a> or call {{ supportPhone }} for details.
+    </p>
+  </div>
+</div>

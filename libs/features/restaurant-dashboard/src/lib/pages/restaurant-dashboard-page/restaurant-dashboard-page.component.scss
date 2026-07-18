@@ -14,6 +14,13 @@ h1 {
   color: var(--color-text);
 }
 
+.restaurant-dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
 h2 {
   margin: 0 0 var(--space-3);
   font-size: var(--font-size-lg);
@@ -25,6 +32,49 @@ h2 {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: var(--space-3);
+}
+
+.restaurant-dashboard-panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--space-4);
+}
+
+.restaurant-dashboard-panel {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+
+  &--wide {
+    grid-column: 1 / -1;
+  }
+}
+
+.restaurant-dashboard-empty {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+.restaurant-dashboard-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+
+    span:first-child {
+      font-weight: var(--font-weight-medium);
+    }
+  }
 }
 
 .restaurant-dashboard-quick-actions-list {

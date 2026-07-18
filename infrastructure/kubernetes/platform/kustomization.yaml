@@ -1,0 +1,24 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Cluster-wide/shared platform resources — applied once, independently of
+# and before any of infrastructure/kubernetes/overlays/*, which reference
+# some of these by name (RoleBindings to the ClusterRole here,
+# priorityClassName to the PriorityClasses here). See
+# infrastructure/kubernetes/platform/README.md for the full apply order
+# and why these can't just live inside base/.
+resources:
+  - namespaces/monitoring.yaml
+  - namespaces/ingress.yaml
+  - namespaces/system.yaml
+  - priority-classes/priority-classes.yaml
+  - rbac/frontend-viewer-clusterrole.yaml
+  - metrics-server/metrics-server.yaml
+  - cert-manager/cluster-issuers.yaml
+  - external-dns/external-dns.yaml
+
+labels:
+  - pairs:
+      app.kubernetes.io/managed-by: kustomize
+    includeSelectors: false
+    includeTemplates: true

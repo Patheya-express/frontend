@@ -8,6 +8,8 @@
       }
     </nav>
 
+    <ng-content select="[shell-header-extra]" />
+
     <button type="button" class="partner-header-logout" (click)="logoutRequested.emit()">Log out</button>
   </header>
 

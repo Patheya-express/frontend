@@ -1,0 +1,54 @@
+<div class="create-ticket-page">
+  <a class="create-ticket-back" routerLink="/support/tickets">&larr; Back to tickets</a>
+
+  <h1>New Support Ticket</h1>
+
+  <form class="create-ticket-form" [formGroup]="form" (ngSubmit)="submit()">
+    <label class="form-field">
+      <span>Category</span>
+      <select formControlName="category">
+        @for (option of categoryOptions; track option.value) {
+          <option [value]="option.value">{{ option.label }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="form-field">
+      <span>Priority</span>
+      <select formControlName="priority">
+        @for (option of priorityOptions; track option) {
+          <option [value]="option">{{ option }}</option>
+        }
+      </select>
+    </label>
+
+    <label class="form-field">
+      <span>Subject</span>
+      <input type="text" formControlName="subject" placeholder="Brief summary of your issue" />
+      @if (submitted() && form.controls.subject.invalid) {
+        <span class="form-error">Subject must be at least 3 characters.</span>
+      }
+    </label>
+
+    <label class="form-field">
+      <span>Description</span>
+      <textarea formControlName="description" rows="5" placeholder="Describe your issue in detail"></textarea>
+      @if (submitted() && form.controls.description.invalid) {
+        <span class="form-error">Description must be at least 10 characters.</span>
+      }
+    </label>
+
+    <label class="form-field">
+      <span>Related order ID (optional)</span>
+      <input type="text" formControlName="orderId" placeholder="Order ID, if this is about a specific order" />
+    </label>
+
+    @if (facade.createError()) {
+      <p class="form-error">{{ facade.createError() }}</p>
+    }
+
+    <button type="submit" class="create-ticket-submit" [disabled]="facade.creating()">
+      {{ facade.creating() ? 'Submitting…' : 'Submit ticket' }}
+    </button>
+  </form>
+</div>

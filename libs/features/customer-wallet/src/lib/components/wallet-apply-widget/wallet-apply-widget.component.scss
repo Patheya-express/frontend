@@ -1,0 +1,35 @@
+.wallet-apply-widget {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.wallet-apply-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.wallet-apply-balance {
+  color: var(--color-text-subtle);
+  font-size: var(--font-size-xs);
+}
+
+.wallet-apply-confirmation {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-success, #2e7d32);
+}
+
+.wallet-apply-error {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-error);
+}

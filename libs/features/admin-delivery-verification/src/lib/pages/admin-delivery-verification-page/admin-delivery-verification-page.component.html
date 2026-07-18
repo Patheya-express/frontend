@@ -1,0 +1,326 @@
+<div class="admin-delivery-verification-page">
+  <h1>Delivery Partner Verification</h1>
+
+  <div class="verification-layout">
+    <section class="queue-panel">
+      <lib-table-toolbar>
+        <lib-search-input
+          toolbar-search
+          placeholder="Search by name, email, phone, or vehicle number"
+          [value]="facade.search()"
+          (valueChange)="onSearch($event)"
+        />
+
+        <div toolbar-filters class="queue-filters">
+          <select (change)="onStatusFilterChange($any($event.target).value)">
+            <option value="" [selected]="!facade.statusFilter()">All statuses</option>
+            @for (option of statusOptions; track option.value) {
+              <option [value]="option.value" [selected]="facade.statusFilter() === option.value">{{ option.label }}</option>
+            }
+          </select>
+
+          <select (change)="onVerifiedFilterChange($any($event.target).value)">
+            <option value="" [selected]="facade.verifiedFilter() === null">All</option>
+            <option value="true" [selected]="facade.verifiedFilter() === true">Verified</option>
+            <option value="false" [selected]="facade.verifiedFilter() === false">Unverified</option>
+          </select>
+
+          <select (change)="onOnlineFilterChange($any($event.target).value)">
+            <option value="" [selected]="facade.onlineFilter() === null">Any presence</option>
+            <option value="true" [selected]="facade.onlineFilter() === true">Online only</option>
+            <option value="false" [selected]="facade.onlineFilter() === false">Offline only</option>
+          </select>
+
+          <label class="date-field">
+            From
+            <input type="date" [value]="facade.dateFrom()" (change)="onDateFromChange($any($event.target).value)" />
+          </label>
+          <label class="date-field">
+            To
+            <input type="date" [value]="facade.dateTo()" (change)="onDateToChange($any($event.target).value)" />
+          </label>
+        </div>
+      </lib-table-toolbar>
+
+      @if (facade.loading()) {
+        <lib-skeleton [count]="6" />
+      } @else if (facade.error()) {
+        <lib-error-state [message]="facade.error()!" (retry)="retry()" />
+      } @else if (facade.partners().length === 0) {
+        <lib-empty-state title="No delivery partners found" message="Try adjusting your search or filters." actionLabel="Refresh" (refresh)="retry()" />
+      } @else {
+        <div class="queue-table-scroll">
+          <lib-data-table [columns]="columns">
+            @for (partner of facade.partners(); track partner.id) {
+              <tr [class.active]="facade.selectedPartner()?.id === partner.id">
+                <td>{{ partnerName(partner) }}</td>
+                <td>{{ vehicleSummary(partner) }}</td>
+                <td><lib-status-chip [label]="partner.isVerified ? 'Verified' : 'Unverified'" [tone]="verifiedTone(partner)" /></td>
+                <td><lib-status-chip [label]="partner.status" [tone]="statusTone(partner.status)" /></td>
+                <td><lib-status-chip [label]="partner.online ? 'Online' : 'Offline'" [tone]="onlineTone(partner)" /></td>
+                <td>{{ formattedDate(partner.createdAt) }}</td>
+                <td>
+                  <button type="button" class="action-link" (click)="selectPartner(partner)">Review</button>
+                </td>
+              </tr>
+            }
+          </lib-data-table>
+        </div>
+
+        <lib-pagination [page]="facade.page()" [totalPages]="facade.totalPages()" [total]="facade.total()" (pageChange)="onPageChange($event)" />
+      }
+    </section>
+
+    <section class="detail-panel">
+      @if (!facade.selectedPartner()) {
+        <lib-empty-state message="Select a delivery partner to review their verification status." />
+      } @else {
+        @let partner = facade.selectedPartner()!;
+
+        @if (facade.detailLoading()) {
+          <lib-skeleton [count]="4" />
+        } @else {
+          @if (facade.actionError(); as actionError) {
+            <div class="form-alert" role="alert">{{ actionError }}</div>
+          }
+
+          <div class="detail-header">
+            <h2>{{ partnerName(partner) }}</h2>
+            <button type="button" class="link-button" (click)="closeDetail()">Close</button>
+          </div>
+
+          <!-- Overview -->
+          <div class="detail-section">
+            <h3>Overview</h3>
+            <div class="overview-grid">
+              @if (profilePhoto(); as photo) {
+                <img class="profile-photo" [src]="resolveUrl(photo.storageUrl)" alt="Partner photo" />
+              }
+              <dl class="detail-list">
+                <dt>Partner ID</dt>
+                <dd>{{ partner.id }}</dd>
+                <dt>Email</dt>
+                <dd>{{ partner.user.email ?? '—' }}</dd>
+                <dt>Phone</dt>
+                <dd>{{ partner.user.phone ?? '—' }}</dd>
+                <dt>Verification Stage</dt>
+                <dd>
+                  @if (facade.verificationStage(); as stage) {
+                    <lib-status-chip [label]="stage" [tone]="statusTone(stage)" />
+                  } @else {
+                    <span class="muted">Unknown</span>
+                  }
+                </dd>
+                <dt>Current Status</dt>
+                <dd><lib-status-chip [label]="partner.status" [tone]="statusTone(partner.status)" /></dd>
+                <dt>Online</dt>
+                <dd><lib-status-chip [label]="partner.online ? 'Online' : 'Offline'" [tone]="onlineTone(partner)" /></dd>
+                <dt>Joined</dt>
+                <dd>{{ formattedDate(partner.createdAt) }}</dd>
+              </dl>
+            </div>
+          </div>
+
+          <!-- Vehicle & License -->
+          <div class="detail-section">
+            <h3>Vehicle &amp; License</h3>
+            <dl class="detail-list">
+              <dt>Vehicle</dt>
+              <dd>{{ vehicleSummary(partner) }}</dd>
+              <dt>License Number</dt>
+              <dd>{{ partner.licenseNumber ?? '—' }}</dd>
+            </dl>
+            <p class="muted note">Per-vehicle metadata (make/model/insurance expiry beyond the document itself) has no admin-facing endpoint yet — see the Documents section below for vehicle document expiry dates.</p>
+          </div>
+
+          <!-- Documents -->
+          <div class="detail-section">
+            <h3>Documents</h3>
+            @if (facade.documents().length === 0) {
+              <p class="muted">No documents uploaded.</p>
+            } @else {
+              <ul class="document-list">
+                @for (document of facade.documents(); track document.id) {
+                  <li>
+                    <div class="document-preview">
+                      <img [src]="resolveUrl(document.storageUrl)" [alt]="document.documentType" />
+                    </div>
+                    <div class="document-info">
+                      <strong>{{ document.documentType }}</strong>
+                      <lib-status-chip [label]="document.status" [tone]="statusTone(document.status)" />
+                      @if (document.expiryDate) {
+                        <span class="muted">Expires {{ formattedDate(document.expiryDate) }}</span>
+                      }
+                      <span class="muted">v{{ document.version }}</span>
+                      @if (document.rejectedReason) {
+                        <span class="reason">Reason: {{ document.rejectedReason }}</span>
+                      }
+                    </div>
+                    <div class="action-row">
+                      <button type="button" [disabled]="facade.processingId() === document.id" (click)="onVerifyDocument(document.id)">Verify</button>
+                      @if (pendingDocumentRejectId() === document.id) {
+                        <input type="text" placeholder="Rejection reason" [(ngModel)]="documentRejectReason" />
+                        <button type="button" [disabled]="!documentRejectReason.trim()" (click)="confirmRejectDocument(document.id)">Confirm Reject</button>
+                        <button type="button" (click)="cancelRejectDocument()">Cancel</button>
+                      } @else {
+                        <button type="button" [disabled]="facade.processingId() === document.id" (click)="requestRejectDocument(document.id)">Reject</button>
+                      }
+                    </div>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+
+          <!-- Bank Account -->
+          <div class="detail-section">
+            <h3>Bank Account</h3>
+            @if (facade.bankAccount(); as account) {
+              <p>{{ account.bankName }} — ••••{{ account.accountNumberLast4 }}</p>
+            } @else {
+              <p class="muted note">No admin read endpoint exists for bank account details — verification status is known, but account holder/bank/IFSC are only visible once a verify/reject action has been taken this session.</p>
+            }
+            @if (facade.bankVerificationStatus(); as status) {
+              <lib-status-chip [label]="status" [tone]="statusTone(status)" />
+            }
+            <div class="action-row">
+              <button type="button" [disabled]="isBusy()" (click)="onVerifyBank()">Verify</button>
+              <button type="button" [disabled]="isBusy()" (click)="onRejectBank()">Reject</button>
+            </div>
+          </div>
+
+          <!-- Compliance Snapshot -->
+          <div class="detail-section">
+            <h3>Compliance Snapshot</h3>
+            @if (facade.compliance(); as compliance) {
+              <div class="health-grid">
+                <lib-status-chip [label]="compliance.overallStatus" [tone]="statusTone(compliance.overallStatus)" />
+                <span>{{ compliance.documentsVerified }}/{{ compliance.documentsTotal }} documents verified</span>
+                @if (compliance.documentsPending > 0) {
+                  <span>{{ compliance.documentsPending }} pending</span>
+                }
+                @if (compliance.documentsRejected > 0) {
+                  <span class="health-warning">{{ compliance.documentsRejected }} rejected</span>
+                }
+              </div>
+              @if (compliance.missingDocumentTypes.length > 0) {
+                <p class="health-warning">Missing: {{ compliance.missingDocumentTypes.join(', ') }}</p>
+              }
+              @if (compliance.expiringWithin30Days.length > 0) {
+                <p class="health-warning">Expiring within 30 days: {{ compliance.expiringWithin30Days.length }} document(s)</p>
+              }
+              @if (compliance.expired.length > 0) {
+                <p class="health-warning">Expired: {{ compliance.expired.length }} document(s)</p>
+              }
+            } @else {
+              <p class="muted">Compliance snapshot unavailable.</p>
+            }
+          </div>
+
+          <!-- Verification Stage & Actions -->
+          <div class="detail-section">
+            <h3>Verification Actions</h3>
+            <div class="action-row">
+              <button type="button" [disabled]="isBusy()" (click)="requestVerificationAction('advance')">Advance</button>
+              <button type="button" [disabled]="isBusy()" (click)="requestVerificationAction('suspend')">Suspend</button>
+              <button type="button" [disabled]="isBusy()" (click)="requestVerificationAction('reinstate')">Reinstate</button>
+            </div>
+            <div class="reject-row">
+              <input type="text" placeholder="Rejection reason" [(ngModel)]="rejectReason" />
+              <button type="button" [disabled]="isBusy() || !rejectReason.trim()" (click)="requestVerificationAction('reject')">Reject</button>
+            </div>
+          </div>
+
+          <!-- Onboarding Change Requests -->
+          <div class="detail-section">
+            <h3>Request Onboarding Changes</h3>
+            @if (facade.onboarding(); as onboarding) {
+              <p>
+                <lib-status-chip [label]="onboarding.status" [tone]="statusTone(onboarding.status)" />
+                <span class="muted">{{ onboarding.progressPercent }}% complete</span>
+              </p>
+              @if (onboarding.changesRequested && onboarding.changesRequested.length > 0) {
+                <ul class="changes-requested-list">
+                  @for (item of onboarding.changesRequested; track item.section) {
+                    <li><strong>{{ item.section }}</strong>: {{ item.reason }}</li>
+                  }
+                </ul>
+              }
+            } @else {
+              <p class="muted note">There is no admin read endpoint for onboarding progress — current step/status only becomes visible after requesting changes below.</p>
+            }
+            <div class="request-changes-panel">
+              @for (section of changeSections; track section.key) {
+                <div class="request-changes-row">
+                  <span>{{ section.label }}</span>
+                  <input type="text" placeholder="Reason (leave blank to skip)" [(ngModel)]="changeReasons[section.key]" />
+                </div>
+              }
+              <button type="button" [disabled]="isBusy()" (click)="onRequestChanges()">Request Changes</button>
+            </div>
+          </div>
+
+          <!-- Verification Timeline -->
+          <div class="detail-section">
+            <h3>Verification Timeline</h3>
+            @if (facade.timeline().length === 0) {
+              <p class="muted">No timeline events yet.</p>
+            } @else {
+              <ul class="timeline-list">
+                @for (entry of facade.timeline(); track entry.at + entry.label) {
+                  <li><span class="timeline-date">{{ formattedDateTime(entry.at) }}</span> — {{ entry.label }}</li>
+                }
+              </ul>
+            }
+            <p class="muted note">Derived from data already fetched for this panel (documents, bank account, onboarding, verification) — there is no dedicated admin verification-history endpoint to call.</p>
+          </div>
+
+          <!-- Audit Timeline -->
+          <div class="detail-section">
+            <h3>Audit Log</h3>
+            @if (facade.auditLoading()) {
+              <lib-skeleton [count]="3" />
+            } @else if (facade.auditLogs().length === 0) {
+              <p class="muted">No audit entries found for this partner.</p>
+            } @else {
+              <ul class="audit-list">
+                @for (log of facade.auditLogs(); track log.id) {
+                  <li>
+                    <span class="timeline-date">{{ formattedDateTime(log.createdAt) }}</span>
+                    <strong>{{ log.action }}</strong>
+                    <span>{{ log.actor ? (log.actor.firstName + ' ' + (log.actor.lastName ?? '')) : 'System' }}</span>
+                  </li>
+                }
+              </ul>
+              <lib-pagination [page]="facade.auditPage()" [totalPages]="facade.auditTotalPages()" (pageChange)="onAuditPageChange($event)" />
+            }
+          </div>
+
+          <!-- Current Assignment & Delivery Summary -->
+          <div class="detail-section">
+            <h3>Current Assignment &amp; Delivery Summary</h3>
+            <dl class="detail-list">
+              <dt>Current Order</dt>
+              <dd>{{ currentOrderLabel(partner) }}</dd>
+              <dt>Completed Deliveries</dt>
+              <dd>{{ partner.completedDeliveries }}</dd>
+              <dt>Today's Deliveries</dt>
+              <dd>{{ partner.todaysDeliveries }}</dd>
+              <dt>Estimated Fees Today</dt>
+              <dd>{{ formattedAmount(partner.estimatedFeesToday) }}</dd>
+            </dl>
+          </div>
+        }
+      }
+    </section>
+  </div>
+
+  <lib-confirm-dialog
+    [open]="!!pendingVerificationAction()"
+    [title]="verificationActionTitle()"
+    [tone]="verificationActionTone()"
+    [busy]="isBusy()"
+    (confirmed)="confirmVerificationAction()"
+    (cancelled)="cancelVerificationAction()"
+  />
+</div>

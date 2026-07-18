@@ -7,6 +7,7 @@ export class CheckoutFacade {
   private readonly store = inject(CheckoutStore);
 
   readonly paymentMode = this.store.paymentMode;
+  readonly useWallet = this.store.useWallet;
   readonly placingOrder = this.store.placingOrder;
   readonly orderSummary = this.store.orderSummary;
   readonly validationErrors = this.store.validationErrors;
@@ -14,6 +15,10 @@ export class CheckoutFacade {
 
   setPaymentMode(mode: PaymentMode): void {
     this.store.setPaymentMode(mode);
+  }
+
+  setUseWallet(useWallet: boolean): void {
+    this.store.setUseWallet(useWallet);
   }
 
   placeOrder(): Promise<OrderResponseDto | null> {

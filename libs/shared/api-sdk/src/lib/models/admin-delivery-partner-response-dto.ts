@@ -41,5 +41,5 @@ export interface AdminDeliveryPartnerResponseDto {
   updatedAt: string;
   user: AdminDeliveryPartnerUserSummaryDto;
   vehicleNumber: string;
-  vehicleType: 'BIKE' | 'SCOOTER' | 'BICYCLE' | 'CAR';
+  vehicleType: 'BIKE' | 'SCOOTER' | 'BICYCLE' | 'CAR' | 'ELECTRIC_VEHICLE';
 }

@@ -1,0 +1,23 @@
+# Sized for full HPA scale-out headroom: 4 apps x up to 10 replicas each
+# (base/*/hpa.yaml's maxReplicas) x 2 containers is a theoretical ceiling
+# of 80 pods — this quota doesn't try to cover that worst case fully (an
+# HPA maxing out every app simultaneously should page someone before it
+# silently OOMs on quota), but gives real room above production's 3-replica
+# floor for organic scale-up.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: patheya-express-prod-quota
+spec:
+  hard:
+    requests.cpu: "8"
+    requests.memory: 8Gi
+    requests.ephemeral-storage: 8Gi
+    limits.cpu: "16"
+    limits.memory: 16Gi
+    limits.ephemeral-storage: 16Gi
+    pods: "60"
+    services: "10"
+    configmaps: "20"
+    secrets: "20"
+    persistentvolumeclaims: "5"

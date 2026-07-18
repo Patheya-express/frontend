@@ -1,0 +1,142 @@
+<div class="staff-page">
+  <div class="staff-page-header">
+    <h1>Staff</h1>
+    <button type="button" class="staff-invite-btn" (click)="openInviteForm()">+ Invite Staff</button>
+  </div>
+
+  <div class="staff-filters">
+    @for (item of filters; track item.value) {
+      <button
+        type="button"
+        class="staff-filter"
+        [class.is-active]="facade.filter() === item.value"
+        (click)="onFilterChange(item.value)"
+      >
+        {{ item.label }}
+        @if (item.value === 'INVITED' && facade.pendingCount() > 0) {
+          <span class="staff-filter-badge">{{ facade.pendingCount() }}</span>
+        }
+      </button>
+    }
+  </div>
+
+  <lib-search-input placeholder="Search staff by name or email…" (valueChange)="onSearch($event)" />
+
+  @if (facade.actionError(); as error) {
+    <div class="staff-banner staff-banner--error">{{ error }}</div>
+  }
+
+  @if (facade.loading()) {
+    <lib-skeleton [count]="4" />
+  } @else if (facade.error()) {
+    <lib-error-state [message]="facade.error()!" (retry)="retry()" />
+  } @else if (facade.staff().length === 0) {
+    <lib-empty-state title="No staff found" message="Invite a team member to get started." actionLabel="Invite Staff" (refresh)="openInviteForm()" />
+  } @else {
+    <lib-data-table [columns]="columns">
+      @for (member of facade.staff(); track member.id) {
+        <tr>
+          <td>
+            <div>{{ staffName(member) }}</div>
+            <small>{{ member.user?.email }}</small>
+          </td>
+          <td>{{ member.role }}</td>
+          <td>{{ branchName(member.branchId) }}</td>
+          <td><lib-status-chip [label]="member.status" [tone]="statusTone(member.status)" /></td>
+          <td class="staff-actions">
+            @if (member.status !== 'REVOKED') {
+              <button type="button" (click)="openEditForm(member)">Edit</button>
+              <button type="button" class="staff-remove" (click)="requestRemove(member.id)">Remove</button>
+            }
+          </td>
+        </tr>
+      }
+    </lib-data-table>
+
+    <lib-pagination [page]="facade.page()" [totalPages]="facade.totalPages()" (pageChange)="onPageChange($event)" />
+  }
+
+  @if (showInviteForm) {
+    <div class="staff-form-overlay">
+      <form class="staff-form" [formGroup]="inviteForm" (ngSubmit)="onInviteSubmit()">
+        <h2>Invite Staff</h2>
+
+        <label class="staff-field">
+          <span>Email (must be a registered account)</span>
+          <input type="email" formControlName="email" />
+        </label>
+
+        <label class="staff-field">
+          <span>Role</span>
+          <select formControlName="role">
+            @for (role of roles; track role) {
+              <option [value]="role">{{ role }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="staff-field">
+          <span>Branch (leave blank for restaurant-wide)</span>
+          <select formControlName="branchId">
+            <option value="">Restaurant-wide</option>
+            @for (branch of context.branches(); track branch.id) {
+              <option [value]="branch.id">{{ branch.name }}</option>
+            }
+          </select>
+        </label>
+
+        <div class="staff-form-actions">
+          <button type="button" (click)="closeInviteForm()">Cancel</button>
+          <button type="submit" [disabled]="facade.saving()">
+            {{ facade.saving() ? 'Sending…' : 'Send Invite' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
+  @if (editingStaffId) {
+    <div class="staff-form-overlay">
+      <form class="staff-form" [formGroup]="editForm" (ngSubmit)="onEditSubmit()">
+        <h2>Edit Staff Role</h2>
+
+        <label class="staff-field">
+          <span>Role</span>
+          <select formControlName="role">
+            @for (role of roles; track role) {
+              <option [value]="role">{{ role }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="staff-field">
+          <span>Branch (leave blank for restaurant-wide)</span>
+          <select formControlName="branchId">
+            <option value="">Restaurant-wide</option>
+            @for (branch of context.branches(); track branch.id) {
+              <option [value]="branch.id">{{ branch.name }}</option>
+            }
+          </select>
+        </label>
+
+        <div class="staff-form-actions">
+          <button type="button" (click)="closeEditForm()">Cancel</button>
+          <button type="submit" [disabled]="facade.saving()">
+            {{ facade.saving() ? 'Saving…' : 'Save' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  }
+
+  <lib-confirm-dialog
+    [open]="!!confirmRemoveId"
+    title="Remove this staff member?"
+    message="They will lose access to this restaurant immediately."
+    confirmLabel="Remove"
+    tone="danger"
+    [busy]="facade.saving()"
+    (confirmed)="confirmRemove()"
+    (cancelled)="cancelRemove()"
+  />
+</div>

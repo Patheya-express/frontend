@@ -1,0 +1,135 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: patheya-frontend
+
+# namespace.yaml deliberately NOT listed here — see overlays/development/kustomization.yaml's
+# comment; same fix, same reason (Terraform-owned "patheya-frontend", not "patheya-express-prod").
+resources:
+  - ../../base
+  - resourcequota.yaml
+  - limitrange.yaml
+
+labels:
+  - pairs:
+      environment: production
+    includeSelectors: false
+    includeTemplates: true
+
+replicas:
+  - name: customer-app
+    count: 3
+  - name: restaurant-app
+    count: 3
+  - name: admin-app
+    count: 3
+  - name: delivery-app
+    count: 3
+
+images:
+  - name: ghcr.io/patheya-express/customer-app
+    newTag: production
+  - name: ghcr.io/patheya-express/restaurant-app
+    newTag: production
+  - name: ghcr.io/patheya-express/admin-app
+    newTag: production
+  - name: ghcr.io/patheya-express/delivery-app
+    newTag: production
+
+patches:
+  # The base Ingress defaults cert-manager.io/cluster-issuer to
+  # letsencrypt-staging (see base/customer-app/ingress.yaml) precisely so
+  # every environment is safe-by-default; production is the one overlay
+  # that explicitly opts into the real, rate-limited, browser-trusted issuer.
+  - target:
+      kind: Ingress
+      name: customer-app
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: customer.patheyaexpress.com
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: customer.patheyaexpress.com
+      - op: replace
+        path: /metadata/annotations/cert-manager.io~1cluster-issuer
+        value: letsencrypt-production
+  - target:
+      kind: Ingress
+      name: restaurant-app
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: restaurant.patheyaexpress.com
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: restaurant.patheyaexpress.com
+      - op: replace
+        path: /metadata/annotations/cert-manager.io~1cluster-issuer
+        value: letsencrypt-production
+  - target:
+      kind: Ingress
+      name: admin-app
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: admin.patheyaexpress.com
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: admin.patheyaexpress.com
+      - op: replace
+        path: /metadata/annotations/cert-manager.io~1cluster-issuer
+        value: letsencrypt-production
+  - target:
+      kind: Ingress
+      name: delivery-app
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: delivery.patheyaexpress.com
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: delivery.patheyaexpress.com
+      - op: replace
+        path: /metadata/annotations/cert-manager.io~1cluster-issuer
+        value: letsencrypt-production
+  # Production's HPA floor matches the `replicas:` override above;
+  # maxReplicas stays at base's default of 10.
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: customer-app
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 3
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: restaurant-app
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 3
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: admin-app
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 3
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: delivery-app
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 3
+  # kustomize's namespace transformer doesn't rewrite a RoleBinding's
+  # subjects[].namespace — see the matching comment in
+  # overlays/development/kustomization.yaml for how this was confirmed.
+  - target:
+      kind: RoleBinding
+      name: ci-deployer
+    patch: |-
+      - op: replace
+        path: /subjects/0/namespace
+        value: patheya-frontend

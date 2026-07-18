@@ -1,0 +1,158 @@
+<div class="admin-support-page">
+  <div class="admin-support-title-row">
+    <h1>Support Tickets</h1>
+
+    <button type="button" class="admin-support-presence-toggle" [class.is-online]="facade.online()" (click)="toggleOnline()">
+      <span class="admin-support-presence-dot"></span>
+      {{ facade.online() ? 'Online' : 'Offline' }}
+    </button>
+
+    @if (facade.newTicketCount() > 0) {
+      <span class="admin-support-new-badge">{{ facade.newTicketCount() }} new</span>
+    }
+  </div>
+
+  <lib-table-toolbar>
+    <lib-search-input
+      toolbar-search
+      placeholder="Search by ticket number, subject, or customer"
+      [value]="facade.filters().search"
+      (valueChange)="onSearch($event)"
+    />
+
+    <div toolbar-filters class="admin-support-filters">
+      <select (change)="onStatusChange($any($event.target).value)">
+        <option value="" [selected]="!facade.filters().status">All statuses</option>
+        @for (option of statusOptions; track option) {
+          <option [value]="option" [selected]="facade.filters().status === option">{{ option }}</option>
+        }
+      </select>
+
+      <select (change)="onCategoryChange($any($event.target).value)">
+        <option value="" [selected]="!facade.filters().category">All categories</option>
+        @for (option of categoryOptions; track option) {
+          <option [value]="option" [selected]="facade.filters().category === option">{{ option }}</option>
+        }
+      </select>
+
+      <select (change)="onPriorityChange($any($event.target).value)">
+        <option value="" [selected]="!facade.filters().priority">All priorities</option>
+        @for (option of priorityOptions; track option) {
+          <option [value]="option" [selected]="facade.filters().priority === option">{{ option }}</option>
+        }
+      </select>
+
+      <label class="admin-support-unassigned-toggle">
+        <input
+          type="checkbox"
+          [checked]="facade.filters().unassigned"
+          (change)="onUnassignedToggle($any($event.target).checked)"
+        />
+        Unassigned only
+      </label>
+    </div>
+  </lib-table-toolbar>
+
+  @if (facade.actionError()) {
+    <div class="admin-support-action-error" role="alert">{{ facade.actionError() }}</div>
+  }
+
+  @if (facade.loading()) {
+    <lib-skeleton [count]="6" />
+  } @else if (facade.error()) {
+    <lib-error-state [message]="facade.error()!" (retry)="retry()" />
+  } @else if (facade.tickets().length === 0) {
+    <lib-empty-state title="No tickets found" message="Try adjusting your search or filters." actionLabel="Refresh" (refresh)="retry()" />
+  } @else {
+    <lib-data-table [columns]="columns">
+      @for (ticket of facade.tickets(); track ticket.id) {
+        <tr>
+          <td>
+            <button type="button" class="admin-support-ticket-link" (click)="openTicket(ticket.id)">
+              {{ ticket.ticketNumber }} — {{ ticket.subject }}
+            </button>
+          </td>
+          <td>{{ customerName(ticket) }}</td>
+          <td>{{ ticket.category }}</td>
+          <td><lib-status-chip [label]="ticket.priority" [tone]="priorityTone(ticket.priority)" /></td>
+          <td><lib-status-chip [label]="ticket.status" [tone]="statusTone(ticket.status)" /></td>
+          <td>{{ ticket.assignedAgentId ? 'Assigned' : 'Unassigned' }}</td>
+          <td>{{ ticket.createdAt | date: 'short' }}</td>
+          <td>
+            @if (!ticket.assignedAgentId) {
+              <button type="button" class="admin-support-action-link" (click)="assignToMe(ticket.id)">Assign to me</button>
+            }
+          </td>
+        </tr>
+      }
+    </lib-data-table>
+
+    <lib-pagination
+      [page]="facade.pagination().page"
+      [totalPages]="facade.pagination().totalPages"
+      [total]="facade.pagination().total"
+      (pageChange)="onPageChange($event)"
+    />
+  }
+
+  @if (facade.selectedTicket(); as ticket) {
+    <div class="admin-support-details-backdrop">
+      <button type="button" class="admin-support-details-backdrop-dismiss" aria-label="Close details" (click)="closeDetail()"></button>
+      <div class="admin-support-details-panel" role="dialog" aria-modal="true" [attr.aria-label]="'Ticket ' + ticket.ticketNumber">
+        <h2>{{ ticket.ticketNumber }} — {{ ticket.subject }}</h2>
+        <p class="admin-support-details-description">{{ ticket.description }}</p>
+
+        <div class="admin-support-details-controls">
+          <label>
+            Status
+            <select [value]="ticket.status" (change)="onStatusUpdate(ticket.id, $any($event.target).value)">
+              @for (option of statusOptions; track option) {
+                <option [value]="option">{{ option }}</option>
+              }
+            </select>
+          </label>
+
+          <label>
+            Priority
+            <select [value]="ticket.priority" (change)="onPriorityUpdate(ticket.id, $any($event.target).value)">
+              @for (option of priorityOptions; track option) {
+                <option [value]="option">{{ option }}</option>
+              }
+            </select>
+          </label>
+
+          @if (!ticket.assignedAgentId) {
+            <button type="button" class="admin-support-action-link" [disabled]="facade.actionBusy()" (click)="assignToMe(ticket.id)">
+              Assign to me
+            </button>
+          }
+        </div>
+
+        <h3>Conversation</h3>
+        <ul class="admin-support-message-list">
+          @for (message of ticket.messages; track message.id) {
+            <li [class.from-agent]="message.senderType === 'AGENT'">
+              <div class="admin-support-message-bubble">
+                <p>{{ message.message }}</p>
+                <span>{{ message.createdAt | date: 'short' }}</span>
+              </div>
+            </li>
+          }
+        </ul>
+
+        <form class="admin-support-reply-form" (ngSubmit)="sendReply(ticket.id)">
+          <textarea
+            [ngModel]="draftMessage()"
+            (ngModelChange)="draftMessage.set($event)"
+            name="reply"
+            rows="2"
+            placeholder="Reply to the customer…"
+          ></textarea>
+          <button type="submit" [disabled]="facade.actionBusy()">Send</button>
+        </form>
+
+        <button type="button" class="admin-support-details-close" (click)="closeDetail()">Close</button>
+      </div>
+    </div>
+  }
+</div>

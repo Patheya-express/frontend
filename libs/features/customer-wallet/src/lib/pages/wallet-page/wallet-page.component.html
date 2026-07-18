@@ -1,0 +1,44 @@
+<div class="wallet-page">
+  <header class="wallet-header">
+    <h1>My Wallet</h1>
+    <a class="wallet-referral-link" routerLink="/wallet/refer">Invite friends &rarr;</a>
+  </header>
+
+  <div class="wallet-balance-card">
+    <span class="wallet-balance-label">Available balance</span>
+    @if (facade.balanceLoading()) {
+      <span class="wallet-balance-value">&hellip;</span>
+    } @else {
+      <span class="wallet-balance-value">&#8377;{{ facade.balance().toFixed(2) }}</span>
+    }
+  </div>
+
+  <section class="wallet-transactions">
+    <h2>Transaction history</h2>
+
+    @if (facade.transactionsLoading() && facade.transactions().length === 0) {
+      <lib-skeleton [count]="4" />
+    } @else if (facade.transactionsError()) {
+      <lib-error-state [message]="facade.transactionsError()!" (retry)="retry()" />
+    } @else if (facade.transactions().length === 0) {
+      <lib-empty-state title="No transactions yet" message="Cashback, refunds, and referral rewards will show up here." />
+    } @else {
+      <ul class="wallet-transaction-list">
+        @for (tx of facade.transactions(); track tx.id) {
+          <li class="wallet-transaction-item">
+            <div class="wallet-transaction-info">
+              <span class="wallet-transaction-type">{{ typeLabel(tx.type) }}</span>
+              <span class="wallet-transaction-description">{{ tx.description }}</span>
+              <span class="wallet-transaction-date">{{ tx.createdAt | date: 'medium' }}</span>
+            </div>
+            <span class="wallet-transaction-amount" [class.credit]="isCredit(tx.amount)" [class.debit]="!isCredit(tx.amount)">
+              {{ isCredit(tx.amount) ? '+' : '' }}&#8377;{{ tx.amount.toFixed(2) }}
+            </span>
+          </li>
+        }
+      </ul>
+
+      <lib-pagination [page]="facade.page()" [totalPages]="facade.totalPages()" [total]="facade.total()" (pageChange)="onPageChange($event)" />
+    }
+  </section>
+</div>

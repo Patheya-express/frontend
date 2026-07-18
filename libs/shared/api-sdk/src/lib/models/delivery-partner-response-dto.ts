@@ -12,5 +12,5 @@ export interface DeliveryPartnerResponseDto {
   updatedAt: string;
   userId: string;
   vehicleNumber: string;
-  vehicleType: 'BIKE' | 'SCOOTER' | 'BICYCLE' | 'CAR';
+  vehicleType: 'BIKE' | 'SCOOTER' | 'BICYCLE' | 'CAR' | 'ELECTRIC_VEHICLE';
 }

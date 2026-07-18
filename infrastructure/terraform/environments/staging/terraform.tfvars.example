@@ -1,0 +1,7 @@
+# Copy to terraform.tfvars (gitignored) and fill in real values before
+# running `terraform apply`. See infrastructure/terraform/README.md.
+
+aws_region       = "us-east-1"
+route53_zone_id  = "Z0000000000000EXAMPLE"
+domain_name      = "patheyaexpress.example"
+ingress_hostname = "a0000000000000000000000000000000-000000000.us-east-1.elb.amazonaws.com"

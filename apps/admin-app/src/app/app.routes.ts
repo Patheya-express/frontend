@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, guestGuard } from '@patheya-express-frontend/auth';
+import { authGuard, guestGuard, roleGuard } from '@patheya-express-frontend/auth';
 
 export const routes: Routes = [
   {
@@ -28,6 +28,14 @@ export const routes: Routes = [
       import('@patheya-express-frontend/admin-restaurants').then((m) => m.AdminRestaurantsPageComponent),
   },
   {
+    path: 'restaurants/verification',
+    canActivate: [authGuard, roleGuard(['ADMIN', 'SUPER_ADMIN'])],
+    loadComponent: () =>
+      import('@patheya-express-frontend/admin-restaurant-verification').then(
+        (m) => m.AdminRestaurantVerificationPageComponent,
+      ),
+  },
+  {
     path: 'orders',
     canActivate: [authGuard],
     loadComponent: () =>
@@ -38,6 +46,14 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () =>
       import('@patheya-express-frontend/admin-delivery').then((m) => m.AdminDeliveryPageComponent),
+  },
+  {
+    path: 'delivery/verification',
+    canActivate: [authGuard, roleGuard(['ADMIN', 'SUPER_ADMIN'])],
+    loadComponent: () =>
+      import('@patheya-express-frontend/admin-delivery-verification').then(
+        (m) => m.AdminDeliveryVerificationPageComponent,
+      ),
   },
   {
     path: 'payments',
@@ -56,6 +72,12 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () =>
       import('@patheya-express-frontend/admin-notifications').then((m) => m.AdminNotificationsPageComponent),
+  },
+  {
+    path: 'support',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('@patheya-express-frontend/admin-support').then((m) => m.AdminSupportPageComponent),
   },
   {
     path: '',

@@ -1,0 +1,59 @@
+name: Security Scan
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    # Catches newly-disclosed CVEs in already-merged dependencies/images,
+    # not just ones introduced by a new PR.
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  dependency-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.5.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Non-blocking for now (`|| true`): this is a Phase 0 foundation —
+      # the existing dependency tree hasn't been triaged against this gate
+      # yet, so failing the build on it today would block unrelated PRs.
+      # Tighten to a hard failure once the current findings are resolved.
+      - run: pnpm audit --audit-level=high || true
+
+  filesystem-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-fs-results.sarif
+          severity: CRITICAL,HIGH
+          exit-code: 0
+      - uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-fs-results.sarif
+          category: trivy-filesystem
+
+  # image-scan removed in Phase 8 (Enterprise CI/CD Platform): frontend-release.yml's per-app
+  # Trivy step (via the shared trivy-scan composite action) now runs against the actual
+  # digest-pinned image that gets pushed to ECR, on every push to main — a blocking gate (exit-code
+  # 1 on HIGH/CRITICAL), not the report-only (exit-code 0) pass this job ran on an ad hoc local
+  # build. Keeping both would mean two separate scans of two different image builds (this job never
+  # scanned the image that actually ships); the release pipeline's scan is strictly more meaningful
+  # and already uploads its own SARIF (category frontend-<app>).

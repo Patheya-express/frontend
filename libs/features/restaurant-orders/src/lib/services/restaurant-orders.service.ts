@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { OrdersService, type OrderResponseDto } from '@patheya-express-frontend/api-sdk';
-import { CurrentRestaurantService } from '@patheya-express-frontend/core';
+import { RestaurantContextService } from '@patheya-express-frontend/core';
 
 // The API gateway wraps every response in a { success, timestamp, data } envelope via a
 // global interceptor that Swagger/the generated SDK types do not account for.
@@ -18,7 +18,7 @@ function unwrap<T>(response: T): T {
 @Injectable({ providedIn: 'root' })
 export class RestaurantOrdersService {
   private readonly ordersService = inject(OrdersService);
-  private readonly currentRestaurant = inject(CurrentRestaurantService);
+  private readonly currentRestaurant = inject(RestaurantContextService);
 
   async getRestaurantOrders(): Promise<OrderResponseDto[]> {
     const restaurantId = await this.currentRestaurant.getRestaurantId();

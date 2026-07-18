@@ -1,0 +1,162 @@
+name: frontend-release
+
+# Section 3 (Frontend Pipeline) + Section 6 (Supply Chain), triggered on every push to main after
+# ci.yml's lint/test/build gate has already run on the same commit (both workflows share the same
+# `push: branches: [main]` trigger; this one adds ~2-3 minutes of build+scan+sign time per app on
+# top, so it deliberately isn't folded into ci.yml's own jobs). Never pushes to GHCR — patheya-
+# express-terraform's modules/supply-chain-security Kyverno policies only ever admit
+# `${ecr_registry_host}/patheya-express/*`, so GHCR was never a viable target regardless of what
+# the previous version of this workflow did.
+#
+# Each of the four apps is built, scanned, signed, and attested independently in one linear job
+# per matrix leg (not split across dependent matrix jobs) — GitHub Actions only exposes one
+# arbitrary leg's outputs to a downstream job when the upstream job is itself a matrix, so the
+# gitops-image-update step has to live in the same job as the build it follows, not a separate job
+# depending on the matrix job's outputs.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/**"
+      - "libs/**"
+      - "infrastructure/docker/**"
+      - "infrastructure/kubernetes/**"
+      - "pnpm-lock.yaml"
+
+permissions:
+  contents: write # git tag + GitHub Release (version job only)
+  id-token: write # AWS OIDC + cosign keyless
+  attestations: write
+  security-events: write
+
+jobs:
+  version:
+    name: Compute version
+    runs-on: ubuntu-latest
+    outputs:
+      semver: ${{ steps.version.outputs.version }}
+      image-tag: ${{ steps.image-tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # One semver counter across all four apps (they live in one repo, one release) — matches
+      # patheya-express-platform's backend-release.yml approach.
+      - name: Compute next semantic version
+        id: semver
+        uses: paulhatch/semantic-version@v5.4.0
+        with:
+          tag_prefix: "v"
+          major_pattern: "/(BREAKING CHANGE:|!:)/"
+          minor_pattern: "/^feat(\\(.+\\))?:/"
+          version_format: "${major}.${minor}.${patch}"
+          bump_each_commit: false
+
+      - id: version
+        run: echo "version=${{ steps.semver.outputs.version }}" >> "$GITHUB_OUTPUT"
+      - id: image-tag
+        run: echo "tag=${{ steps.semver.outputs.version }}-${{ steps.semver.outputs.current_commit }}" >> "$GITHUB_OUTPUT"
+
+  release:
+    name: Build, scan, sign, publish, promote (${{ matrix.app }})
+    needs: version
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [customer-app, restaurant-app, admin-app, delivery-app]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and push to ECR
+        id: build
+        uses: Patheya-express/patheya-express-platform/.github/actions/docker-build-push-ecr@main
+        with:
+          aws-region: ap-south-1
+          role-to-assume: ${{ vars.FRONTEND_ECR_PUSH_ROLE_ARN }}
+          ecr-repository: ${{ matrix.app }}
+          image-tag: ${{ needs.version.outputs.image-tag }}
+          context: .
+          dockerfile: infrastructure/docker/frontend.Dockerfile
+          build-args: |
+            APP_NAME=${{ matrix.app }}
+            BUILD_CONFIGURATION=production
+
+      - name: Trivy scan (quality gate)
+        uses: Patheya-express/patheya-express-platform/.github/actions/trivy-scan@main
+        with:
+          image-ref: ${{ steps.build.outputs.image-ref-digest }}
+          sarif-category: frontend-${{ matrix.app }}
+
+      - name: Generate SBOM
+        id: sbom
+        uses: Patheya-express/patheya-express-platform/.github/actions/generate-sbom@main
+        with:
+          image-ref: ${{ steps.build.outputs.image-ref-digest }}
+
+      - name: Cosign sign + attest SBOM
+        uses: Patheya-express/patheya-express-platform/.github/actions/cosign-sign@main
+        with:
+          image-ref: ${{ steps.build.outputs.image-ref-digest }}
+          sbom-path: ${{ steps.sbom.outputs.sbom-path }}
+
+      - name: Generate SLSA provenance attestation
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ steps.build.outputs.image-uri }}
+          subject-digest: ${{ steps.build.outputs.image-digest }}
+          push-to-registry: true
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ matrix.app }}-${{ needs.version.outputs.image-tag }}
+          path: ${{ steps.sbom.outputs.sbom-path }}
+          retention-days: 90
+
+      - name: Open GitOps PR (development)
+        uses: Patheya-express/patheya-express-platform/.github/actions/gitops-image-update@main
+        with:
+          github-token: ${{ secrets.GITOPS_PR_TOKEN }}
+          app-path: applications/frontend/overlays/development
+          image-name-old: ghcr.io/patheya-express/${{ matrix.app }}
+          image-name-new: ${{ steps.build.outputs.registry }}/patheya-express/${{ matrix.app }}
+          image-tag: ${{ needs.version.outputs.image-tag }}
+          git-commit-sha: ${{ github.sha }}
+          build-id: ${{ github.run_id }}
+          environment: development
+          app-display-name: "Frontend (${{ matrix.app }})"
+          auto-merge: "true"
+
+  github-release:
+    name: Tag + GitHub Release
+    needs: [version, release]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="v${{ needs.version.outputs.semver }}"
+          gh release create "$tag" \
+            --title "$tag" \
+            --generate-notes \
+            --notes "Image tag: \`${{ needs.version.outputs.image-tag }}\` (customer-app, restaurant-app, admin-app, delivery-app)"
+
+  notify:
+    name: Notify
+    needs: [version, release, github-release]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: Patheya-express/patheya-express-platform/.github/actions/notify@main
+        with:
+          status: ${{ (contains(needs.*.result, 'failure') && 'failure') || 'success' }}
+          title: "frontend-release: v${{ needs.version.outputs.semver }}"
+          details: "Image tag: `${{ needs.version.outputs.image-tag }}`"
+          slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+          pagerduty-routing-key: ${{ secrets.PAGERDUTY_ROUTING_KEY }}

@@ -1,0 +1,201 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: delivery-app
+  labels:
+    app.kubernetes.io/name: delivery-app
+    app.kubernetes.io/part-of: patheya-express
+    app.kubernetes.io/component: frontend
+    app.kubernetes.io/version: "unset"
+spec:
+  # Overridden per environment via each overlay's `replicas:` field
+  # (infrastructure/kubernetes/overlays/*/kustomization.yaml).
+  replicas: 2
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: delivery-app
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: delivery-app
+        app.kubernetes.io/part-of: patheya-express
+        app.kubernetes.io/component: frontend
+        app.kubernetes.io/version: "unset"
+      annotations:
+        # Scraped by a Prometheus running with kubernetes_sd_configs
+        # annotation-based discovery — see infrastructure/monitoring/prometheus/prometheus.yml.
+        # No Prometheus Operator / ServiceMonitor CRD assumed here. Dead against the platform's
+        # real Prometheus (see base/podmonitor.yaml's comment) — kept, not removed.
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9113"
+        prometheus.io/path: "/metrics"
+        patheya-express.io/git-commit: "unset"
+        patheya-express.io/build-id: "unset"
+    spec:
+      # Grace period covers the preStop sleep (drain time) plus nginx's own
+      # shutdown — see the lifecycle hook below.
+      terminationGracePeriodSeconds: 30
+      serviceAccountName: delivery-app
+      # On the live order-tracking critical path (delivery partner
+      # accept/status updates) — scheduled ahead of admin-app under node
+      # pressure. See
+      # infrastructure/kubernetes/platform/priority-classes and
+      # infrastructure/docs/scaling-strategy.md for the full rationale.
+      priorityClassName: patheya-high-priority
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      # Zone-level spread is a soft preference (ScheduleAnyway) rather than
+      # DoNotSchedule: a cluster with only one zone available (a common
+      # single-AZ dev/staging setup) must still be able to schedule this
+      # pod at all. Host-level spread below stays a strict pod anti-affinity
+      # since losing that one only costs scheduling flexibility, never
+      # availability, given the zone constraint already spreads broadly.
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: delivery-app
+      affinity:
+        # Soft preference for a node pool labeled for frontend workloads,
+        # if the cluster has one — harmless no-op (falls through to any
+        # node) on a cluster that doesn't label nodes this way yet.
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 50
+              preference:
+                matchExpressions:
+                  - key: node.kubernetes.io/workload
+                    operator: In
+                    values: ["frontend"]
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: delivery-app
+                topologyKey: kubernetes.io/hostname
+      containers:
+        - name: delivery-app
+          # Replaced per environment by the `images:` transformer in each
+          # overlay's kustomization.yaml — this tag is never deployed as-is.
+          image: ghcr.io/patheya-express/delivery-app:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          # nginx (see infrastructure/docker/nginx/nginx.conf) writes only to
+          # /tmp, /var/cache/nginx, and /var/run — everything else in the
+          # image stays read-only, matching docker-compose.prod.yml's tmpfs
+          # mounts for the same three paths.
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: cache
+              mountPath: /var/cache/nginx
+            - name: run
+              mountPath: /var/run
+          # nginx serving a prebuilt static bundle starts in well under a
+          # second, so this budget (5 x 3s = 15s) is generous headroom, not
+          # a tuned-for-slow-start value — its real job is letting
+          # liveness/readiness both start immediately on container start
+          # (no initialDelaySeconds guesswork) without risking a restart
+          # loop if the node is briefly under scheduling pressure.
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 3
+            timeoutSeconds: 2
+            failureThreshold: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                # Give the endpoint controller time to remove this pod from
+                # the Service before nginx stops accepting new connections,
+                # then ask nginx to finish in-flight requests before exiting
+                # (mirrors STOPSIGNAL SIGQUIT in frontend.Dockerfile — some
+                # container runtimes don't yet honor a custom STOPSIGNAL, so
+                # this hook makes the graceful shutdown explicit either way).
+                command: ["/bin/sh", "-c", "sleep 5 && nginx -s quit"]
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+              # emptyDir volumes (tmp/cache/run above) count against a
+              # pod's ephemeral-storage limit, not just log/writable-layer
+              # usage — bounding it here stops a single misbehaving pod
+              # from starving disk on a shared node.
+              ephemeral-storage: 32Mi
+            limits:
+              cpu: 250m
+              memory: 128Mi
+              ephemeral-storage: 128Mi
+        # Translates nginx's /stub_status (loopback-only, see
+        # infrastructure/docker/nginx/app.conf.template) into Prometheus
+        # text format on :9113 — shares the pod's network namespace, so
+        # "localhost" here really does mean the delivery-app container above.
+        - name: metrics-exporter
+          image: nginx/nginx-prometheus-exporter:1.3.0
+          args:
+            - --nginx.scrape-uri=http://localhost:8080/stub_status
+          ports:
+            - name: metrics
+              containerPort: 9113
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 5m
+              memory: 16Mi
+              ephemeral-storage: 16Mi
+            limits:
+              cpu: 50m
+              memory: 32Mi
+              ephemeral-storage: 32Mi
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: cache
+          emptyDir: {}
+        - name: run
+          emptyDir: {}

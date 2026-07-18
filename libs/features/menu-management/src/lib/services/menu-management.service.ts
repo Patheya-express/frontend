@@ -7,7 +7,7 @@ import {
   type UpdateCategoryDto,
   type UpdateMenuItemDto,
 } from '@patheya-express-frontend/api-sdk';
-import { CurrentRestaurantService } from '@patheya-express-frontend/core';
+import { RestaurantContextService } from '@patheya-express-frontend/core';
 
 // The API gateway wraps every response in a { success, timestamp, data } envelope via a
 // global interceptor that Swagger/the generated SDK types do not account for.
@@ -25,7 +25,7 @@ function unwrap<T>(response: T): T {
 @Injectable({ providedIn: 'root' })
 export class MenuManagementService {
   private readonly menuService = inject(MenuService);
-  private readonly currentRestaurant = inject(CurrentRestaurantService);
+  private readonly currentRestaurant = inject(RestaurantContextService);
 
   async getMenu(): Promise<MenuCategoryResponseDto[]> {
     const restaurantId = await this.currentRestaurant.getRestaurantId();

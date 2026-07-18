@@ -1,0 +1,70 @@
+# Production overlay — resource limits and a hardened runtime (read-only
+# root filesystem, no new privileges, all capabilities dropped). Intended
+# for a single-host `docker compose` deployment.
+#
+# Deliberately single-instance per service here: horizontal scaling with
+# fixed host-port publishing (below) can't run multiple replicas on one
+# host without a port range or an external load balancer in front. Real
+# multi-replica HA is what infrastructure/kubernetes is for — this file
+# exists for smaller single-VM deployments and local prod-parity testing.
+#
+#   docker compose -f infrastructure/docker/docker-compose.yml -f infrastructure/docker/docker-compose.prod.yml up --build -d
+
+x-prod-hardening: &prod-hardening
+  read_only: true
+  # nginx-unprivileged needs to write its pid file and a handful of runtime
+  # dirs; nginx.conf points pid at /tmp (see infrastructure/docker/nginx/nginx.conf),
+  # and the cache/client-body paths below are nginx's other default write
+  # targets — everything else in the image stays genuinely read-only.
+  #
+  # Mode 1777 (world-writable + sticky, same as /tmp) is required, not
+  # optional: Docker's default tmpfs mount is owned by root with a mode
+  # that the container's uid-101 process can't mkdir into, which crash-loops
+  # nginx on startup ("mkdir() \"/var/cache/nginx/client_temp\" failed (13:
+  # Permission denied)") — caught by actually running this overlay, not just
+  # validating its YAML.
+  volumes:
+    - type: tmpfs
+      target: /tmp
+      tmpfs:
+        mode: 01777
+    - type: tmpfs
+      target: /var/cache/nginx
+      tmpfs:
+        mode: 01777
+    - type: tmpfs
+      target: /var/run
+      tmpfs:
+        mode: 01777
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  # `restart:` (in the base compose file's x-frontend-common) already covers
+  # restart behavior for plain `docker compose up`. `deploy.restart_policy`
+  # is a Swarm-mode construct — under plain compose, setting both caused the
+  # daemon to reject the container outright ("invalid restart policy:
+  # maximum retry count can only be used with 'on-failure'"), since
+  # `unless-stopped` doesn't support a max retry count. Only `deploy.resources`
+  # is meaningful here.
+  deploy:
+    resources:
+      limits:
+        cpus: "0.50"
+        memory: 128M
+      reservations:
+        cpus: "0.10"
+        memory: 32M
+
+services:
+  customer-app:
+    <<: *prod-hardening
+
+  restaurant-app:
+    <<: *prod-hardening
+
+  admin-app:
+    <<: *prod-hardening
+
+  delivery-app:
+    <<: *prod-hardening

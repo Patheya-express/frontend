@@ -1,0 +1,252 @@
+<div class="profile-page">
+  <div class="profile-page-header">
+    <h1>Restaurant Profile</h1>
+    @if (facade.restaurant(); as restaurant) {
+      <lib-status-chip [label]="restaurant.status" [tone]="verificationStatusTone(restaurant.status)" />
+    }
+  </div>
+
+  @if (facade.loading()) {
+    <lib-skeleton />
+  } @else if (facade.error()) {
+    <lib-error-state [message]="facade.error()!" />
+  } @else {
+    @if (facade.actionError(); as actionError) {
+      <div class="form-alert" role="alert">{{ actionError }}</div>
+    }
+
+    <!-- Verification & Compliance -->
+    <section class="profile-section">
+      <h2>Verification &amp; Compliance</h2>
+
+      @if (facade.verification(); as verification) {
+        <ol class="verification-timeline">
+          @for (stage of verificationTimeline; track stage) {
+            <li [class.is-done]="verificationTimeline.indexOf(stage) <= verificationTimeline.indexOf(verification.stage)" [class.is-current]="stage === verification.stage">
+              {{ stage }}
+            </li>
+          }
+        </ol>
+
+        @if (verification.rejectedReason) {
+          <p class="verification-rejected">Rejected: {{ verification.rejectedReason }}</p>
+        }
+
+        @if (canSubmitVerification) {
+          <button type="button" (click)="onSubmitVerification()" [disabled]="facade.submittingVerification()">
+            {{ facade.submittingVerification() ? 'Submitting…' : 'Submit for Verification' }}
+          </button>
+        }
+      }
+
+      @if (facade.compliance(); as compliance) {
+        <div class="compliance-summary">
+          <lib-status-chip [label]="compliance.overallStatus" [tone]="complianceTone(compliance.overallStatus)" />
+          <span>{{ compliance.documentsVerified }}/{{ compliance.documentsTotal }} documents verified</span>
+          @if (compliance.documentsPending > 0) {
+            <span>{{ compliance.documentsPending }} pending</span>
+          }
+          @if (compliance.documentsRejected > 0) {
+            <span>{{ compliance.documentsRejected }} rejected</span>
+          }
+          @if (compliance.expiringWithin30Days.length > 0) {
+            <span class="compliance-warning">{{ compliance.expiringWithin30Days.length }} document(s) expiring within 30 days</span>
+          }
+        </div>
+      }
+    </section>
+
+    <!-- Business Info -->
+    <section class="profile-section">
+      <h2>Business Information</h2>
+      <form [formGroup]="profileForm" (ngSubmit)="onProfileSubmit()">
+        <div class="form-grid">
+          <label class="form-field">
+            <span>Restaurant Name</span>
+            <input type="text" formControlName="name" />
+          </label>
+          <label class="form-field">
+            <span>Legal Business Name</span>
+            <input type="text" formControlName="legalBusinessName" />
+          </label>
+          <label class="form-field">
+            <span>Trade Name</span>
+            <input type="text" formControlName="tradeName" />
+          </label>
+          <label class="form-field">
+            <span>Brand Name</span>
+            <input type="text" formControlName="brandName" />
+          </label>
+          <label class="form-field">
+            <span>Phone</span>
+            <input type="text" formControlName="phone" />
+          </label>
+          <label class="form-field">
+            <span>Email</span>
+            <input type="email" formControlName="email" />
+          </label>
+          <label class="form-field">
+            <span>Support Email</span>
+            <input type="email" formControlName="supportEmail" />
+          </label>
+          <label class="form-field">
+            <span>Support Phone</span>
+            <input type="text" formControlName="supportPhone" />
+          </label>
+          <label class="form-field">
+            <span>Business Email</span>
+            <input type="email" formControlName="businessEmail" />
+          </label>
+          <label class="form-field">
+            <span>Business Phone</span>
+            <input type="text" formControlName="businessPhone" />
+          </label>
+          <label class="form-field">
+            <span>Website</span>
+            <input type="url" formControlName="website" />
+          </label>
+        </div>
+        <label class="form-field">
+          <span>Description</span>
+          <textarea formControlName="description" rows="3"></textarea>
+        </label>
+        <button type="submit" [disabled]="facade.savingProfile()">
+          {{ facade.savingProfile() ? 'Saving…' : 'Save Business Info' }}
+        </button>
+      </form>
+    </section>
+
+    <!-- Branches & Media links -->
+    <section class="profile-section profile-links">
+      <a routerLink="/branches" class="profile-link-card">
+        <strong>Branches</strong>
+        <span>Manage locations, operating hours, and delivery radius →</span>
+      </a>
+      <a routerLink="/gallery" class="profile-link-card">
+        <strong>Media</strong>
+        <span>Logo, banner, and gallery photos/videos →</span>
+      </a>
+    </section>
+
+    <!-- Documents -->
+    <section class="profile-section">
+      <h2>Documents</h2>
+
+      @if (facade.documents().length === 0) {
+        <lib-empty-state message="No documents uploaded yet." />
+      } @else {
+        <ul class="document-list">
+          @for (document of facade.documents(); track document.id) {
+            <li class="document-item">
+              <span>{{ document.documentType }}</span>
+              <lib-status-chip [label]="document.status" [tone]="documentStatusTone(document.status)" />
+              <button type="button" (click)="onRemoveDocument(document.id)">Remove</button>
+            </li>
+          }
+        </ul>
+      }
+
+      <div class="document-upload">
+        <label class="form-field">
+          <span>Document Type</span>
+          <select (change)="onDocumentTypeChange($event)">
+            @for (type of documentTypes; track type) {
+              <option [value]="type">{{ type }}</option>
+            }
+          </select>
+        </label>
+        <lib-file-upload
+          accept="image/png,image/jpeg,application/pdf"
+          label="Upload document"
+          [uploading]="facade.uploadingDocument()"
+          (fileSelected)="onDocumentSelected($event)"
+        />
+      </div>
+    </section>
+
+    <!-- Tax Profile -->
+    <section class="profile-section">
+      <h2>Tax Profile</h2>
+      <form [formGroup]="taxForm" (ngSubmit)="onTaxSubmit()">
+        <div class="form-grid">
+          <label class="form-field">
+            <span>GSTIN</span>
+            <input type="text" formControlName="gstin" />
+          </label>
+          <label class="form-field">
+            <span>GST Legal Name</span>
+            <input type="text" formControlName="gstLegalName" />
+          </label>
+          <label class="form-field">
+            <span>FSSAI Number</span>
+            <input type="text" formControlName="fssaiNumber" />
+          </label>
+          <label class="form-field">
+            <span>FSSAI Expiry</span>
+            <input type="date" formControlName="fssaiExpiryAt" />
+          </label>
+          <label class="form-field">
+            <span>PAN</span>
+            <input type="text" formControlName="pan" />
+          </label>
+          <label class="form-field">
+            <span>Business Type</span>
+            <select formControlName="businessType">
+              <option value="">Select…</option>
+              @for (type of businessTypes; track type) {
+                <option [value]="type">{{ type }}</option>
+              }
+            </select>
+          </label>
+        </div>
+        @if (facade.taxProfile(); as tax) {
+          <p class="verification-status">
+            GST: <lib-status-chip [label]="tax.gstVerificationStatus" tone="neutral" />
+            FSSAI: <lib-status-chip [label]="tax.fssaiVerificationStatus" tone="neutral" />
+          </p>
+        }
+        <button type="submit" [disabled]="facade.savingTaxProfile()">
+          {{ facade.savingTaxProfile() ? 'Saving…' : 'Save Tax Profile' }}
+        </button>
+      </form>
+    </section>
+
+    <!-- Bank Account -->
+    <section class="profile-section">
+      <h2>Bank Account</h2>
+      @if (facade.bankAccount(); as account) {
+        <p class="bank-summary">
+          {{ account.bankName }} — {{ account.accountNumberLast4 }}
+          <lib-status-chip [label]="account.verificationStatus" tone="neutral" />
+        </p>
+      }
+      <form [formGroup]="bankForm" (ngSubmit)="onBankSubmit()">
+        <div class="form-grid">
+          <label class="form-field">
+            <span>Account Holder Name</span>
+            <input type="text" formControlName="accountHolderName" />
+          </label>
+          <label class="form-field">
+            <span>Bank Name</span>
+            <input type="text" formControlName="bankName" />
+          </label>
+          <label class="form-field">
+            <span>Account Number</span>
+            <input type="text" formControlName="accountNumber" />
+          </label>
+          <label class="form-field">
+            <span>IFSC</span>
+            <input type="text" formControlName="ifsc" />
+          </label>
+          <label class="form-field">
+            <span>UPI ID</span>
+            <input type="text" formControlName="upiId" />
+          </label>
+        </div>
+        <button type="submit" [disabled]="facade.savingBankAccount()">
+          {{ facade.savingBankAccount() ? 'Saving…' : 'Save Bank Account' }}
+        </button>
+      </form>
+    </section>
+  }
+</div>

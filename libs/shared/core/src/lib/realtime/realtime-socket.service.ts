@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Socket, io } from 'socket.io-client';
-import { ApiConfiguration } from '@patheya-express-frontend/api-sdk';
 import { AuthFacade } from '@patheya-express-frontend/auth';
+import { APP_ENVIRONMENT } from '../environment/app-environment';
 
 export interface JoinRoomResult {
   success: boolean;
@@ -17,7 +17,7 @@ export interface JoinRoomResult {
  */
 @Injectable({ providedIn: 'root' })
 export class RealtimeSocketService {
-  private readonly apiConfiguration = inject(ApiConfiguration);
+  private readonly environment = inject(APP_ENVIRONMENT);
   private readonly authFacade = inject(AuthFacade);
 
   private socket: Socket | null = null;
@@ -31,7 +31,7 @@ export class RealtimeSocketService {
 
     const token = this.authFacade.getAccessToken();
 
-    const socket = io(this.apiConfiguration.rootUrl, {
+    const socket = io(this.environment.socketUrl, {
       auth: { token },
       transports: ['websocket'],
     });

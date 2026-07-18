@@ -10,11 +10,13 @@ import { RequestBuilder } from '../../request-builder';
 import { CuisineResponseDto } from '../../models/cuisine-response-dto';
 
 export interface CuisinesControllerFindAll$Params {
+  search?: string;
 }
 
 export function cuisinesControllerFindAll(http: HttpClient, rootUrl: string, params?: CuisinesControllerFindAll$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<CuisineResponseDto>>> {
   const rb = new RequestBuilder(rootUrl, cuisinesControllerFindAll.PATH, 'get');
   if (params) {
+    rb.query('search', params.search, {});
   }
 
   return http.request(

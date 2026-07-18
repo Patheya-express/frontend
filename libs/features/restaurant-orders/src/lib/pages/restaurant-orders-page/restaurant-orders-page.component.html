@@ -1,5 +1,12 @@
 <div class="restaurant-orders-page">
-  <h1>Incoming Orders</h1>
+  <div class="restaurant-orders-header">
+    <h1>Incoming Orders</h1>
+    @if (realtimeConnected()) {
+      <lib-status-chip label="Live" tone="success" />
+    } @else {
+      <lib-status-chip label="Reconnecting…" tone="neutral" />
+    }
+  </div>
 
   @if (actionError(); as message) {
     <lib-error-state title="Action failed" [message]="message" (retry)="dismissActionError()" />

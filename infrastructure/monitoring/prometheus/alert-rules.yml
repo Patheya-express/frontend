@@ -1,0 +1,50 @@
+# nginx's built-in stub_status module (what nginx-prometheus-exporter reads
+# — see infrastructure/docker/nginx/app.conf.template) exposes connection
+# counters and a total request count, but no per-status-code breakdown —
+# there's no nginx_http_requests_total{status="5xx"} to alert on with this
+# setup, since that needs the paid nginx Plus API or the third-party VTS
+# module. These rules alert on what stub_status actually provides:
+# exporter/target health and connection-handling anomalies.
+
+groups:
+  - name: patheya-express-frontend
+    rules:
+      - alert: FrontendTargetDown
+        expr: up{job="patheya-express-frontend"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.app }} ({{ $labels.environment }}) metrics endpoint is unreachable"
+          description: "Prometheus has not been able to scrape {{ $labels.app }} in namespace {{ $labels.namespace }} for 5 minutes. The pod may be crash-looping or the exporter sidecar has crashed."
+
+      - alert: NginxExporterScrapeFailed
+        expr: nginx_up == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.app }} exporter is up but can't reach nginx's stub_status endpoint"
+          description: "nginx-prometheus-exporter is reachable but its last scrape of http://localhost:8080/stub_status failed — nginx itself may be down inside the pod even though the sidecar container is still running."
+
+      - alert: FrontendConnectionsDroppedByNginx
+        # accepted counts every connection nginx's listen queue accepted;
+        # handled counts every one it actually processed. A sustained gap
+        # means nginx is refusing connections under load (worker_connections
+        # exhausted — see infrastructure/docker/nginx/nginx.conf).
+        expr: (rate(nginx_connections_accepted[5m]) - rate(nginx_connections_handled[5m])) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.app }} is dropping connections"
+          description: "nginx accepted more connections than it handled over the last 5 minutes — likely worker_connections exhaustion. Consider raising infrastructure/docker/nginx/nginx.conf's worker_connections or scaling out (see the HPA in infrastructure/kubernetes/base/{{ $labels.app }}/hpa.yaml)."
+
+      - alert: FrontendHighActiveConnections
+        expr: nginx_connections_active > 800
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.app }} is nearing its connection ceiling"
+          description: "nginx_connections_active has been above 800 (worker_connections is 1024, see infrastructure/docker/nginx/nginx.conf) for 10 minutes on {{ $labels.app }}."

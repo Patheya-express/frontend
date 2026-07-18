@@ -22,4 +22,9 @@ export interface RegisterDto {
    * Password with minimum 8 characters
    */
   password: string;
+
+  /**
+   * Another user's referral code, if this signup was referred.
+   */
+  referralCode?: string;
 }

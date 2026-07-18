@@ -1,5 +1,12 @@
 <div class="restaurant-dashboard-page">
-  <h1>Dashboard</h1>
+  <div class="restaurant-dashboard-header">
+    <h1>Dashboard</h1>
+    @if (realtimeConnected()) {
+      <lib-status-chip label="Live" tone="success" />
+    } @else {
+      <lib-status-chip label="Reconnecting…" tone="neutral" />
+    }
+  </div>
 
   @if (loading()) {
     <lib-skeleton [count]="4" />
@@ -10,6 +17,58 @@
       @for (metric of metrics(); track metric.key) {
         <lib-metric-card [label]="metric.label" [value]="metric.value" />
       }
+    </div>
+
+    <div class="restaurant-dashboard-panels">
+      <section class="restaurant-dashboard-panel">
+        <h2>Top Selling Items</h2>
+        @if (topSellingItems().length === 0) {
+          <p class="restaurant-dashboard-empty">No sales in the last 30 days yet.</p>
+        } @else {
+          <ol class="restaurant-dashboard-list">
+            @for (item of topSellingItems(); track item.menuItemId) {
+              <li>
+                <span>{{ item.name }}</span>
+                <span>{{ item.quantitySold }} sold</span>
+              </li>
+            }
+          </ol>
+        }
+      </section>
+
+      <section class="restaurant-dashboard-panel">
+        <h2>Peak Hours</h2>
+        @if (peakHours().length === 0) {
+          <p class="restaurant-dashboard-empty">Not enough order history yet.</p>
+        } @else {
+          <ol class="restaurant-dashboard-list">
+            @for (hour of peakHours(); track hour.hour) {
+              <li>
+                <span>{{ formatHour(hour.hour) }}</span>
+                <span>{{ hour.orderCount }} orders</span>
+              </li>
+            }
+          </ol>
+        }
+      </section>
+
+      <section class="restaurant-dashboard-panel restaurant-dashboard-panel--wide">
+        <h2>Recent Orders</h2>
+        @if (recentOrders().length === 0) {
+          <p class="restaurant-dashboard-empty">No orders yet.</p>
+        } @else {
+          <ol class="restaurant-dashboard-list">
+            @for (order of recentOrders(); track order.id) {
+              <li>
+                <span>{{ order.orderNumber }}</span>
+                <span>{{ order.customerName }}</span>
+                <span>{{ order.status }}</span>
+                <span>₹{{ order.totalAmount.toFixed(2) }}</span>
+              </li>
+            }
+          </ol>
+        }
+      </section>
     </div>
   }
 

@@ -1,0 +1,17 @@
+# Zero-trust baseline: an empty podSelector matches every pod in whatever
+# namespace this ends up in (each overlay's `namespace:` transformer), and
+# empty ingress/egress lists (implied by omitting them while still listing
+# the policyType) mean "no traffic is allowed by this policy" — every
+# individual allow lives in each app's own networkpolicy.yaml, which
+# Kubernetes ORs together with this one for any pod matched by both.
+# Without at least one NetworkPolicy selecting a pod, the pod is
+# unrestricted by default — this is what actually turns that default off.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  labels:
+    app.kubernetes.io/part-of: patheya-express
+spec:
+  podSelector: {}
+  policyTypes: ["Ingress", "Egress"]

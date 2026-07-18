@@ -1,10 +1,7 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { APP_ENVIRONMENT } from '../environment/app-environment';
 
 const RAZORPAY_SCRIPT_URL = 'https://checkout.razorpay.com/v1/checkout.js';
-
-// Public key — safe to ship client-side; only the secret (server-side only) can authorize charges.
-// TODO: move to environment-based configuration once build-time environment files are introduced.
-const RAZORPAY_KEY_ID = 'rzp_test_Sop8avBtckAdw2';
 
 export interface RazorpayCheckoutOptions {
   orderId: string;
@@ -31,6 +28,8 @@ declare global {
 /** Lazily loads and wraps the Razorpay Checkout widget (checkout.js) for one-off payment collection. */
 @Injectable({ providedIn: 'root' })
 export class RazorpayCheckoutService {
+  private readonly environment = inject(APP_ENVIRONMENT);
+
   private scriptPromise: Promise<void> | null = null;
 
   private loadScript(): Promise<void> {
@@ -63,7 +62,7 @@ export class RazorpayCheckoutService {
 
     return new Promise<RazorpayPaymentResult>((resolve, reject) => {
       const razorpay = new RazorpayCtor({
-        key: RAZORPAY_KEY_ID,
+        key: this.environment.razorpayKeyId,
         order_id: options.orderId,
         amount: options.amount,
         currency: options.currency,

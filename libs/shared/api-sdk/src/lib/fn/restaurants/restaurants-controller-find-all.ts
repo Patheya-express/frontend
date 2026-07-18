@@ -11,7 +11,31 @@ import { PaginatedRestaurantSummariesResponseDto } from '../../models/paginated-
 
 export interface RestaurantsControllerFindAll$Params {
   sortOrder?: 'asc' | 'desc';
-  sortBy?: 'name' | 'rating' | 'createdAt';
+  sortBy?: 'name' | 'rating' | 'createdAt' | 'popularity' | 'deliveryTime' | 'preparationTime' | 'distance';
+  longitude?: number;
+  latitude?: number;
+
+/**
+ * Requires latitude/longitude.
+ */
+  maxDistanceKm?: number;
+  maxDeliveryTimeMinutes?: number;
+  minRating?: number;
+
+/**
+ * Only restaurants with at least one currently active offer.
+ */
+  offers?: boolean;
+
+/**
+ * Only restaurants with at least one vegan menu item.
+ */
+  vegan?: boolean;
+
+/**
+ * Only restaurants with at least one vegetarian menu item.
+ */
+  veg?: boolean;
   openNow?: boolean;
   featured?: boolean;
   cuisine?: any;
@@ -26,6 +50,14 @@ export function restaurantsControllerFindAll(http: HttpClient, rootUrl: string, 
   if (params) {
     rb.query('sortOrder', params.sortOrder, {});
     rb.query('sortBy', params.sortBy, {});
+    rb.query('longitude', params.longitude, {});
+    rb.query('latitude', params.latitude, {});
+    rb.query('maxDistanceKm', params.maxDistanceKm, {});
+    rb.query('maxDeliveryTimeMinutes', params.maxDeliveryTimeMinutes, {});
+    rb.query('minRating', params.minRating, {});
+    rb.query('offers', params.offers, {});
+    rb.query('vegan', params.vegan, {});
+    rb.query('veg', params.veg, {});
     rb.query('openNow', params.openNow, {});
     rb.query('featured', params.featured, {});
     rb.query('cuisine', params.cuisine, {});

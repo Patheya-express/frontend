@@ -1,0 +1,155 @@
+<div class="branch-detail-page">
+  <div class="branch-detail-header">
+    <h1>{{ isNew ? 'Add Branch' : 'Branch Details' }}</h1>
+    <a routerLink="/branches">← Back to branches</a>
+  </div>
+
+  @if (notFound) {
+    <lib-error-state message="This branch could not be found." />
+  } @else if (!isNew && facade.loading() && !form.dirty) {
+    <lib-skeleton [count]="4" />
+  } @else {
+    @if (facade.actionError(); as error) {
+      <div class="branch-detail-banner branch-detail-banner--error">{{ error }}</div>
+    }
+
+    <form class="branch-detail-form" [formGroup]="form" (ngSubmit)="onSubmit()">
+      <section class="branch-detail-section">
+        <h2>Overview</h2>
+
+        <label class="branch-detail-field">
+          <span>Branch Name</span>
+          <input type="text" formControlName="name" />
+        </label>
+
+        <label class="branch-detail-toggle">
+          <input type="checkbox" formControlName="isPrimary" />
+          <span>Primary branch</span>
+        </label>
+
+        @if (!isNew) {
+          <label class="branch-detail-toggle">
+            <input type="checkbox" formControlName="isActive" />
+            <span>Active</span>
+          </label>
+        }
+      </section>
+
+      <section class="branch-detail-section">
+        <h2>Address</h2>
+
+        <label class="branch-detail-field">
+          <span>Address Line 1</span>
+          <input type="text" formControlName="addressLine1" />
+        </label>
+        <label class="branch-detail-field">
+          <span>Address Line 2</span>
+          <input type="text" formControlName="addressLine2" />
+        </label>
+        <div class="branch-detail-row">
+          <label class="branch-detail-field">
+            <span>City</span>
+            <input type="text" formControlName="city" />
+          </label>
+          <label class="branch-detail-field">
+            <span>State</span>
+            <input type="text" formControlName="state" />
+          </label>
+          <label class="branch-detail-field">
+            <span>Postal Code</span>
+            <input type="text" formControlName="postalCode" />
+          </label>
+        </div>
+        <label class="branch-detail-field">
+          <span>Landmark</span>
+          <input type="text" formControlName="landmark" />
+        </label>
+
+        <div class="branch-detail-field">
+          <span>Pick this branch's location on the map</span>
+          <lib-map-picker [initialPosition]="initialMapPosition" (locationChange)="onLocationChange($event)" />
+        </div>
+
+        <div class="branch-detail-row">
+          <label class="branch-detail-field">
+            <span>Latitude</span>
+            <input type="number" step="0.000001" formControlName="latitude" />
+          </label>
+          <label class="branch-detail-field">
+            <span>Longitude</span>
+            <input type="number" step="0.000001" formControlName="longitude" />
+          </label>
+        </div>
+      </section>
+
+      <section class="branch-detail-section">
+        <h2>Contact &amp; Delivery</h2>
+
+        <label class="branch-detail-field">
+          <span>Phone</span>
+          <input type="text" formControlName="phone" />
+        </label>
+        <div class="branch-detail-row">
+          <label class="branch-detail-field">
+            <span>Emergency Contact Name</span>
+            <input type="text" formControlName="emergencyContactName" />
+          </label>
+          <label class="branch-detail-field">
+            <span>Emergency Contact Phone</span>
+            <input type="text" formControlName="emergencyContactPhone" />
+          </label>
+        </div>
+        <div class="branch-detail-row">
+          <label class="branch-detail-field">
+            <span>Delivery Radius (km)</span>
+            <input type="number" min="0" step="0.5" formControlName="deliveryRadiusKm" />
+          </label>
+          <label class="branch-detail-field">
+            <span>Timezone</span>
+            <input type="text" formControlName="timezone" placeholder="Asia/Kolkata" />
+          </label>
+        </div>
+      </section>
+
+      <div class="branch-detail-actions">
+        @if (!isNew) {
+          <button type="button" class="branch-detail-delete" (click)="openDeleteConfirm()">
+            Delete Branch
+          </button>
+        }
+        <button type="submit" [disabled]="facade.saving()">
+          {{ facade.saving() ? 'Saving…' : (isNew ? 'Create Branch' : 'Save Changes') }}
+        </button>
+      </div>
+    </form>
+
+    @if (!isNew) {
+      <section class="branch-detail-section">
+        <h2>Operating Hours</h2>
+
+        @if (facade.hoursLoading()) {
+          <lib-skeleton [count]="3" />
+        } @else {
+          <lib-operating-hours-editor
+            [hours]="facade.operatingHours()"
+            [saving]="facade.hoursSaving()"
+            [error]="facade.hoursError()"
+            [savedAt]="facade.hoursSavedAt()"
+            (save)="onSaveHours($event)"
+          />
+        }
+      </section>
+    }
+  }
+
+  <lib-confirm-dialog
+    [open]="confirmDeleteOpen"
+    title="Delete this branch?"
+    message="This cannot be undone. You can't delete the primary branch while other branches exist."
+    confirmLabel="Delete"
+    tone="danger"
+    [busy]="facade.saving()"
+    (confirmed)="confirmDelete()"
+    (cancelled)="cancelDelete()"
+  />
+</div>

@@ -1,0 +1,73 @@
+<div class="compliance-page">
+  <h1>Compliance</h1>
+
+  @if (facade.loading()) {
+    <lib-skeleton [count]="3" />
+  } @else if (facade.error()) {
+    <lib-error-state [message]="facade.error()!" (retry)="retry()" />
+  } @else if (facade.snapshot(); as snapshot) {
+    <div class="compliance-overall">
+      <lib-status-chip [label]="snapshot.overallStatus" [tone]="overallTone(snapshot.overallStatus)" />
+      <span>Verification stage: {{ snapshot.verificationStage }}</span>
+    </div>
+
+    <div class="compliance-grid">
+      <div class="compliance-stat">
+        <span class="value">{{ snapshot.documentsVerified }}</span>
+        <span class="label">Verified</span>
+      </div>
+      <div class="compliance-stat">
+        <span class="value">{{ snapshot.documentsPending }}</span>
+        <span class="label">Pending</span>
+      </div>
+      <div class="compliance-stat">
+        <span class="value">{{ snapshot.documentsRejected }}</span>
+        <span class="label">Rejected</span>
+      </div>
+      <div class="compliance-stat">
+        <span class="value">{{ snapshot.documentsTotal }}</span>
+        <span class="label">Total Documents</span>
+      </div>
+    </div>
+
+    @if (snapshot.missingDocumentTypes.length > 0) {
+      <section class="compliance-section">
+        <h2>Missing Documents</h2>
+        <ul>
+          @for (type of snapshot.missingDocumentTypes; track type) {
+            <li>{{ documentTypeLabel(type) }}</li>
+          }
+        </ul>
+      </section>
+    }
+
+    @if (snapshot.expired.length > 0) {
+      <section class="compliance-section">
+        <h2>Expired Documents</h2>
+        <ul>
+          @for (item of snapshot.expired; track item.documentId) {
+            <li>{{ documentTypeLabel(item.documentType) }} — expired {{ item.expiryDate | date: 'mediumDate' }}</li>
+          }
+        </ul>
+      </section>
+    }
+
+    @if (snapshot.expiringWithin30Days.length > 0) {
+      <section class="compliance-section">
+        <h2>Expiring Within 30 Days</h2>
+        <ul>
+          @for (item of snapshot.expiringWithin30Days; track item.documentId) {
+            <li>{{ documentTypeLabel(item.documentType) }} — expires {{ item.expiryDate | date: 'mediumDate' }}</li>
+          }
+        </ul>
+      </section>
+    }
+
+    @if (snapshot.bankVerificationStatus) {
+      <section class="compliance-section">
+        <h2>Bank Account</h2>
+        <lib-status-chip [label]="snapshot.bankVerificationStatus" tone="info" />
+      </section>
+    }
+  }
+</div>

@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, OnInit, effect, inject } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ChangeDetectionStrategy, Component, OnInit, effect, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import type { RecentSearchDto, SearchSuggestionDto, TrendingSearchDto } from '@patheya-express-frontend/api-sdk';
 import {
   EmptyStateComponent,
   ErrorStateComponent,
@@ -12,6 +13,7 @@ import { FavoritesFacade } from '@patheya-express-frontend/favorites';
 import { RestaurantFacade } from '../../facades/restaurant.facade';
 import type { RestaurantFilters } from '../../store/restaurant.store';
 import { RestaurantCardComponent } from '../restaurant-card/restaurant-card.component';
+import { SearchSuggestionsService } from '../../services/search-suggestions.service';
 
 @Component({
   selector: 'lib-restaurant-list',
@@ -31,8 +33,15 @@ import { RestaurantCardComponent } from '../restaurant-card/restaurant-card.comp
 export class RestaurantListComponent implements OnInit {
   protected readonly facade = inject(RestaurantFacade);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly authFacade = inject(AuthFacade);
   private readonly favoritesFacade = inject(FavoritesFacade);
+  private readonly searchSuggestionsService = inject(SearchSuggestionsService);
+
+  protected readonly suggestions = signal<SearchSuggestionDto[]>([]);
+  protected readonly recentSearches = signal<RecentSearchDto[]>([]);
+  protected readonly trendingSearches = signal<TrendingSearchDto[]>([]);
+  protected readonly showSuggestions = signal(false);
 
   constructor() {
     // One bulk favorite-status request per page of results — never one request per card.
@@ -52,6 +61,12 @@ export class RestaurantListComponent implements OnInit {
     if (cuisine) {
       this.facade.setCuisineFilter(cuisine);
     }
+
+    void this.searchSuggestionsService.getTrending().then((trending) => this.trendingSearches.set(trending));
+
+    if (this.authFacade.isAuthenticated()) {
+      void this.searchSuggestionsService.getRecent().then((recent) => this.recentSearches.set(recent));
+    }
   }
 
   protected retry(): void {
@@ -60,6 +75,58 @@ export class RestaurantListComponent implements OnInit {
 
   protected onSearch(value: string): void {
     this.facade.setSearch(value);
+
+    if (!value.trim()) {
+      this.suggestions.set([]);
+      this.showSuggestions.set(false);
+      return;
+    }
+
+    void this.searchSuggestionsService.getSuggestions(value).then((results) => {
+      this.suggestions.set(results);
+      this.showSuggestions.set(true);
+    });
+
+    void this.searchSuggestionsService.logSearch(value);
+
+    if (this.authFacade.isAuthenticated()) {
+      void this.searchSuggestionsService
+        .recordRecent(value)
+        .then(() => this.searchSuggestionsService.getRecent())
+        .then((recent) => this.recentSearches.set(recent));
+    }
+  }
+
+  protected onSearchFocus(): void {
+    if (this.facade.filters().search.trim()) {
+      this.showSuggestions.set(true);
+    }
+  }
+
+  protected onSearchBlur(): void {
+    // Delay so a click on a suggestion/chip registers before the panel hides.
+    setTimeout(() => this.showSuggestions.set(false), 150);
+  }
+
+  protected selectSuggestion(suggestion: SearchSuggestionDto): void {
+    this.showSuggestions.set(false);
+
+    switch (suggestion.type) {
+      case 'RESTAURANT':
+        void this.router.navigate(['/restaurants', suggestion.id]);
+        return;
+      case 'MENU_ITEM':
+        void this.router.navigate(['/restaurants', suggestion.restaurantId]);
+        return;
+      case 'CUISINE':
+        this.facade.setCuisineFilter(suggestion.label);
+        return;
+    }
+  }
+
+  protected selectChip(query: string): void {
+    this.showSuggestions.set(false);
+    this.onSearch(query);
   }
 
   protected onCuisineFilterChange(value: string): void {
@@ -70,9 +137,37 @@ export class RestaurantListComponent implements OnInit {
     this.facade.setOpenNowFilter(checked);
   }
 
+  protected onVegToggle(checked: boolean): void {
+    this.facade.setVegFilter(checked);
+  }
+
+  protected onVeganToggle(checked: boolean): void {
+    this.facade.setVeganFilter(checked);
+  }
+
+  protected onOffersToggle(checked: boolean): void {
+    this.facade.setOffersFilter(checked);
+  }
+
+  protected onCityChange(value: string): void {
+    this.facade.setCityFilter(value);
+  }
+
+  protected onMinRatingChange(value: string): void {
+    this.facade.setMinRating(value ? Number(value) : undefined);
+  }
+
+  protected onMaxDeliveryTimeChange(value: string): void {
+    this.facade.setMaxDeliveryTimeMinutes(value ? Number(value) : undefined);
+  }
+
   protected onSortChange(value: string): void {
     const [sortBy, sortOrder] = value.split(':') as [RestaurantFilters['sortBy'], RestaurantFilters['sortOrder']];
     this.facade.setSort(sortBy, sortOrder);
+  }
+
+  protected clearFilters(): void {
+    this.facade.clearFilters();
   }
 
   protected onPageChange(page: number): void {

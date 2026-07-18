@@ -6,6 +6,15 @@ import {
   type PaginatedRestaurantSummariesResponseDto,
 } from '@patheya-express-frontend/api-sdk';
 
+export type RestaurantSortBy =
+  | 'name'
+  | 'rating'
+  | 'createdAt'
+  | 'popularity'
+  | 'deliveryTime'
+  | 'preparationTime'
+  | 'distance';
+
 export interface RestaurantListQuery {
   page?: number;
   limit?: number;
@@ -14,7 +23,15 @@ export interface RestaurantListQuery {
   cuisine?: string;
   featured?: boolean;
   openNow?: boolean;
-  sortBy?: 'name' | 'rating' | 'createdAt';
+  veg?: boolean;
+  vegan?: boolean;
+  offers?: boolean;
+  minRating?: number;
+  maxDeliveryTimeMinutes?: number;
+  maxDistanceKm?: number;
+  latitude?: number;
+  longitude?: number;
+  sortBy?: RestaurantSortBy;
   sortOrder?: 'asc' | 'desc';
 }
 

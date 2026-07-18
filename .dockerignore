@@ -1,0 +1,37 @@
+# Keeps the Docker build context small and cache-friendly. Build context is
+# the repository root (see infrastructure/docker/frontend.Dockerfile) — every
+# app's Dockerfile COPYs only the paths it needs explicitly, so nothing here
+# is required for the build itself, only excluded to speed up `docker build`
+# and avoid invalidating layer cache on unrelated file changes.
+
+.git
+.github
+.claude
+.ai
+.angular
+.nx
+.vscode
+.idea
+
+node_modules
+dist
+tmp
+out-tsc
+coverage
+
+*.log
+build-output.txt
+build.log
+frontend.log
+
+.env
+.env.*
+!.env.example
+
+infrastructure/kubernetes
+infrastructure/terraform
+infrastructure/docs
+infrastructure/monitoring
+
+README.md
+patheya-express-frontend

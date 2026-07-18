@@ -36,7 +36,12 @@
   </div>
 
   <div class="restaurant-card-body">
-    <h3>{{ restaurant.name }}</h3>
+    <h3>
+      {{ restaurant.name }}
+      @if (restaurant.hasVegOptions) {
+        <span class="restaurant-card-veg-badge" title="Vegetarian options available" aria-hidden="true"></span>
+      }
+    </h3>
     <p class="restaurant-card-cuisine">{{ cuisineLabel }}</p>
     <div class="restaurant-card-meta">
       <span class="meta-item">

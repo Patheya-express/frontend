@@ -1,0 +1,73 @@
+<div class="ticket-detail-page">
+  <a class="ticket-detail-back" routerLink="/support/tickets">&larr; Back to tickets</a>
+
+  @if (facade.selectedTicketLoading()) {
+    <lib-skeleton [count]="3" />
+  } @else if (facade.selectedTicketError()) {
+    <lib-error-state [message]="facade.selectedTicketError()!" (retry)="retry()" />
+  } @else if (facade.selectedTicket(); as ticket) {
+    <header class="ticket-detail-header">
+      <div>
+        <h1>{{ ticket.subject }}</h1>
+        <span class="ticket-detail-number">{{ ticket.ticketNumber }}</span>
+      </div>
+      <div class="ticket-detail-badges">
+        <span class="ticket-detail-badge" [attr.data-priority]="ticket.priority">{{ ticket.priority }}</span>
+        <span class="ticket-detail-badge">{{ ticket.status.replace('_', ' ') }}</span>
+      </div>
+    </header>
+
+    <p class="ticket-detail-description">{{ ticket.description }}</p>
+
+    @if (!isTerminal(ticket.status)) {
+      <button type="button" class="ticket-detail-close-btn" (click)="closeTicket()">Close ticket</button>
+    }
+
+    <section class="ticket-thread">
+      <h2>Conversation</h2>
+
+      @if (ticket.messages.length === 0) {
+        <lib-empty-state title="No replies yet" message="Our support team will respond here soon." />
+      } @else {
+        <ul class="ticket-message-list">
+          @for (message of ticket.messages; track message.id) {
+            <li class="ticket-message" [class.from-agent]="message.senderType === 'AGENT'">
+              <div class="ticket-message-bubble">
+                <p>{{ message.message }}</p>
+                @if (message.attachments.length > 0) {
+                  <div class="ticket-message-attachments">
+                    @for (attachment of message.attachments; track attachment.id) {
+                      <a [href]="attachment.fileUrl" target="_blank" rel="noopener">{{ attachment.fileName }}</a>
+                    }
+                  </div>
+                }
+                <span class="ticket-message-time">{{ message.createdAt | date: 'short' }}</span>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+
+      @if (!isTerminal(ticket.status)) {
+        <form class="ticket-message-form" (ngSubmit)="sendMessage()">
+          <textarea
+            [ngModel]="draftMessage()"
+            (ngModelChange)="draftMessage.set($event)"
+            name="message"
+            rows="2"
+            placeholder="Type a reply…"
+          ></textarea>
+          <div class="ticket-message-actions">
+            <input #fileInput type="file" hidden (change)="onFileSelected($event)" />
+            <button type="button" class="ticket-attach-btn" (click)="triggerFilePicker()" [disabled]="uploading()">
+              {{ uploading() ? 'Uploading…' : 'Attach file' }}
+            </button>
+            <button type="submit" class="ticket-send-btn" [disabled]="facade.sendingMessage() || !draftMessage().trim()">
+              {{ facade.sendingMessage() ? 'Sending…' : 'Send' }}
+            </button>
+          </div>
+        </form>
+      }
+    </section>
+  }
+</div>

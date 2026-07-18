@@ -7,11 +7,14 @@ const NAV_LINKS: PartnerNavLink[] = [
   { label: 'Dashboard', path: '/dashboard' },
   { label: 'Users', path: '/users' },
   { label: 'Restaurants', path: '/restaurants' },
+  { label: 'Verification', path: '/restaurants/verification' },
   { label: 'Orders', path: '/orders' },
   { label: 'Delivery', path: '/delivery' },
+  { label: 'Delivery Verification', path: '/delivery/verification' },
   { label: 'Payments', path: '/payments' },
   { label: 'Audit Logs', path: '/audit' },
   { label: 'Notifications', path: '/notifications' },
+  { label: 'Support', path: '/support' },
 ];
 
 @Component({

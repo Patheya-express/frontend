@@ -1,0 +1,46 @@
+# Reference Prometheus config for scraping the four frontend apps —
+# annotation-based pod discovery, no Prometheus Operator / ServiceMonitor
+# CRD assumed, since neither is provisioned by this repo (see
+# infrastructure/terraform/README.md — cluster-level tooling is out of
+# scope here). If the target cluster already runs the Prometheus Operator,
+# prefer a PodMonitor selecting `app.kubernetes.io/part-of: patheya-express`
+# instead of this scrape_config.
+#
+# Each app's pod carries prometheus.io/scrape=true, prometheus.io/port=9113,
+# prometheus.io/path=/metrics (see infrastructure/kubernetes/base/*/deployment.yaml)
+# — set by the nginx-prometheus-exporter sidecar reading nginx's /stub_status.
+
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+
+rule_files:
+  - alert-rules.yml
+
+scrape_configs:
+  - job_name: patheya-express-frontend
+    kubernetes_sd_configs:
+      - role: pod
+    relabel_configs:
+      # Only scrape pods that opted in via the annotation.
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        action: keep
+        regex: "true"
+      # Respect a non-default path if the pod ever sets one.
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+        action: replace
+        target_label: __metrics_path__
+        regex: (.+)
+      # Rewrite the scrape address to the annotated port (9113, the
+      # exporter sidecar — not the app container's 8080).
+      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+        action: replace
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+        target_label: __address__
+      - source_labels: [__meta_kubernetes_namespace]
+        target_label: namespace
+      - source_labels: [__meta_kubernetes_pod_label_app_kubernetes_io_name]
+        target_label: app
+      - source_labels: [__meta_kubernetes_pod_label_environment]
+        target_label: environment

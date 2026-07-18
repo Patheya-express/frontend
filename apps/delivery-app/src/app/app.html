@@ -1,5 +1,14 @@
 @if (isAuthenticated()) {
-  <lib-partner-shell [brandName]="brandName" [navLinks]="navLinks" (logoutRequested)="onLogout()" />
+  <lib-partner-shell [brandName]="brandName" [navLinks]="navLinks()" (logoutRequested)="onLogout()">
+    <div shell-header-extra class="delivery-header-extras">
+      @if (currentVehicleLabel(); as vehicleLabel) {
+        <span class="delivery-header-vehicle">{{ vehicleLabel }}</span>
+      }
+      <lib-status-chip [label]="verification()?.stage ?? 'DRAFT'" [tone]="stageTone(verification()?.stage)" />
+      <lib-notification-badge [count]="unreadNotifications()" />
+      <span class="delivery-header-avatar" [attr.aria-label]="'Profile'" title="Profile">{{ avatarInitials() }}</span>
+    </div>
+  </lib-partner-shell>
 } @else {
   <router-outlet />
 }

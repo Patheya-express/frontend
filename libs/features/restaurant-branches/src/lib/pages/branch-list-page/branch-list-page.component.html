@@ -1,0 +1,42 @@
+<div class="branch-list-page">
+  <div class="branch-list-header">
+    <h1>Branches</h1>
+    <a routerLink="/branches/new" class="branch-list-add">+ Add Branch</a>
+  </div>
+
+  <lib-search-input placeholder="Search branches by name or city…" (valueChange)="onSearch($event)" />
+
+  @if (facade.loading()) {
+    <lib-skeleton [count]="4" />
+  } @else if (facade.error()) {
+    <lib-error-state [message]="facade.error()!" (retry)="retry()" />
+  } @else if (facade.totalBranches().length === 0) {
+    <lib-empty-state
+      title="No branches yet"
+      message="Add your first branch to start managing hours, staff, and orders per location."
+      actionLabel="Add Branch"
+    />
+  } @else {
+    <lib-data-table [columns]="columns">
+      @for (branch of facade.branches(); track branch.id) {
+        <tr>
+          <td>{{ branch.name }}</td>
+          <td>{{ branch.city }}</td>
+          <td>
+            @if (branch.isPrimary) {
+              <lib-status-chip label="Primary" tone="success" />
+            }
+          </td>
+          <td>
+            <lib-status-chip [label]="branch.isActive ? 'Active' : 'Inactive'" [tone]="branch.isActive ? 'success' : 'neutral'" />
+          </td>
+          <td>
+            <a [routerLink]="['/branches', branch.id]">Manage</a>
+          </td>
+        </tr>
+      }
+    </lib-data-table>
+
+    <lib-pagination [page]="facade.page()" [totalPages]="facade.totalPages()" [total]="facade.totalBranches().length" (pageChange)="onPageChange($event)" />
+  }
+</div>

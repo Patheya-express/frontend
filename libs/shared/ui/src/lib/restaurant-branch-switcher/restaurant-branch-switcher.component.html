@@ -1,0 +1,17 @@
+<div class="switcher">
+  @if (restaurants.length > 1) {
+    <select class="switcher-select" [value]="currentRestaurantId" (change)="onRestaurantChange($event)">
+      @for (restaurant of restaurants; track restaurant.id) {
+        <option [value]="restaurant.id">{{ restaurant.label }}</option>
+      }
+    </select>
+  }
+
+  @if (branches.length > 1) {
+    <select class="switcher-select" [value]="currentBranchId" (change)="onBranchChange($event)">
+      @for (branch of branches; track branch.id) {
+        <option [value]="branch.id">{{ branch.label }}</option>
+      }
+    </select>
+  }
+</div>

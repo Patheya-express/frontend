@@ -1,6 +1,7 @@
 <lib-auth-layout [brandName]="brandName">
   <lib-auth-card title="Welcome back" subtitle="Log in to continue to {{ brandName }}">
     <lib-login-form [loading]="loading()" [errorMessage]="error()" (submitted)="onSubmit($event)" />
+    <a class="forgot-password-link" routerLink="/auth/forgot-password">Forgot password?</a>
     @if (registerCta) {
       <span auth-card-footer>Don't have an account? <a [routerLink]="registerCta.path">{{ registerCta.label }}</a></span>
     }

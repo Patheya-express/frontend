@@ -1,0 +1,68 @@
+# A namespace-scoped identity Phase 2's CI/CD can assume to deploy this
+# platform, instead of a cluster-admin kubeconfig. Least privilege: exactly
+# the verbs needed to roll out the 4 apps' own resource kinds, nothing else
+# — no Secrets access, no RBAC self-modification, no access to any other
+# workload that might land in this namespace later.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ci-deployer
+  labels:
+    app.kubernetes.io/part-of: patheya-express-platform
+    app.kubernetes.io/component: ci
+automountServiceAccountToken: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ci-deployer
+  labels:
+    app.kubernetes.io/part-of: patheya-express-platform
+    app.kubernetes.io/component: ci
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses", "networkpolicies"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: ["autoscaling"]
+    resources: ["horizontalpodautoscalers"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: ["policy"]
+    resources: ["poddisruptionbudgets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: ["autoscaling.k8s.io"]
+    resources: ["verticalpodautoscalers"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  # Read-only on pods/events — useful for a deploy step to verify rollout
+  # health, never to modify a running pod directly (that's what updating
+  # the Deployment is for).
+  - apiGroups: [""]
+    resources: ["pods", "events"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ci-deployer
+  labels:
+    app.kubernetes.io/part-of: patheya-express-platform
+    app.kubernetes.io/component: ci
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: ci-deployer
+subjects:
+  - kind: ServiceAccount
+    name: ci-deployer
+    # A RoleBinding's ServiceAccount subject requires an explicit namespace
+    # (unlike metadata.namespace, the API server does not default this one
+    # from the RoleBinding's own namespace) — this placeholder is rewritten
+    # to the real per-environment namespace by each overlay's `namespace:`
+    # transformer, verified against actual `kubectl kustomize` output
+    # rather than assumed.
+    namespace: PLACEHOLDER_NAMESPACE

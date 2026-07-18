@@ -41,7 +41,31 @@
               "maximumError": "8kb"
             }
           ],
-          "outputHashing": "all"
+          "outputHashing": "all",
+          "fileReplacements": [
+            {
+              "replace": "apps/customer-app/src/environments/environment.ts",
+              "with": "apps/customer-app/src/environments/environment.prod.ts"
+            }
+          ]
+        },
+        "staging": {
+          "outputHashing": "all",
+          "fileReplacements": [
+            {
+              "replace": "apps/customer-app/src/environments/environment.ts",
+              "with": "apps/customer-app/src/environments/environment.staging.ts"
+            }
+          ]
+        },
+        "qa": {
+          "outputHashing": "all",
+          "fileReplacements": [
+            {
+              "replace": "apps/customer-app/src/environments/environment.ts",
+              "with": "apps/customer-app/src/environments/environment.qa.ts"
+            }
+          ]
         },
         "development": {
           "optimization": false,
@@ -57,6 +81,12 @@
       "configurations": {
         "production": {
           "buildTarget": "customer-app:build:production"
+        },
+        "staging": {
+          "buildTarget": "customer-app:build:staging"
+        },
+        "qa": {
+          "buildTarget": "customer-app:build:qa"
         },
         "development": {
           "buildTarget": "customer-app:build:development"

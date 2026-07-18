@@ -1,0 +1,97 @@
+# Base compose file — production-shaped image definitions shared by every
+# environment. Run directly for a local "prod-like" smoke test, or layer
+# docker-compose.dev.yml / docker-compose.prod.yml on top for
+# environment-specific overrides:
+#
+#   docker compose -f infrastructure/docker/docker-compose.yml up --build
+#   docker compose -f infrastructure/docker/docker-compose.yml -f infrastructure/docker/docker-compose.dev.yml up --build
+#   docker compose -f infrastructure/docker/docker-compose.yml -f infrastructure/docker/docker-compose.prod.yml up --build
+#
+# These four services are independent static SPAs — nothing here talks to
+# the backend container-to-container, because API calls are made by the
+# *browser*, not by nginx. The backend (apps/api-gateway in the sibling
+# patheya-express-platform repo) is started separately; see
+# infrastructure/docs/local-development-guide.md. Each app's apiBaseUrl is
+# baked in at build time (see BUILD_CONFIGURATION) via the existing Angular
+# environment files — this compose setup deliberately does not add a
+# runtime env-injection mechanism, since that would mean changing how
+# APP_ENVIRONMENT is provided in each app's app.config.ts.
+#
+# Build context is the repository root — see infrastructure/docker/frontend.Dockerfile.
+#
+# `name:` below pins an explicit Compose project name. Without it, Compose
+# derives the project name from this file's parent directory
+# (infrastructure/docker) — and the sibling backend repo
+# (patheya-express-platform) happens to keep its own compose file at that
+# exact same relative path. Two different repos both defaulting to project
+# name "docker" means Compose treats each other's containers as "orphans"
+# of its own project: `docker compose down --remove-orphans` run from this
+# repo has actually stopped and removed the backend's running
+# postgres/redis/kafka/zookeeper containers this way. An explicit, unique
+# name prevents the collision entirely.
+name: patheya-express-frontend
+
+x-frontend-common: &frontend-common
+  build:
+    context: ../..
+    dockerfile: infrastructure/docker/frontend.Dockerfile
+    args:
+      BUILD_CONFIGURATION: production
+  restart: unless-stopped
+  networks:
+    - patheya-frontend
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+services:
+  customer-app:
+    <<: *frontend-common
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/frontend.Dockerfile
+      args:
+        APP_NAME: customer-app
+        BUILD_CONFIGURATION: production
+    ports:
+      - "${CUSTOMER_APP_PORT:-4200}:8080"
+
+  restaurant-app:
+    <<: *frontend-common
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/frontend.Dockerfile
+      args:
+        APP_NAME: restaurant-app
+        BUILD_CONFIGURATION: production
+    ports:
+      - "${RESTAURANT_APP_PORT:-4201}:8080"
+
+  admin-app:
+    <<: *frontend-common
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/frontend.Dockerfile
+      args:
+        APP_NAME: admin-app
+        BUILD_CONFIGURATION: production
+    ports:
+      - "${ADMIN_APP_PORT:-4202}:8080"
+
+  delivery-app:
+    <<: *frontend-common
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/frontend.Dockerfile
+      args:
+        APP_NAME: delivery-app
+        BUILD_CONFIGURATION: production
+    ports:
+      - "${DELIVERY_APP_PORT:-4203}:8080"
+
+networks:
+  patheya-frontend:
+    name: patheya-frontend
+    driver: bridge

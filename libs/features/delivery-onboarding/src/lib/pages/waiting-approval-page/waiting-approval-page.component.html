@@ -1,0 +1,52 @@
+<div class="waiting-approval-page">
+  @if (facade.initializing()) {
+    <lib-skeleton [count]="3" />
+  } @else {
+    <div class="waiting-approval-card">
+      <div class="waiting-approval-spinner" aria-hidden="true"></div>
+      <h1>Application Submitted</h1>
+      <p>Your delivery partner application is under review. We'll notify you as soon as a decision is made.</p>
+
+      <dl class="waiting-approval-details">
+        @if (facade.onboarding(); as onboarding) {
+          <div>
+            <dt>Application ID</dt>
+            <dd>{{ onboarding.id }}</dd>
+          </div>
+          @if (onboarding.submittedAt) {
+            <div>
+              <dt>Submitted</dt>
+              <dd>{{ onboarding.submittedAt | date: 'medium' }}</dd>
+            </div>
+          }
+          <div>
+            <dt>Status</dt>
+            <dd>{{ onboarding.status }}</dd>
+          </div>
+        }
+        @if (facade.verification(); as verification) {
+          <div>
+            <dt>Verification Stage</dt>
+            <dd>{{ verification.stage }}</dd>
+          </div>
+          @if (verification.rejectedReason) {
+            <div>
+              <dt>Reviewer Comments</dt>
+              <dd>{{ verification.rejectedReason }}</dd>
+            </div>
+          }
+        }
+        <div>
+          <dt>Estimated Review Time</dt>
+          <dd>1-3 business days</dd>
+        </div>
+      </dl>
+
+      <p class="waiting-approval-support">
+        Questions? Contact <a [href]="'mailto:' + supportEmail">{{ supportEmail }}</a> or call {{ supportPhone }}.
+      </p>
+
+      <button type="button" (click)="retry()">Check Status</button>
+    </div>
+  }
+</div>

@@ -1,0 +1,57 @@
+# Requires cert-manager's own CRDs + controller to be installed separately
+# (typically via its official Helm chart — not provisioned by this repo,
+# consistent with infrastructure/terraform/README.md's "prepare, don't
+# provision" scope for everything cluster-level). `kubectl kustomize`
+# renders this fine regardless; `kubectl apply` will fail with "no matches
+# for kind ClusterIssuer" until cert-manager's CRDs exist on the target
+# cluster.
+#
+# Every app's Ingress (infrastructure/kubernetes/base/*/ingress.yaml)
+# references one of these two issuers by name via the
+# cert-manager.io/cluster-issuer annotation — cert-manager's ingress-shim
+# component reads that annotation and creates the Certificate object for
+# us, so no separate Certificate resource is defined here (see
+# infrastructure/kubernetes/platform/cert-manager/README.md).
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+  labels:
+    app.kubernetes.io/part-of: patheya-express-platform
+spec:
+  acme:
+    # Let's Encrypt's staging environment: no rate limit worth worrying
+    # about, but issues certificates no browser trusts — exactly right for
+    # development/staging (the two overlays that use this issuer by
+    # default, see base/customer-app/ingress.yaml) and never appropriate
+    # for a real domain anyone actually visits.
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: platform@patheyaexpress.example
+    privateKeySecretRef:
+      name: letsencrypt-staging-account-key
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: nginx
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-production
+  labels:
+    app.kubernetes.io/part-of: patheya-express-platform
+spec:
+  acme:
+    # Real, browser-trusted certificates — rate-limited (50 certs/registered
+    # domain/week as of this writing). Only the production overlay's
+    # Ingress patches point at this issuer (see
+    # overlays/production/kustomization.yaml) — precisely to keep
+    # iteration in dev/staging from ever touching that limit.
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: platform@patheyaexpress.example
+    privateKeySecretRef:
+      name: letsencrypt-production-account-key
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: nginx

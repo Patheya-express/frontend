@@ -1,0 +1,104 @@
+<div class="map-picker">
+  @if (!facade.isProviderConfigured()) {
+    <div class="map-picker-banner map-picker-banner--warning" role="status">
+      {{ facade.providerName() }} is not configured yet. You can still enter the address fields
+      manually below.
+    </div>
+  } @else if (facade.error(); as error) {
+    <div class="map-picker-banner map-picker-banner--error" role="alert">{{ error }}</div>
+  }
+
+  <div class="map-picker-search">
+    <label class="map-picker-search-label" for="map-picker-search-input">Search for an address</label>
+    <input
+      id="map-picker-search-input"
+      type="text"
+      autocomplete="off"
+      placeholder="Type an address…"
+      [value]="facade.searchQuery()"
+      (input)="onSearchInput($event)"
+    />
+
+    @if (facade.searching()) {
+      <span class="map-picker-search-spinner" aria-hidden="true"></span>
+    }
+
+    @if (facade.searchResults().length > 0) {
+      <ul class="map-picker-search-results" role="listbox">
+        @for (result of facade.searchResults(); track result.placeId) {
+          <li>
+            <button type="button" role="option" aria-selected="false" (click)="onSelectResult(result)">
+              {{ result.description }}
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  <div class="map-picker-map-shell" [style.height]="height">
+    <div #mapContainer class="map-picker-map" role="application" aria-label="Interactive map"></div>
+
+    <div class="map-picker-controls">
+      <button
+        type="button"
+        class="map-picker-control-btn"
+        title="Use my current location"
+        aria-label="Use my current location"
+        (click)="onUseCurrentLocation()"
+        [disabled]="facade.loading()"
+      >
+        📍
+      </button>
+      <button
+        type="button"
+        class="map-picker-control-btn"
+        title="Recenter on marker"
+        aria-label="Recenter on marker"
+        (click)="onRecenter()"
+        [disabled]="!facade.markerPosition()"
+      >
+        ⌖
+      </button>
+    </div>
+
+    @if (facade.loading()) {
+      <div class="map-picker-loading-overlay" aria-live="polite">Loading…</div>
+    }
+  </div>
+
+  @if (facade.markerPosition(); as position) {
+    <div class="map-picker-preview" aria-live="polite">
+      <h3>Selected Location</h3>
+      <p class="map-picker-preview-address">
+        {{ facade.addressPreview().formattedAddress || 'Address unavailable — refine your search or drag the marker.' }}
+      </p>
+      <dl class="map-picker-preview-grid">
+        <div>
+          <dt>Latitude</dt>
+          <dd>{{ position.lat !== null && position.lat !== undefined ? position.lat.toFixed(6) : '—' }}</dd>
+        </div>
+        <div>
+          <dt>Longitude</dt>
+          <dd>{{ position.lng !== null && position.lng !== undefined ? position.lng.toFixed(6) : '—' }}</dd>
+        </div>
+        <div>
+          <dt>City</dt>
+          <dd>{{ facade.addressPreview().city || '—' }}</dd>
+        </div>
+        <div>
+          <dt>State</dt>
+          <dd>{{ facade.addressPreview().state || '—' }}</dd>
+        </div>
+        <div>
+          <dt>Postal Code</dt>
+          <dd>{{ facade.addressPreview().postalCode || '—' }}</dd>
+        </div>
+        <div>
+          <dt>Country</dt>
+          <dd>{{ facade.addressPreview().country || '—' }}</dd>
+        </div>
+      </dl>
+    </div>
+  }
+</div>

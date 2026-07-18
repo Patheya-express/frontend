@@ -1,0 +1,70 @@
+<div class="waiting-page">
+  @if (facade.initializing()) {
+    <lib-skeleton [count]="4" />
+  } @else if (facade.onboarding(); as onboarding) {
+    @if (onboarding.status === 'REJECTED') {
+      <div class="waiting-card waiting-card--rejected">
+        <h1>Application Rejected</h1>
+        <p>Unfortunately your restaurant application was not approved.</p>
+        <p class="waiting-hint">
+          Contact <a [href]="'mailto:' + supportEmail">{{ supportEmail }}</a> or call {{ supportPhone }} for details.
+        </p>
+      </div>
+    } @else {
+      <div class="waiting-card">
+        <h1>Application Under Review</h1>
+        <p class="waiting-hint">
+          Thanks for completing your onboarding application. Our team is verifying your details.
+        </p>
+
+        <div class="waiting-grid">
+          <div class="waiting-item">
+            <span>Application ID</span>
+            <strong>{{ onboarding.id }}</strong>
+          </div>
+          <div class="waiting-item">
+            <span>Status</span>
+            <strong>{{ onboarding.status === 'SUBMITTED' ? 'Submitted' : 'Under Review' }}</strong>
+          </div>
+          <div class="waiting-item">
+            <span>Submitted On</span>
+            <strong>{{ onboarding.submittedAt ? (onboarding.submittedAt | date: 'medium') : '—' }}</strong>
+          </div>
+          <div class="waiting-item">
+            <span>Estimated Review Time</span>
+            <strong>1-2 business days</strong>
+          </div>
+        </div>
+
+        <section class="waiting-section">
+          <h2>Documents Submitted</h2>
+          @if (facade.documents().length === 0) {
+            <p class="waiting-hint">No documents uploaded.</p>
+          } @else {
+            <ul class="waiting-doc-list">
+              @for (doc of facade.documents(); track doc.id) {
+                <li>
+                  <span>{{ doc.documentType }}</span>
+                  <span class="waiting-doc-status" [class]="'status-' + doc.status.toLowerCase()">{{ doc.status }}</span>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+
+        <section class="waiting-section">
+          <h2>Review Timeline</h2>
+          <ol class="waiting-timeline">
+            <li class="is-done">Application submitted</li>
+            <li [class.is-done]="onboarding.status === 'UNDER_REVIEW'">Verification in progress</li>
+            <li>Decision</li>
+          </ol>
+        </section>
+
+        <p class="waiting-hint">
+          Questions? Contact <a [href]="'mailto:' + supportEmail">{{ supportEmail }}</a> or call {{ supportPhone }}.
+        </p>
+      </div>
+    }
+  }
+</div>

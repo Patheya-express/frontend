@@ -1,0 +1,33 @@
+<div class="file-upload">
+  <div class="file-upload-preview">
+    @if (isImagePreview()) {
+      <img [src]="previewUrl" alt="" />
+    } @else if (selectedFileName) {
+      <span class="file-upload-name">{{ selectedFileName }}</span>
+    } @else {
+      <span class="file-upload-placeholder" aria-hidden="true">+</span>
+    }
+  </div>
+
+  <button
+    type="button"
+    class="file-upload-btn"
+    [disabled]="uploading"
+    (click)="openFilePicker()"
+  >
+    {{ uploading ? 'Uploading…' : label }}
+  </button>
+
+  @if (hint) {
+    <p class="file-upload-hint">{{ hint }}</p>
+  }
+
+  <input
+    #fileInput
+    type="file"
+    [attr.accept]="accept"
+    class="file-upload-input"
+    aria-label="Upload file"
+    (change)="onFileChange($event)"
+  />
+</div>

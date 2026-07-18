@@ -1,0 +1,70 @@
+<div class="hours-editor">
+  <div class="hours-editor-toolbar">
+    <button type="button" class="hours-editor-24x7" (click)="applyTwentyFourSeven()">
+      Set 24×7 for every day
+    </button>
+
+    @if (dirty) {
+      <span class="hours-editor-status hours-editor-status--warning">Unsaved changes</span>
+    } @else if (savedAt) {
+      <span class="hours-editor-status hours-editor-status--success">Saved</span>
+    }
+  </div>
+
+  @if (error) {
+    <div class="hours-editor-error">{{ error }}</div>
+  }
+
+  <div class="hours-editor-days">
+    @for (day of week; track day.dayOfWeek) {
+      <div class="hours-editor-day">
+        <div class="hours-editor-day-header">
+          <strong>{{ day.label }}</strong>
+          <label class="hours-editor-closed-toggle">
+            <input type="checkbox" [checked]="day.isClosed" (change)="toggleClosed(day)" />
+            Closed
+          </label>
+        </div>
+
+        @if (!day.isClosed) {
+          <div class="hours-editor-shifts">
+            @for (shift of day.shifts; track $index) {
+              <div class="hours-editor-shift">
+                <input type="time" [(ngModel)]="shift.opensAt" (ngModelChange)="markDirty()" />
+                <span>to</span>
+                <input type="time" [(ngModel)]="shift.closesAt" (ngModelChange)="markDirty()" />
+                @if (day.shifts.length > 1) {
+                  <button type="button" class="hours-editor-remove-shift" (click)="removeShift(day, $index)">✕</button>
+                }
+              </div>
+            }
+            <button type="button" class="hours-editor-add-shift" (click)="addShift(day)">
+              + Add split shift
+            </button>
+          </div>
+        }
+
+        <details class="hours-editor-copy">
+          <summary>Copy this day's schedule to…</summary>
+          <div class="hours-editor-copy-targets">
+            @for (target of week; track target.dayOfWeek) {
+              @if (target.dayOfWeek !== day.dayOfWeek) {
+                <label>
+                  <input type="checkbox" [(ngModel)]="day.copyTargets[target.dayOfWeek]" />
+                  {{ target.label }}
+                </label>
+              }
+            }
+          </div>
+          <button type="button" (click)="copyToSelected(day)">Copy</button>
+        </details>
+      </div>
+    }
+  </div>
+
+  <div class="hours-editor-actions">
+    <button type="button" class="hours-editor-save" [disabled]="saving || !dirty" (click)="onSave()">
+      {{ saving ? 'Saving…' : 'Save Operating Hours' }}
+    </button>
+  </div>
+</div>

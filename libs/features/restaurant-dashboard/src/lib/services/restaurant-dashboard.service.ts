@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { OrdersService, type OrderResponseDto } from '@patheya-express-frontend/api-sdk';
-import { CurrentRestaurantService } from '@patheya-express-frontend/core';
+import { OrdersService, type RestaurantDashboardResponseDto } from '@patheya-express-frontend/api-sdk';
+import { RestaurantContextService } from '@patheya-express-frontend/core';
 
 // The API gateway wraps every response in a { success, timestamp, data } envelope via a
 // global interceptor that Swagger/the generated SDK types do not account for.
@@ -15,20 +15,22 @@ function unwrap<T>(response: T): T {
 }
 
 /**
- * Stateless backend orchestration for the restaurant dashboard.
- *
- * There is no analytics/reporting endpoint, so metrics are derived (in the Store) from the
- * same order list the restaurant-orders feature uses. This service independently calls the
- * SDK rather than depending on RestaurantOrdersService, keeping the two features isolated.
+ * Stateless backend orchestration for the restaurant dashboard. Every metric is computed
+ * server-side by GET /orders/restaurant/:id/dashboard (OrdersService.getRestaurantDashboard) —
+ * this service (and the Store above it) only fetches and renders that response, it never
+ * re-derives metrics from a raw order list.
  */
 @Injectable({ providedIn: 'root' })
 export class RestaurantDashboardService {
   private readonly ordersService = inject(OrdersService);
-  private readonly currentRestaurant = inject(CurrentRestaurantService);
+  private readonly currentRestaurant = inject(RestaurantContextService);
 
-  async getRestaurantOrders(): Promise<OrderResponseDto[]> {
+  async getDashboard(branchId?: string): Promise<RestaurantDashboardResponseDto> {
     const restaurantId = await this.currentRestaurant.getRestaurantId();
-    const response = await this.ordersService.ordersControllerGetRestaurantOrders({ restaurantId });
+    const response = await this.ordersService.ordersControllerGetRestaurantDashboard({
+      restaurantId,
+      branchId,
+    });
     return unwrap(response);
   }
 }

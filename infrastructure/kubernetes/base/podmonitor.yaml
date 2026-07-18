@@ -1,0 +1,28 @@
+# Phase 9 (patheya-express-platform): one PodMonitor covering all four apps, matched by the
+# shared app.kubernetes.io/part-of+component labels every app.deployment.yaml already carries —
+# PodMonitor (not ServiceMonitor) because each app's Service only exposes the "http" port, never
+# the metrics-exporter sidecar's "metrics" port (9113), so a ServiceMonitor would have nothing to
+# scrape. The pre-existing `prometheus.io/scrape` pod annotations (deployment.yaml) target a
+# different, annotation-based Prometheus config (infrastructure/monitoring/prometheus/prometheus.yml)
+# that predates this platform's real, Terraform-installed kube-prometheus-stack — that stack uses
+# Prometheus Operator's ServiceMonitor/PodMonitor CRDs exclusively
+# (serviceMonitorSelectorNilUsesHelmValues=false with no annotation-based `kubernetes_sd_configs`),
+# so those annotations are inert against the real platform. Documented as a known,
+# pre-existing inconsistency, not fixed by deleting the annotations (harmless dead metadata) in
+# this phase.
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: frontend-apps
+  labels:
+    app.kubernetes.io/part-of: patheya-express
+    app.kubernetes.io/component: frontend
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/part-of: patheya-express
+      app.kubernetes.io/component: frontend
+  podMetricsEndpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s

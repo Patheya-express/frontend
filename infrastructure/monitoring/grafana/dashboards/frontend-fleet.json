@@ -1,0 +1,88 @@
+{
+  "title": "Patheya Express — Frontend Fleet",
+  "uid": "patheya-frontend-fleet",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "environment",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "query": "label_values(nginx_up, environment)",
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true
+      },
+      {
+        "name": "app",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "query": "label_values(nginx_up{environment=~\"$environment\"}, app)",
+        "refresh": 2,
+        "multi": true,
+        "includeAll": true
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Target up (1 = healthy)",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "min(up{job=\"patheya-express-frontend\", environment=~\"$environment\", app=~\"$app\"})"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Active connections",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 6, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "nginx_connections_active{environment=~\"$environment\", app=~\"$app\"}",
+          "legendFormat": "{{app}} ({{environment}})"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Request rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "rate(nginx_http_requests_total{environment=~\"$environment\", app=~\"$app\"}[5m])",
+          "legendFormat": "{{app}} ({{environment}})"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Accepted vs handled connections (gap = dropped)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "targets": [
+        {
+          "expr": "rate(nginx_connections_accepted{environment=~\"$environment\", app=~\"$app\"}[5m])",
+          "legendFormat": "accepted — {{app}}"
+        },
+        {
+          "expr": "rate(nginx_connections_handled{environment=~\"$environment\", app=~\"$app\"}[5m])",
+          "legendFormat": "handled — {{app}}"
+        }
+      ]
+    }
+  ]
+}

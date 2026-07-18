@@ -1,0 +1,383 @@
+<div class="onboarding-wizard-page">
+  @if (facade.initializing()) {
+    <lib-skeleton [count]="5" />
+  } @else if (facade.error()) {
+    <lib-error-state [message]="facade.error()!" (retry)="retry()" />
+  } @else {
+    <aside class="wizard-steps">
+      <div class="wizard-progress">
+        <div class="wizard-progress-bar" [style.width.%]="facade.progressPercent()"></div>
+      </div>
+      <span class="wizard-progress-label">{{ facade.progressPercent() }}% complete</span>
+
+      <ol>
+        @for (stepMeta of steps; track stepMeta.step) {
+          <li
+            [class.active]="facade.activeStep() === stepMeta.step"
+            [class.complete]="isStepComplete(stepMeta.step)"
+            [class.locked]="!isStepUnlocked(stepMeta.step)"
+            [class.changes-requested]="sectionHasRequestedChanges(stepMeta.key)"
+          >
+            <button type="button" [disabled]="!isStepUnlocked(stepMeta.step)" (click)="goToStep(stepMeta.step)">
+              {{ stepMeta.step }}. {{ stepMeta.label }}
+              @if (sectionHasRequestedChanges(stepMeta.key)) {
+                <span class="changes-badge">Changes Requested</span>
+              }
+            </button>
+          </li>
+        }
+      </ol>
+    </aside>
+
+    <main class="wizard-content">
+      @if (facade.saveError()) {
+        <p class="wizard-error" role="alert">{{ facade.saveError() }}</p>
+      }
+
+      <!-- Step 1: Personal -->
+      @if (facade.activeStep() === 1) {
+        <form [formGroup]="personalForm" (ngSubmit)="onSubmitPersonal()">
+          <h1>Personal Details</h1>
+          <label>
+            Date of Birth
+            <input type="date" formControlName="dateOfBirth" />
+          </label>
+          <label>
+            Gender
+            <select formControlName="gender">
+              <option value="" disabled>Select</option>
+              @for (gender of genders; track gender) {
+                <option [value]="gender">{{ gender }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            Languages Spoken
+            <input type="text" formControlName="languagesSpoken" placeholder="English, Hindi, Telugu" />
+          </label>
+          <button type="submit" [disabled]="facade.saving()">{{ facade.saving() ? 'Saving…' : 'Continue' }}</button>
+        </form>
+      }
+
+      <!-- Step 2: Address -->
+      @if (facade.activeStep() === 2) {
+        <form [formGroup]="addressForm" (ngSubmit)="onSubmitAddress()">
+          <h1>Address</h1>
+
+          <h2>Current Address</h2>
+          <lib-map-picker [initialPosition]="initialCurrentPosition" (locationChange)="onCurrentLocationPicked($event)" />
+          <label>
+            Address Line 1
+            <input type="text" formControlName="currentAddressLine1" />
+          </label>
+          <label>
+            Address Line 2
+            <input type="text" formControlName="currentAddressLine2" />
+          </label>
+          <label>
+            City
+            <input type="text" formControlName="currentCity" />
+          </label>
+          <label>
+            State
+            <input type="text" formControlName="currentState" />
+          </label>
+          <label>
+            Postal Code
+            <input type="text" formControlName="currentPostalCode" />
+          </label>
+
+          <h2>Permanent Address</h2>
+          <label class="checkbox-label">
+            <input type="checkbox" formControlName="sameAsPermanentAddress" />
+            Same as Current Address
+          </label>
+
+          @if (!addressForm.controls.sameAsPermanentAddress.value) {
+            <lib-map-picker [initialPosition]="initialPermanentPosition" (locationChange)="onPermanentLocationPicked($event)" />
+            <label>
+              Address Line 1
+              <input type="text" formControlName="permanentAddressLine1" />
+            </label>
+            <label>
+              Address Line 2
+              <input type="text" formControlName="permanentAddressLine2" />
+            </label>
+            <label>
+              City
+              <input type="text" formControlName="permanentCity" />
+            </label>
+            <label>
+              State
+              <input type="text" formControlName="permanentState" />
+            </label>
+            <label>
+              Postal Code
+              <input type="text" formControlName="permanentPostalCode" />
+            </label>
+          }
+
+          <button type="submit" [disabled]="facade.saving()">{{ facade.saving() ? 'Saving…' : 'Continue' }}</button>
+        </form>
+      }
+
+      <!-- Step 3: Vehicle -->
+      @if (facade.activeStep() === 3) {
+        <form [formGroup]="vehicleForm" (ngSubmit)="onSubmitVehicle()">
+          <h1>Vehicle</h1>
+          <label>
+            Vehicle Type
+            <select formControlName="vehicleType">
+              @for (type of vehicleTypes; track type) {
+                <option [value]="type">{{ type }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            Registration Number
+            <input type="text" formControlName="registrationNumber" placeholder="KA01AB1234" />
+          </label>
+          <label>
+            Brand
+            <input type="text" formControlName="brand" />
+          </label>
+          <label>
+            Model
+            <input type="text" formControlName="model" />
+          </label>
+          <label>
+            Year
+            <input type="number" formControlName="year" />
+          </label>
+          <label>
+            Fuel Type
+            <select formControlName="fuelType">
+              <option value="PETROL">PETROL</option>
+              <option value="DIESEL">DIESEL</option>
+              <option value="ELECTRIC">ELECTRIC</option>
+              <option value="CNG">CNG</option>
+              <option value="HYBRID">HYBRID</option>
+            </select>
+          </label>
+          <label>
+            Color
+            <input type="text" formControlName="color" />
+          </label>
+          <button type="submit" [disabled]="facade.saving()">{{ facade.saving() ? 'Saving…' : 'Continue' }}</button>
+        </form>
+      }
+
+      <!-- Step 4: Driving License -->
+      @if (facade.activeStep() === 4) {
+        <div class="document-step">
+          <h1>Driving License</h1>
+          <lib-file-upload
+            label="Upload Driving License"
+            accept="image/png,image/jpeg,image/webp,application/pdf"
+            [uploading]="isUploading('DRIVING_LICENSE')"
+            hint="Upload a clear photo or scan of your driving license."
+            (fileSelected)="onDrivingLicenseSelected($event)"
+          />
+          <button type="button" [disabled]="!hasDocument('DRIVING_LICENSE') || facade.saving()" (click)="onContinueDrivingLicense()">
+            Continue
+          </button>
+        </div>
+      }
+
+      <!-- Step 5: Aadhaar -->
+      @if (facade.activeStep() === 5) {
+        <div class="document-step">
+          <h1>Aadhaar</h1>
+          <lib-file-upload
+            label="Upload Aadhaar"
+            accept="image/png,image/jpeg,image/webp,application/pdf"
+            [uploading]="isUploading('AADHAAR')"
+            (fileSelected)="onAadhaarSelected($event)"
+          />
+          <button type="button" [disabled]="!hasDocument('AADHAAR') || facade.saving()" (click)="onContinueAadhaar()">Continue</button>
+        </div>
+      }
+
+      <!-- Step 6: PAN -->
+      @if (facade.activeStep() === 6) {
+        <div class="document-step">
+          <h1>PAN</h1>
+          <lib-file-upload
+            label="Upload PAN"
+            accept="image/png,image/jpeg,image/webp,application/pdf"
+            [uploading]="isUploading('PAN')"
+            (fileSelected)="onPanSelected($event)"
+          />
+          <button type="button" [disabled]="!hasDocument('PAN') || facade.saving()" (click)="onContinuePan()">Continue</button>
+        </div>
+      }
+
+      <!-- Step 7: Vehicle RC -->
+      @if (facade.activeStep() === 7) {
+        <div class="document-step">
+          <h1>Vehicle RC</h1>
+          <lib-file-upload
+            label="Upload Vehicle RC"
+            accept="image/png,image/jpeg,image/webp,application/pdf"
+            [uploading]="isUploading('VEHICLE_RC')"
+            (fileSelected)="onVehicleRcSelected($event)"
+          />
+          <button type="button" [disabled]="!hasDocument('VEHICLE_RC') || facade.saving()" (click)="onContinueVehicleRc()">Continue</button>
+        </div>
+      }
+
+      <!-- Step 8: Vehicle Insurance (+ optional Fitness/Pollution) -->
+      @if (facade.activeStep() === 8) {
+        <div class="document-step">
+          <h1>Vehicle Insurance</h1>
+          <lib-file-upload
+            label="Upload Insurance"
+            accept="image/png,image/jpeg,image/webp,application/pdf"
+            [uploading]="isUploading('VEHICLE_INSURANCE')"
+            (fileSelected)="onVehicleInsuranceSelected($event)"
+          />
+
+          <h2>Fitness Certificate (optional)</h2>
+          <lib-file-upload
+            label="Upload Fitness Certificate"
+            accept="image/png,image/jpeg,image/webp,application/pdf"
+            [uploading]="isUploading('VEHICLE_FITNESS')"
+            (fileSelected)="onVehicleFitnessSelected($event)"
+          />
+
+          <h2>Pollution Certificate (optional)</h2>
+          <lib-file-upload
+            label="Upload Pollution Certificate"
+            accept="image/png,image/jpeg,image/webp,application/pdf"
+            [uploading]="isUploading('VEHICLE_POLLUTION')"
+            (fileSelected)="onVehiclePollutionSelected($event)"
+          />
+
+          <button type="button" [disabled]="!hasDocument('VEHICLE_INSURANCE') || facade.saving()" (click)="onContinueVehicleInsurance()">
+            Continue
+          </button>
+        </div>
+      }
+
+      <!-- Step 9: Bank -->
+      @if (facade.activeStep() === 9) {
+        <form [formGroup]="bankForm" (ngSubmit)="onSubmitBank()">
+          <h1>Bank Account</h1>
+          <label>
+            Account Holder Name
+            <input type="text" formControlName="accountHolderName" />
+          </label>
+          <label>
+            Account Number
+            <input type="text" formControlName="accountNumber" />
+          </label>
+          <label>
+            Bank Name
+            <input type="text" formControlName="bankName" />
+          </label>
+          <label>
+            Branch Name
+            <input type="text" formControlName="branchName" />
+          </label>
+          <label>
+            IFSC
+            <input type="text" formControlName="ifsc" (input)="onIfscInput($event)" placeholder="HDFC0000042" />
+          </label>
+          <label>
+            UPI ID
+            <input type="text" formControlName="upiId" />
+          </label>
+          <button type="submit" [disabled]="facade.saving()">{{ facade.saving() ? 'Saving…' : 'Continue' }}</button>
+        </form>
+      }
+
+      <!-- Step 10: Selfie -->
+      @if (facade.activeStep() === 10) {
+        <div class="document-step">
+          <h1>Live Selfie</h1>
+          <lib-file-upload
+            label="Take/Upload Selfie"
+            accept="image/png,image/jpeg,image/webp"
+            [uploading]="isUploading('SELFIE')"
+            hint="Use your device camera for a clear, well-lit selfie."
+            (fileSelected)="onSelfieSelected($event)"
+          />
+          <button type="button" [disabled]="!hasDocument('SELFIE') || facade.saving()" (click)="onContinueSelfie()">Continue</button>
+        </div>
+      }
+
+      <!-- Step 11: Background Verification -->
+      @if (facade.activeStep() === 11) {
+        <div class="document-step">
+          <h1>Background Verification</h1>
+          <p>As part of verification, a background/police check will be conducted. Upload a police clearance certificate if you already have one (optional).</p>
+          <lib-file-upload
+            label="Upload Document (optional)"
+            accept="image/png,image/jpeg,image/webp,application/pdf"
+            [uploading]="isUploading('BACKGROUND_VERIFICATION')"
+            (fileSelected)="onBackgroundDocumentSelected($event)"
+          />
+          <label class="checkbox-label">
+            <input type="checkbox" [formControl]="backgroundConsent" />
+            I consent to a background verification check being conducted.
+          </label>
+          <button type="button" [disabled]="facade.saving()" (click)="onContinueBackground()">Continue</button>
+        </div>
+      }
+
+      <!-- Step 12: Review -->
+      @if (facade.activeStep() === 12) {
+        <div class="review-step">
+          <h1>Review & Submit</h1>
+
+          @if (facade.profile(); as profile) {
+            <section>
+              <h2>Personal</h2>
+              <p>{{ profile.dateOfBirth | date: 'mediumDate' }} · {{ profile.gender }}</p>
+              <p>{{ profile.languagesSpoken.join(', ') }}</p>
+            </section>
+            <section>
+              <h2>Address</h2>
+              <p>{{ profile.currentAddressLine1 }}, {{ profile.currentCity }}, {{ profile.currentState }} {{ profile.currentPostalCode }}</p>
+            </section>
+          }
+
+          @if (facade.primaryVehicle(); as vehicle) {
+            <section>
+              <h2>Vehicle</h2>
+              <p>{{ vehicle.vehicleType }} · {{ vehicle.registrationNumber }}</p>
+            </section>
+          }
+
+          <section>
+            <h2>Documents</h2>
+            <ul>
+              <li>Driving License: {{ hasDocument('DRIVING_LICENSE') ? 'Uploaded' : 'Missing' }}</li>
+              <li>Aadhaar: {{ hasDocument('AADHAAR') ? 'Uploaded' : 'Missing' }}</li>
+              <li>PAN: {{ hasDocument('PAN') ? 'Uploaded' : 'Missing' }}</li>
+              <li>Vehicle RC: {{ hasDocument('VEHICLE_RC') ? 'Uploaded' : 'Missing' }}</li>
+              <li>Vehicle Insurance: {{ hasDocument('VEHICLE_INSURANCE') ? 'Uploaded' : 'Missing' }}</li>
+              <li>Selfie: {{ hasDocument('SELFIE') ? 'Uploaded' : 'Missing' }}</li>
+            </ul>
+          </section>
+
+          @if (facade.bankAccount(); as account) {
+            <section>
+              <h2>Bank Account</h2>
+              <p>{{ account.bankName }} — ••••{{ account.accountNumberLast4 }}</p>
+            </section>
+          }
+
+          <label class="checkbox-label">
+            <input type="checkbox" [formControl]="acceptTerms" />
+            I accept the terms and conditions and confirm all information provided is accurate.
+          </label>
+
+          <button type="button" [disabled]="facade.saving()" (click)="onSubmitApplication()">
+            {{ facade.saving() ? 'Submitting…' : 'Submit Application' }}
+          </button>
+        </div>
+      }
+    </main>
+  }
+</div>

@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { CuisineResponseDto, RestaurantSummaryDto } from '@patheya-express-frontend/api-sdk';
-import { RestaurantService, type RestaurantListQuery } from '../services/restaurant.service';
+import { RestaurantService, type RestaurantListQuery, type RestaurantSortBy } from '../services/restaurant.service';
 
 export interface RestaurantPagination {
   total: number;
@@ -11,9 +11,15 @@ export interface RestaurantPagination {
 
 export interface RestaurantFilters {
   search: string;
+  city: string;
   cuisine: string;
   openNow: boolean;
-  sortBy: 'name' | 'rating' | 'createdAt';
+  veg: boolean;
+  vegan: boolean;
+  offers: boolean;
+  minRating: number | undefined;
+  maxDeliveryTimeMinutes: number | undefined;
+  sortBy: RestaurantSortBy;
   sortOrder: 'asc' | 'desc';
 }
 
@@ -26,8 +32,14 @@ const INITIAL_PAGINATION: RestaurantPagination = {
 
 const INITIAL_FILTERS: RestaurantFilters = {
   search: '',
+  city: '',
   cuisine: '',
   openNow: false,
+  veg: false,
+  vegan: false,
+  offers: false,
+  minRating: undefined,
+  maxDeliveryTimeMinutes: undefined,
   sortBy: 'name',
   sortOrder: 'asc',
 };
@@ -84,7 +96,7 @@ export class RestaurantStore {
     }
   }
 
-  /** Reloads using the current filters/pagination signals — the single path every mutator and retry() goes through. */
+/** Reloads using the current filters/pagination signals — the single path every mutator and retry() goes through. */
   refresh(): Promise<void> {
     const filters = this._filters();
     const pagination = this._pagination();
@@ -93,8 +105,14 @@ export class RestaurantStore {
       page: pagination.page,
       limit: pagination.limit,
       search: filters.search || undefined,
+      city: filters.city || undefined,
       cuisine: filters.cuisine || undefined,
       openNow: filters.openNow || undefined,
+      veg: filters.veg || undefined,
+      vegan: filters.vegan || undefined,
+      offers: filters.offers || undefined,
+      minRating: filters.minRating,
+      maxDeliveryTimeMinutes: filters.maxDeliveryTimeMinutes,
       sortBy: filters.sortBy,
       sortOrder: filters.sortOrder,
     });
@@ -102,6 +120,12 @@ export class RestaurantStore {
 
   setSearch(search: string): void {
     this._filters.update((filters) => ({ ...filters, search }));
+    this._pagination.update((pagination) => ({ ...pagination, page: 1 }));
+    void this.refresh();
+  }
+
+  setCityFilter(city: string): void {
+    this._filters.update((filters) => ({ ...filters, city }));
     this._pagination.update((pagination) => ({ ...pagination, page: 1 }));
     void this.refresh();
   }
@@ -118,8 +142,44 @@ export class RestaurantStore {
     void this.refresh();
   }
 
+  setVegFilter(veg: boolean): void {
+    this._filters.update((filters) => ({ ...filters, veg }));
+    this._pagination.update((pagination) => ({ ...pagination, page: 1 }));
+    void this.refresh();
+  }
+
+  setVeganFilter(vegan: boolean): void {
+    this._filters.update((filters) => ({ ...filters, vegan }));
+    this._pagination.update((pagination) => ({ ...pagination, page: 1 }));
+    void this.refresh();
+  }
+
+  setOffersFilter(offers: boolean): void {
+    this._filters.update((filters) => ({ ...filters, offers }));
+    this._pagination.update((pagination) => ({ ...pagination, page: 1 }));
+    void this.refresh();
+  }
+
+  setMinRating(minRating: number | undefined): void {
+    this._filters.update((filters) => ({ ...filters, minRating }));
+    this._pagination.update((pagination) => ({ ...pagination, page: 1 }));
+    void this.refresh();
+  }
+
+  setMaxDeliveryTimeMinutes(maxDeliveryTimeMinutes: number | undefined): void {
+    this._filters.update((filters) => ({ ...filters, maxDeliveryTimeMinutes }));
+    this._pagination.update((pagination) => ({ ...pagination, page: 1 }));
+    void this.refresh();
+  }
+
   setSort(sortBy: RestaurantFilters['sortBy'], sortOrder: RestaurantFilters['sortOrder']): void {
     this._filters.update((filters) => ({ ...filters, sortBy, sortOrder }));
+    this._pagination.update((pagination) => ({ ...pagination, page: 1 }));
+    void this.refresh();
+  }
+
+  clearFilters(): void {
+    this._filters.set(INITIAL_FILTERS);
     this._pagination.update((pagination) => ({ ...pagination, page: 1 }));
     void this.refresh();
   }

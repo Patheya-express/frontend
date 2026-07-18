@@ -1,0 +1,30 @@
+# Read-only visibility across every frontend namespace for on-call/support
+# — not bound to anyone by default (see the ClusterRoleBinding in this same
+# directory, whose `subjects:` is a placeholder Group that needs a real
+# OIDC group mapping before this grants anyone anything). get/list/watch
+# only; no create/update/patch/delete on anything, ever.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: patheya-frontend-viewer
+  labels:
+    app.kubernetes.io/part-of: patheya-express-platform
+rules:
+  # Secrets deliberately excluded even at read-only — a TLS Secret's private
+  # key is as sensitive as any write access, and "viewer" should never mean
+  # "can read every Secret in the namespace."
+  - apiGroups: [""]
+    resources: ["pods", "pods/log", "services", "events", "configmaps"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses", "networkpolicies"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["autoscaling"]
+    resources: ["horizontalpodautoscalers"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["policy"]
+    resources: ["poddisruptionbudgets"]
+    verbs: ["get", "list", "watch"]

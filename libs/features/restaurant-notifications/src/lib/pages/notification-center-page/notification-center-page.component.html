@@ -1,0 +1,50 @@
+<div class="notifications-page">
+  <div class="notifications-header">
+    <h1>Notifications</h1>
+    @if (facade.unreadCount() > 0) {
+      <span class="notifications-unread-badge">{{ facade.unreadCount() }} unread</span>
+    }
+    <button type="button" class="notifications-mark-all" (click)="markAllAsRead()">Mark All Read</button>
+  </div>
+
+  <div class="notifications-filters">
+    <lib-search-input placeholder="Search notifications…" (valueChange)="onSearch($event)" />
+
+    <select (change)="onTypeChange($event)">
+      <option value="">All types</option>
+      @for (type of facade.restaurantNotificationTypes(); track type) {
+        <option [value]="type">{{ typeLabels[type] ?? type }}</option>
+      }
+    </select>
+
+    <label class="notifications-unread-toggle">
+      <input type="checkbox" (change)="onUnreadOnlyChange($event)" />
+      Unread only
+    </label>
+  </div>
+
+  @if (facade.loading()) {
+    <lib-skeleton [count]="5" />
+  } @else if (facade.error()) {
+    <lib-error-state [message]="facade.error()!" (retry)="retry()" />
+  } @else if (facade.notifications().length === 0) {
+    <lib-empty-state title="No notifications" message="You're all caught up." />
+  } @else {
+    <div class="notifications-list">
+      @for (notification of facade.notifications(); track notification.id) {
+        <button type="button" class="notifications-item" [class.is-unread]="!notification.readAt" (click)="openNotification(notification)">
+          <div class="notifications-item-main">
+            <strong>{{ notification.title }}</strong>
+            <p>{{ notification.message }}</p>
+          </div>
+          <div class="notifications-item-meta">
+            <lib-status-chip [label]="typeLabels[notification.type] ?? notification.type" tone="info" />
+            <span>{{ notification.createdAt | date: 'short' }}</span>
+          </div>
+        </button>
+      }
+    </div>
+
+    <lib-pagination [page]="facade.page()" [totalPages]="facade.totalPages()" [total]="facade.total()" (pageChange)="onPageChange($event)" />
+  }
+</div>

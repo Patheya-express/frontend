@@ -49,3 +49,13 @@ build.log
 
 # Claude Code local settings (machine-specific, not shared)
 .claude/settings.local.json
+
+# Infrastructure — filled-in environment/secret files (see
+# infrastructure/environments/.env.example and infrastructure/docs/secrets-guide.md)
+infrastructure/environments/.env
+infrastructure/environments/.env.local
+infrastructure/**/terraform.tfvars
+infrastructure/**/.terraform/
+infrastructure/**/*.tfstate
+infrastructure/**/*.tfstate.*
+infrastructure/**/crash.log

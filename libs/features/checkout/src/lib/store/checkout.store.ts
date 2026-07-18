@@ -3,6 +3,7 @@ import type { CreateOrderDto, OrderResponseDto } from '@patheya-express-frontend
 import { CartFacade, type CartItem } from '@patheya-express-frontend/cart';
 import { AddressesFacade } from '@patheya-express-frontend/addresses';
 import { PaymentsCheckoutService } from '@patheya-express-frontend/core';
+import { CustomerWalletFacade } from '@patheya-express-frontend/customer-wallet';
 import { CheckoutService } from '../services/checkout.service';
 
 export type PaymentMode = 'ONLINE' | 'COD';
@@ -30,13 +31,16 @@ export class CheckoutStore {
   private readonly addressesFacade = inject(AddressesFacade);
   private readonly checkoutService = inject(CheckoutService);
   private readonly paymentsCheckoutService = inject(PaymentsCheckoutService);
+  private readonly customerWalletFacade = inject(CustomerWalletFacade);
 
   private readonly _paymentMode = signal<PaymentMode>('ONLINE');
+  private readonly _useWallet = signal(false);
   private readonly _placingOrder = signal(false);
   private readonly _validationErrors = signal<string[]>([]);
   private readonly _error = signal<string | null>(null);
 
   readonly paymentMode = this._paymentMode.asReadonly();
+  readonly useWallet = this._useWallet.asReadonly();
   readonly placingOrder = this._placingOrder.asReadonly();
   readonly validationErrors = this._validationErrors.asReadonly();
   readonly error = this._error.asReadonly();
@@ -61,6 +65,10 @@ export class CheckoutStore {
 
   setPaymentMode(mode: PaymentMode): void {
     this._paymentMode.set(mode);
+  }
+
+  setUseWallet(useWallet: boolean): void {
+    this._useWallet.set(useWallet);
   }
 
   /**
@@ -98,10 +106,20 @@ export class CheckoutStore {
       const order = await this.checkoutService.placeOrder(dto);
 
       if (this._paymentMode() === 'ONLINE') {
-        const paid = await this.paymentsCheckoutService.payForOrder(order);
+        let remainingAmount = Number(order.totalAmount);
 
-        if (!paid) {
-          this._error.set('Payment was not completed. You can retry it from your order details.');
+        if (this._useWallet()) {
+          const result = await this.customerWalletFacade.applyToOrder(order.id, remainingAmount);
+          remainingAmount = result?.remainingAmount ?? remainingAmount;
+        }
+
+        // Fully covered by wallet — the backend already marked the order paid, no Razorpay leg needed.
+        if (remainingAmount > 0) {
+          const paid = await this.paymentsCheckoutService.payForOrder(order, remainingAmount);
+
+          if (!paid) {
+            this._error.set('Payment was not completed. You can retry it from your order details.');
+          }
         }
       }
 

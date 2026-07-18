@@ -19,6 +19,24 @@ export const routes: Routes = [
       import('@patheya-express-frontend/auth-ui').then((m) => m.RegisterPageComponent),
   },
   {
+    path: 'auth/forgot-password',
+    canActivate: [guestGuard],
+    data: {
+      brandName: 'Patheya Express',
+    },
+    loadComponent: () =>
+      import('@patheya-express-frontend/auth-ui').then((m) => m.ForgotPasswordPageComponent),
+  },
+  {
+    path: 'auth/reset-password',
+    canActivate: [guestGuard],
+    data: {
+      brandName: 'Patheya Express',
+    },
+    loadComponent: () =>
+      import('@patheya-express-frontend/auth-ui').then((m) => m.ResetPasswordPageComponent),
+  },
+  {
     path: 'restaurants/:restaurantId/offers',
     loadComponent: () =>
       import('@patheya-express-frontend/customer-offers').then(
@@ -107,6 +125,41 @@ export const routes: Routes = [
     path: 'offers/:id',
     loadComponent: () =>
       import('@patheya-express-frontend/customer-offers').then((m) => m.OfferDetailPageComponent),
+  },
+  {
+    path: 'wallet',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('@patheya-express-frontend/customer-wallet').then((m) => m.WalletPageComponent),
+  },
+  {
+    path: 'wallet/refer',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('@patheya-express-frontend/customer-wallet').then((m) => m.ReferralPageComponent),
+  },
+  {
+    path: 'support/faqs',
+    loadComponent: () =>
+      import('@patheya-express-frontend/customer-support').then((m) => m.FaqPageComponent),
+  },
+  {
+    path: 'support/tickets/new',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('@patheya-express-frontend/customer-support').then((m) => m.CreateTicketPageComponent),
+  },
+  {
+    path: 'support/tickets/:id',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('@patheya-express-frontend/customer-support').then((m) => m.TicketDetailPageComponent),
+  },
+  {
+    path: 'support/tickets',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('@patheya-express-frontend/customer-support').then((m) => m.TicketListPageComponent),
   },
   {
     path: '',

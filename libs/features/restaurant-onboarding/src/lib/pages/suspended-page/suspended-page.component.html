@@ -1,0 +1,12 @@
+<div class="suspended-page">
+  <div class="suspended-card">
+    <h1>Restaurant Suspended</h1>
+    <p>
+      {{ facade.restaurant()?.name || 'Your restaurant' }} has been suspended by the Patheya Express team.
+      Dashboard, orders, and menu management are unavailable while suspended.
+    </p>
+    <p class="suspended-hint">
+      Contact <a [href]="'mailto:' + supportEmail">{{ supportEmail }}</a> or call {{ supportPhone }} to resolve this.
+    </p>
+  </div>
+</div>

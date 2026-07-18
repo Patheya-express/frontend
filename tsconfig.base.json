@@ -33,6 +33,9 @@
       "@patheya-express-frontend/core": ["./libs/shared/core/src/index.ts"],
       "@patheya-express-frontend/models": ["./libs/shared/models/src/index.ts"],
       "@patheya-express-frontend/ui": ["./libs/shared/ui/src/index.ts"],
+      "@patheya-express-frontend/map-picker": [
+        "./libs/shared/map-picker/src/index.ts"
+      ],
       "@patheya-express-frontend/restaurant-discovery": [
         "./libs/features/restaurant-discovery/src/index.ts"
       ],
@@ -67,6 +70,15 @@
       "@patheya-express-frontend/customer-offers": [
         "./libs/features/customer-offers/src/index.ts"
       ],
+      "@patheya-express-frontend/customer-wallet": [
+        "./libs/features/customer-wallet/src/index.ts"
+      ],
+      "@patheya-express-frontend/customer-support": [
+        "./libs/features/customer-support/src/index.ts"
+      ],
+      "@patheya-express-frontend/admin-support": [
+        "./libs/features/admin-support/src/index.ts"
+      ],
       "@patheya-express-frontend/restaurant-orders": [
         "./libs/features/restaurant-orders/src/index.ts"
       ],
@@ -75,6 +87,30 @@
       ],
       "@patheya-express-frontend/menu-management": [
         "./libs/features/menu-management/src/index.ts"
+      ],
+      "@patheya-express-frontend/restaurant-profile": [
+        "./libs/features/restaurant-profile/src/index.ts"
+      ],
+      "@patheya-express-frontend/restaurant-settings": [
+        "./libs/features/restaurant-settings/src/index.ts"
+      ],
+      "@patheya-express-frontend/restaurant-onboarding": [
+        "./libs/features/restaurant-onboarding/src/index.ts"
+      ],
+      "@patheya-express-frontend/restaurant-branches": [
+        "./libs/features/restaurant-branches/src/index.ts"
+      ],
+      "@patheya-express-frontend/restaurant-holidays": [
+        "./libs/features/restaurant-holidays/src/index.ts"
+      ],
+      "@patheya-express-frontend/restaurant-staff": [
+        "./libs/features/restaurant-staff/src/index.ts"
+      ],
+      "@patheya-express-frontend/restaurant-gallery": [
+        "./libs/features/restaurant-gallery/src/index.ts"
+      ],
+      "@patheya-express-frontend/restaurant-notifications": [
+        "./libs/features/restaurant-notifications/src/index.ts"
       ],
       "@patheya-express-frontend/delivery-dashboard": [
         "./libs/features/delivery-dashboard/src/index.ts"
@@ -85,6 +121,27 @@
       "@patheya-express-frontend/delivery-fees": [
         "./libs/features/delivery-fees/src/index.ts"
       ],
+      "@patheya-express-frontend/delivery-onboarding": [
+        "./libs/features/delivery-onboarding/src/index.ts"
+      ],
+      "@patheya-express-frontend/delivery-verification": [
+        "./libs/features/delivery-verification/src/index.ts"
+      ],
+      "@patheya-express-frontend/delivery-profile": [
+        "./libs/features/delivery-profile/src/index.ts"
+      ],
+      "@patheya-express-frontend/delivery-vehicles": [
+        "./libs/features/delivery-vehicles/src/index.ts"
+      ],
+      "@patheya-express-frontend/delivery-documents": [
+        "./libs/features/delivery-documents/src/index.ts"
+      ],
+      "@patheya-express-frontend/delivery-bank": [
+        "./libs/features/delivery-bank/src/index.ts"
+      ],
+      "@patheya-express-frontend/delivery-compliance": [
+        "./libs/features/delivery-compliance/src/index.ts"
+      ],
       "@patheya-express-frontend/admin-dashboard": [
         "./libs/features/admin-dashboard/src/index.ts"
       ],
@@ -94,11 +151,17 @@
       "@patheya-express-frontend/admin-restaurants": [
         "./libs/features/admin-restaurants/src/index.ts"
       ],
+      "@patheya-express-frontend/admin-restaurant-verification": [
+        "./libs/features/admin-restaurant-verification/src/index.ts"
+      ],
       "@patheya-express-frontend/admin-orders": [
         "./libs/features/admin-orders/src/index.ts"
       ],
       "@patheya-express-frontend/admin-delivery": [
         "./libs/features/admin-delivery/src/index.ts"
+      ],
+      "@patheya-express-frontend/admin-delivery-verification": [
+        "./libs/features/admin-delivery-verification/src/index.ts"
       ],
       "@patheya-express-frontend/admin-payments": [
         "./libs/features/admin-payments/src/index.ts"

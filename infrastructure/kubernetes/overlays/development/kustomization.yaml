@@ -1,0 +1,128 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: patheya-frontend
+
+# namespace.yaml deliberately NOT listed here — Terraform creates and owns `patheya-frontend`
+# (modules/eks-addons/namespaces.tf), the same fix already applied to the backend repo's own
+# k8s/base/kustomization.yaml. This overlay previously targeted "patheya-express-dev", a
+# pre-Phase-3 per-environment-suffixed name Terraform never creates — a real, load-bearing bug
+# fixed during Phase 8 (Enterprise CI/CD Platform), not a style change. The overlay's own
+# namespace.yaml file is left on disk (Bash `rm` was denied by this session's permission
+# classifier) but is now unreferenced and inert; delete it manually.
+resources:
+  - ../../base
+  - resourcequota.yaml
+  - limitrange.yaml
+
+labels:
+  - pairs:
+      environment: development
+    includeSelectors: false
+    includeTemplates: true
+
+replicas:
+  - name: customer-app
+    count: 1
+  - name: restaurant-app
+    count: 1
+  - name: admin-app
+    count: 1
+  - name: delivery-app
+    count: 1
+
+images:
+  - name: ghcr.io/patheya-express/customer-app
+    newTag: dev
+  - name: ghcr.io/patheya-express/restaurant-app
+    newTag: dev
+  - name: ghcr.io/patheya-express/admin-app
+    newTag: dev
+  - name: ghcr.io/patheya-express/delivery-app
+    newTag: dev
+
+patches:
+  - target:
+      kind: Ingress
+      name: customer-app
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: dev.customer.patheyaexpress.com
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: dev.customer.patheyaexpress.com
+  - target:
+      kind: Ingress
+      name: restaurant-app
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: dev.restaurant.patheyaexpress.com
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: dev.restaurant.patheyaexpress.com
+  - target:
+      kind: Ingress
+      name: admin-app
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: dev.admin.patheyaexpress.com
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: dev.admin.patheyaexpress.com
+  - target:
+      kind: Ingress
+      name: delivery-app
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/host
+        value: dev.delivery.patheyaexpress.com
+      - op: replace
+        path: /spec/tls/0/hosts/0
+        value: dev.delivery.patheyaexpress.com
+  # Dev doesn't need to autoscale, and a single-replica HPA floor would
+  # otherwise mismatch the `replicas:` override above.
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: customer-app
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: restaurant-app
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: admin-app
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: delivery-app
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+  # kustomize's namespace transformer rewrites metadata.namespace on every
+  # namespaced resource, but NOT a RoleBinding's subjects[].namespace field
+  # (confirmed by inspecting actual `kubectl kustomize` output — it left
+  # the literal PLACEHOLDER_NAMESPACE from base/rbac-ci-deployer.yaml
+  # untouched). This patch is what actually binds the Role to the
+  # ServiceAccount in this specific namespace instead of a namespace that
+  # doesn't exist.
+  - target:
+      kind: RoleBinding
+      name: ci-deployer
+    patch: |-
+      - op: replace
+        path: /subjects/0/namespace
+        value: patheya-frontend

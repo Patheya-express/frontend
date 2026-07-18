@@ -19,6 +19,11 @@
     </label>
   }
 
+  <div class="field map-picker-field">
+    <span>Pick your location on the map</span>
+    <lib-map-picker [initialPosition]="initialMapPosition" (locationChange)="onLocationChange($event)" />
+  </div>
+
   <label class="field">
     <span>Address line 1 *</span>
     <input type="text" [value]="addressLine1()" (input)="addressLine1.set($any($event.target).value)" placeholder="House no, street" required />
@@ -53,15 +58,6 @@
     <span>Delivery instructions</span>
     <textarea rows="2" [value]="deliveryInstructions()" (input)="deliveryInstructions.set($any($event.target).value)" placeholder="e.g. Leave at the door"></textarea>
   </label>
-
-  <div class="location-row">
-    <button type="button" class="location-btn" [disabled]="locating()" (click)="useCurrentLocation()">
-      {{ locating() ? 'Detecting…' : '📍 Use current location' }}
-    </button>
-    @if (latitude() !== undefined && longitude() !== undefined) {
-      <span class="location-confirmed">Location captured</span>
-    }
-  </div>
 
   <label class="default-checkbox">
     <input type="checkbox" [checked]="isDefault()" (change)="isDefault.set($any($event.target).checked)" />

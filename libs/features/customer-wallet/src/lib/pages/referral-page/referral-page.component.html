@@ -1,0 +1,33 @@
+<div class="referral-page">
+  <a class="referral-back" routerLink="/wallet">&larr; Back to wallet</a>
+
+  <header class="referral-header">
+    <h1>Invite friends, earn rewards</h1>
+    <p>Share your code. When a friend signs up and completes their first order, you both get a wallet reward.</p>
+  </header>
+
+  <div class="referral-code-card">
+    <span class="referral-code-label">Your referral code</span>
+    <div class="referral-code-row">
+      <span class="referral-code-value">{{ facade.referralLoading() ? '…' : facade.referralCode() }}</span>
+      <button type="button" class="referral-copy-btn" (click)="copyCode()">
+        {{ copied() ? 'Copied!' : 'Copy' }}
+      </button>
+    </div>
+  </div>
+
+  <div class="referral-stats">
+    <div class="referral-stat">
+      <span class="referral-stat-value">{{ facade.totalReferred() }}</span>
+      <span class="referral-stat-label">Friends referred</span>
+    </div>
+    <div class="referral-stat">
+      <span class="referral-stat-value">{{ facade.totalRewarded() }}</span>
+      <span class="referral-stat-label">Rewarded</span>
+    </div>
+    <div class="referral-stat">
+      <span class="referral-stat-value">&#8377;{{ facade.totalEarned().toFixed(2) }}</span>
+      <span class="referral-stat-label">Total earned</span>
+    </div>
+  </div>
+</div>

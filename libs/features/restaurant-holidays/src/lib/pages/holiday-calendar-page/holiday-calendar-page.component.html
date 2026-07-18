@@ -1,0 +1,164 @@
+<div class="holiday-page">
+  <div class="holiday-page-header">
+    <h1>Holiday Calendar</h1>
+    <div class="holiday-page-actions">
+      <div class="holiday-view-toggle">
+        <button type="button" [class.is-active]="viewMode() === 'calendar'" (click)="setViewMode('calendar')">Calendar</button>
+        <button type="button" [class.is-active]="viewMode() === 'list'" (click)="setViewMode('list')">List</button>
+      </div>
+      <button type="button" class="holiday-add" (click)="openCreateForm()">+ Add Holiday</button>
+    </div>
+  </div>
+
+  @if (facade.loading()) {
+    <lib-skeleton [count]="4" />
+  } @else if (facade.error()) {
+    <lib-error-state [message]="facade.error()!" (retry)="retry()" />
+  } @else {
+    @if (facade.actionError(); as error) {
+      <div class="holiday-banner holiday-banner--error">{{ error }}</div>
+    }
+
+    <section class="holiday-upcoming">
+      <h2>Upcoming Holidays</h2>
+      @if (facade.upcomingHolidays().length === 0) {
+        <p class="holiday-empty-text">No upcoming holidays scheduled.</p>
+      } @else {
+        <ul>
+          @for (holiday of facade.upcomingHolidays(); track holiday.id) {
+            <li>
+              <span>{{ holiday.date }}</span>
+              <span>{{ holiday.name }}</span>
+              <span>{{ branchName(holiday.branchId) }}</span>
+            </li>
+          }
+        </ul>
+      }
+    </section>
+
+    @if (viewMode() === 'calendar') {
+      <section class="holiday-calendar">
+        <div class="holiday-calendar-nav">
+          <button type="button" (click)="previousMonth()">‹</button>
+          <strong>{{ monthNames[cursor().getMonth()] }} {{ cursor().getFullYear() }}</strong>
+          <button type="button" (click)="nextMonth()">›</button>
+        </div>
+
+        <div class="holiday-calendar-grid">
+          <div class="holiday-calendar-weekday">Sun</div>
+          <div class="holiday-calendar-weekday">Mon</div>
+          <div class="holiday-calendar-weekday">Tue</div>
+          <div class="holiday-calendar-weekday">Wed</div>
+          <div class="holiday-calendar-weekday">Thu</div>
+          <div class="holiday-calendar-weekday">Fri</div>
+          <div class="holiday-calendar-weekday">Sat</div>
+
+          @for (week of calendarWeeks(); track $index) {
+            @for (cell of week; track $index) {
+              <div class="holiday-calendar-cell" [class.is-empty]="!cell.date">
+                @if (cell.dayOfMonth) {
+                  <span class="holiday-calendar-day">{{ cell.dayOfMonth }}</span>
+                  @for (holiday of cell.holidays; track holiday.id) {
+                    <button type="button" class="holiday-calendar-marker" (click)="openEditForm(holiday)">
+                      {{ holiday.name }}
+                    </button>
+                  }
+                }
+              </div>
+            }
+          }
+        </div>
+      </section>
+    } @else {
+      <section class="holiday-list">
+        @if (facade.holidays().length === 0) {
+          <lib-empty-state title="No holidays yet" message="Add a holiday to override the regular weekly schedule." actionLabel="Add Holiday" (refresh)="openCreateForm()" />
+        } @else {
+          @for (holiday of facade.holidays(); track holiday.id) {
+            <div class="holiday-list-row">
+              <div>
+                <strong>{{ holiday.name }}</strong>
+                <span>{{ holiday.date }} · {{ branchName(holiday.branchId) }}</span>
+                <span>{{ holiday.isClosed ? 'Closed' : (holiday.specialOpensAt + ' - ' + holiday.specialClosesAt) }}</span>
+              </div>
+              <div class="holiday-list-row-actions">
+                <button type="button" (click)="openEditForm(holiday)">Edit</button>
+                <button type="button" class="holiday-list-delete" (click)="requestDelete(holiday.id)">Delete</button>
+              </div>
+            </div>
+          }
+        }
+      </section>
+    }
+
+    @if (showForm) {
+      <div class="holiday-form-overlay">
+        <form class="holiday-form" [formGroup]="form" (ngSubmit)="onSubmit()">
+          <h2>{{ editingId ? 'Edit Holiday' : 'Add Holiday' }}</h2>
+
+          <label class="holiday-field">
+            <span>Name</span>
+            <input type="text" formControlName="name" />
+          </label>
+
+          <label class="holiday-field">
+            <span>Date</span>
+            <input type="date" formControlName="date" />
+          </label>
+
+          <label class="holiday-field">
+            <span>Branch</span>
+            <select formControlName="branchId">
+              <option value="">All branches</option>
+              @for (branch of context.branches(); track branch.id) {
+                <option [value]="branch.id">{{ branch.name }}</option>
+              }
+            </select>
+          </label>
+
+          <label class="holiday-toggle">
+            <input type="checkbox" formControlName="isClosed" />
+            <span>Fully closed</span>
+          </label>
+
+          @if (showSpecialHoursFields) {
+            <div class="holiday-row">
+              <label class="holiday-field">
+                <span>Special Opens At</span>
+                <input type="time" formControlName="specialOpensAt" />
+              </label>
+              <label class="holiday-field">
+                <span>Special Closes At</span>
+                <input type="time" formControlName="specialClosesAt" />
+              </label>
+            </div>
+          }
+
+          @if (!editingId) {
+            <label class="holiday-toggle">
+              <input type="checkbox" formControlName="repeatAnnually" />
+              <span>Repeats annually (creates this + next 2 years)</span>
+            </label>
+          }
+
+          <div class="holiday-form-actions">
+            <button type="button" (click)="closeForm()">Cancel</button>
+            <button type="submit" [disabled]="facade.saving()">
+              {{ facade.saving() ? 'Saving…' : 'Save' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    }
+  }
+
+  <lib-confirm-dialog
+    [open]="!!confirmDeleteId"
+    title="Remove this holiday?"
+    tone="danger"
+    confirmLabel="Remove"
+    [busy]="facade.saving()"
+    (confirmed)="confirmDelete()"
+    (cancelled)="cancelDelete()"
+  />
+</div>

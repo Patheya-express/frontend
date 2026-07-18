@@ -1,0 +1,22 @@
+# Sized for development's floor: 4 apps x 1 replica x 2 containers each
+# (app + metrics-exporter, see base/*/deployment.yaml) is ~8 pods at rest,
+# using roughly 300m CPU / 320Mi memory total at their combined limits.
+# This quota gives ample headroom above that for manual scale-testing
+# without leaving the namespace effectively unbounded.
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: patheya-express-dev-quota
+spec:
+  hard:
+    requests.cpu: "2"
+    requests.memory: 2Gi
+    requests.ephemeral-storage: 2Gi
+    limits.cpu: "4"
+    limits.memory: 4Gi
+    limits.ephemeral-storage: 4Gi
+    pods: "20"
+    services: "10"
+    configmaps: "20"
+    secrets: "20"
+    persistentvolumeclaims: "5"

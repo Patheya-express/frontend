@@ -1,0 +1,50 @@
+# Requires the VPA CRDs + recommender/updater/admission-controller
+# (github.com/kubernetes/autoscaler, vertical-pod-autoscaler component) to
+# be installed on the cluster separately — not provisioned by this repo
+# (see infrastructure/kubernetes/platform/README.md). `kubectl kustomize`
+# renders this fine either way since kustomize doesn't validate CRD
+# schemas; `kubectl apply` will fail until the CRD exists on the target
+# cluster.
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: restaurant-app
+  labels:
+    app.kubernetes.io/name: restaurant-app
+    app.kubernetes.io/part-of: patheya-express
+    app.kubernetes.io/component: frontend
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: restaurant-app
+  updatePolicy:
+    # "Off" = recommendation-only. The VPA recommender computes suggested
+    # requests/limits and exposes them on this object's .status for a human
+    # to read (`kubectl describe vpa restaurant-app`), but nothing ever
+    # evicts or resizes a running pod — see the task instruction not to
+    # enable automatic eviction yet. Revisit once there's enough historical
+    # usage data to trust the recommendation, and note VPA's updateMode
+    # can't safely run alongside the CPU/memory-based HPA in hpa.yaml
+    # without "Auto" mode's in-place resize support (still maturing) —
+    # both fighting over the same Deployment's resources would fight each
+    # other; keep it in "Off" until that's resolved either way.
+    updateMode: "Off"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: restaurant-app
+        minAllowed:
+          cpu: 10m
+          memory: 16Mi
+        maxAllowed:
+          cpu: 500m
+          memory: 256Mi
+        controlledResources: ["cpu", "memory"]
+      - containerName: metrics-exporter
+        minAllowed:
+          cpu: 5m
+          memory: 8Mi
+        maxAllowed:
+          cpu: 100m
+          memory: 64Mi
+        controlledResources: ["cpu", "memory"]

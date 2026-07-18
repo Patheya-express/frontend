@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ingress
+  labels:
+    app.kubernetes.io/part-of: patheya-express-platform
+    purpose: ingress
+    # "baseline", not "restricted": the nginx Ingress controller binds
+    # host-visible ports 80/443 and typically requires NET_BIND_SERVICE —
+    # a real capability grant that "restricted" categorically forbids.
+    # This is the one namespace on the platform allowed anything beyond
+    # what our own application pods need (see
+    # infrastructure/kubernetes/overlays/*/namespace.yaml for the
+    # "restricted" baseline everything else runs under).
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/enforce-version: latest

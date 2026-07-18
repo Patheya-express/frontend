@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: patheya-system
+  labels:
+    app.kubernetes.io/part-of: patheya-express-platform
+    purpose: system
+    # Houses cluster-management controllers (metrics-server, cert-manager,
+    # ExternalDNS — see the sibling metrics-server/, cert-manager/, and
+    # external-dns/ directories) rather than application workloads.
+    # "baseline" rather than "restricted": some of these controllers need
+    # capabilities (e.g. reading kubelet TLS bootstrap data) that
+    # "restricted" forbids outright — still meaningfully tighter than no
+    # Pod Security Admission enforcement at all.
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/enforce-version: latest

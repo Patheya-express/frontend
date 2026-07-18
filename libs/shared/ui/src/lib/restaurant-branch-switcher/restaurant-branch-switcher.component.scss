@@ -1,0 +1,13 @@
+.switcher {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.switcher-select {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: var(--font-size-sm);
+  max-width: 200px;
+}

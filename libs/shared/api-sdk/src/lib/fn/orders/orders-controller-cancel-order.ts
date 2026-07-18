@@ -7,16 +7,19 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
+import { CancelOrderDto } from '../../models/cancel-order-dto';
 import { OrderResponseDto } from '../../models/order-response-dto';
 
 export interface OrdersControllerCancelOrder$Params {
   id: string;
+      body?: CancelOrderDto
 }
 
 export function ordersControllerCancelOrder(http: HttpClient, rootUrl: string, params: OrdersControllerCancelOrder$Params, context?: HttpContext): Observable<StrictHttpResponse<OrderResponseDto>> {
   const rb = new RequestBuilder(rootUrl, ordersControllerCancelOrder.PATH, 'post');
   if (params) {
     rb.path('id', params.id, {});
+    rb.body(params.body, 'application/json');
   }
 
   return http.request(

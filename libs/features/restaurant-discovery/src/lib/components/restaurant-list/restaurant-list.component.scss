@@ -22,6 +22,92 @@ h1 {
   gap: var(--space-3);
 }
 
+.restaurant-discovery-search-wrap {
+  position: relative;
+  flex: 1 1 260px;
+  min-width: 220px;
+}
+
+.restaurant-discovery-suggestions-panel {
+  position: absolute;
+  top: calc(100% + var(--space-1));
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.restaurant-discovery-suggestions-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+    cursor: pointer;
+
+    &:hover {
+      background: var(--color-surface-hover, rgba(0, 0, 0, 0.04));
+    }
+  }
+
+  .suggestion-type {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-subtle);
+    text-transform: capitalize;
+  }
+}
+
+.restaurant-discovery-chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
+}
+
+.chip-group-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-subtle);
+  font-weight: var(--font-weight-medium);
+  margin-right: var(--space-1);
+}
+
+.restaurant-discovery-chip {
+  background: var(--color-secondary-soft, rgba(0, 0, 0, 0.05));
+  border: none;
+  border-radius: var(--radius-full, 999px);
+  padding: 2px var(--space-3);
+  font-size: var(--font-size-xs);
+  color: var(--color-text);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--color-primary-soft, rgba(255, 152, 0, 0.15));
+  }
+}
+
 .restaurant-discovery-filter-select {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -31,13 +117,38 @@ h1 {
   background: var(--color-surface);
 }
 
-.restaurant-discovery-open-now {
+.restaurant-discovery-toggle {
   display: flex;
   align-items: center;
   gap: var(--space-2);
   font-size: var(--font-size-sm);
   color: var(--color-text);
   white-space: nowrap;
+}
+
+.restaurant-discovery-city-input {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  background: var(--color-surface);
+  width: 120px;
+}
+
+.restaurant-discovery-clear-filters {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  padding: 0;
+  white-space: nowrap;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 .restaurant-grid {

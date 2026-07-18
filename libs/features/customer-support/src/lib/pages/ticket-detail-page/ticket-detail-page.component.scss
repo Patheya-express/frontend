@@ -1,0 +1,197 @@
+.ticket-detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.ticket-detail-back {
+  align-self: flex-start;
+  color: var(--color-primary);
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.ticket-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+
+  h1 {
+    margin: 0;
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+  }
+}
+
+.ticket-detail-number {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-subtle);
+}
+
+.ticket-detail-badges {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.ticket-detail-badge {
+  font-size: var(--font-size-xs);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  text-transform: capitalize;
+  background: var(--color-secondary-soft, rgba(0, 0, 0, 0.06));
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.ticket-detail-badge[data-priority='URGENT'],
+.ticket-detail-badge[data-priority='HIGH'] {
+  background: var(--color-error-soft, rgba(211, 47, 47, 0.12));
+  color: var(--color-error, #d32f2f);
+}
+
+.ticket-detail-description {
+  margin: 0;
+  color: var(--color-text-muted);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.ticket-detail-close-btn {
+  align-self: flex-start;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--color-primary);
+  }
+}
+
+.ticket-thread h2 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+}
+
+.ticket-message-list {
+  list-style: none;
+  margin: 0 0 var(--space-4);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.ticket-message {
+  display: flex;
+  justify-content: flex-start;
+
+  &.from-agent {
+    justify-content: flex-end;
+  }
+}
+
+.ticket-message-bubble {
+  max-width: 80%;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+
+  .from-agent & {
+    background: var(--color-primary-soft, rgba(255, 152, 0, 0.1));
+    border-color: var(--color-primary);
+  }
+
+  p {
+    margin: 0 0 2px;
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+    white-space: pre-wrap;
+  }
+}
+
+.ticket-message-attachments {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 2px;
+
+  a {
+    font-size: var(--font-size-xs);
+    color: var(--color-primary);
+  }
+}
+
+.ticket-message-time {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-subtle);
+}
+
+.ticket-message-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+
+  textarea {
+    resize: vertical;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--font-size-sm);
+    font-family: inherit;
+    color: var(--color-text);
+    background: var(--color-surface);
+  }
+}
+
+.ticket-message-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.ticket-attach-btn,
+.ticket-send-btn {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.ticket-attach-btn {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.ticket-send-btn {
+  border: none;
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
+  font-weight: var(--font-weight-semibold);
+
+  &:hover:not(:disabled) {
+    filter: brightness(0.95);
+  }
+}

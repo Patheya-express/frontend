@@ -1,0 +1,66 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: restaurant-app
+  labels:
+    app.kubernetes.io/name: restaurant-app
+    app.kubernetes.io/part-of: patheya-express
+    app.kubernetes.io/component: frontend
+  annotations:
+    # cert-manager's ingress-shim reads this annotation and creates the
+    # Certificate object for us — no separate Certificate resource needed
+    # (see infrastructure/kubernetes/platform/cert-manager/README.md for
+    # why that would just be a redundant second path managing the same
+    # Secret). Points at the staging issuer here; production's overlay
+    # patches this to letsencrypt-production (see
+    # overlays/production/kustomization.yaml) — staging's issuer has no
+    # rate limit and issues certs browsers don't trust, exactly what you
+    # want while iterating on ingress config, never what you want for a
+    # real domain.
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: 2m
+    # WebSocket compatibility: this Ingress only ever routes to a static
+    # nginx pod today (no WS endpoint of its own — Socket.IO is served by
+    # the backend directly, see infrastructure/docs/infrastructure-overview.md),
+    # but nginx-ingress's default 60s proxy timeouts are tuned for regular
+    # HTTP request/response, not a held-open connection. Raised here so
+    # this Ingress class definition is WS-safe if a future path ever needs
+    # it, without requiring a second Ingress resource.
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    # Edge-level rate limiting, independent of and in addition to the
+    # per-pod nginx.conf limit_req_zone (infrastructure/docker/nginx/nginx.conf)
+    # — this one throttles per client IP at the load balancer before a
+    # request ever reaches a pod.
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    nginx.ingress.kubernetes.io/limit-connections: "50"
+    # Response compression and security headers are deliberately NOT
+    # re-applied here via configuration-snippet: every pod behind this
+    # Ingress already gzips and sets the full header set itself
+    # (infrastructure/docker/nginx/nginx.conf, security-headers.conf —
+    # Phase 0, frozen). Duplicating either at the ingress layer would risk
+    # doubled/conflicting header values, not add protection.
+spec:
+  ingressClassName: nginx
+  tls:
+    # host is a placeholder — replaced per environment by a JSON6902 patch
+    # in each overlay's kustomization.yaml (see overlays/*/kustomization.yaml).
+    - hosts: ["customer.patheyaexpress.com"]
+      secretName: restaurant-app-tls
+  rules:
+    - host: customer.patheyaexpress.com
+      http:
+        paths:
+          # No rewrite-target needed: the SPA fallback that maps every
+          # sub-path to /index.html already happens inside nginx itself
+          # (infrastructure/docker/nginx/app.conf.template) — a single "/"
+          # Prefix path forwards everything as-is, which is exactly what
+          # that fallback expects to receive.
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: restaurant-app
+                port:
+                  name: http

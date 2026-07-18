@@ -1,0 +1,75 @@
+<div class="documents-page">
+  <h1>Documents</h1>
+
+  @if (facade.uploadError()) {
+    <p class="documents-page-error" role="alert">{{ facade.uploadError() }}</p>
+  }
+
+  @if (facade.loading()) {
+    <lib-skeleton [count]="4" />
+  } @else if (facade.error()) {
+    <lib-error-state [message]="facade.error()!" (retry)="retry()" />
+  } @else {
+    @for (group of groups; track group.key) {
+      <section class="document-group">
+        <h2>{{ group.label }}</h2>
+        <div class="document-cards">
+          @for (type of group.types; track type) {
+            @let doc = facade.documentsByType().get(type);
+            <div class="document-card">
+              <div class="document-card-header">
+                <h3>{{ typeLabel(type) }}</h3>
+                @if (doc) {
+                  <lib-status-chip [label]="doc.status" [tone]="statusTone(doc.status)" />
+                }
+              </div>
+
+              @if (doc) {
+                <p class="document-card-meta">
+                  Uploaded {{ doc.createdAt | date: 'mediumDate' }}
+                  @if (doc.expiryDate) { · Expires {{ doc.expiryDate | date: 'mediumDate' }} }
+                </p>
+                @if (doc.status === 'REJECTED' && doc.rejectedReason) {
+                  <p class="document-card-rejected">{{ doc.rejectedReason }}</p>
+                }
+                <a [href]="doc.storageUrl" target="_blank" rel="noopener">Preview</a>
+                <button type="button" (click)="openHistory(type)">History</button>
+              }
+
+              <lib-file-upload
+                [label]="doc ? 'Replace' : 'Upload'"
+                accept="image/png,image/jpeg,image/webp,application/pdf"
+                [uploading]="isUploading(type)"
+                [selectedFileName]="doc?.fileName"
+                (fileSelected)="onFileSelected(type, $event)"
+              />
+            </div>
+          }
+        </div>
+      </section>
+    }
+  }
+
+  @if (historyOpenFor(); as type) {
+    <div class="document-history-modal">
+      <div class="document-history-content">
+        <h2>{{ typeLabel(type) }} — History</h2>
+        @if (facade.historyLoading()) {
+          <lib-skeleton [count]="2" />
+        } @else if (facade.history().length === 0) {
+          <p>No previous versions.</p>
+        } @else {
+          <ul>
+            @for (entry of facade.history(); track entry.id) {
+              <li>
+                v{{ entry.version }} — {{ entry.supersededAt | date: 'medium' }}
+                <a [href]="entry.storageUrl" target="_blank" rel="noopener">View</a>
+              </li>
+            }
+          </ul>
+        }
+        <button type="button" (click)="closeHistory()">Close</button>
+      </div>
+    </div>
+  }
+</div>

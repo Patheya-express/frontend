@@ -7,4 +7,9 @@ export interface RefreshResponseDto {
    * New JWT access token
    */
   accessToken: string;
+
+  /**
+   * New refresh token — refresh tokens are rotated on every use. The token supplied in the request is revoked; store this new one and discard the old one.
+   */
+  refreshToken: string;
 }

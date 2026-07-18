@@ -1,0 +1,66 @@
+name: frontend-promote
+
+# Mirrors patheya-express-platform's backend-promote.yml — see that file's header comment for the
+# full rationale (Section 7 Promotion Strategy, Section 10 "promoted unchanged, never rebuilt").
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: choice
+        options: [staging, production]
+        required: true
+      app:
+        type: choice
+        options: [customer-app, restaurant-app, admin-app, delivery-app, all]
+        required: true
+      image-tag:
+        description: The exact <semver>-<git-sha-short> tag to promote — must already exist in ECR for every app being promoted.
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  resolve-apps:
+    name: Resolve app list
+    runs-on: ubuntu-latest
+    outputs:
+      apps: ${{ steps.apps.outputs.list }}
+    steps:
+      - id: apps
+        run: |
+          if [ "${{ inputs.app }}" = "all" ]; then
+            echo 'list=["customer-app","restaurant-app","admin-app","delivery-app"]' >> "$GITHUB_OUTPUT"
+          else
+            echo 'list=["${{ inputs.app }}"]' >> "$GITHUB_OUTPUT"
+          fi
+
+  gitops-promote:
+    name: Open GitOps promotion PR (${{ inputs.environment }})
+    needs: resolve-apps
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: ${{ fromJSON(needs.resolve-apps.outputs.apps) }}
+    steps:
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ap-south-1
+          role-to-assume: ${{ vars.FRONTEND_ECR_PUSH_ROLE_ARN }}
+
+      - uses: aws-actions/amazon-ecr-login@v2
+        id: ecr-login
+
+      - name: Open image-update PR
+        uses: Patheya-express/patheya-express-platform/.github/actions/gitops-image-update@main
+        with:
+          github-token: ${{ secrets.GITOPS_PR_TOKEN }}
+          app-path: applications/frontend/overlays/${{ inputs.environment }}
+          image-name-old: ghcr.io/patheya-express/${{ matrix.app }}
+          image-name-new: ${{ steps.ecr-login.outputs.registry }}/patheya-express/${{ matrix.app }}
+          image-tag: ${{ inputs.image-tag }}
+          environment: ${{ inputs.environment }}
+          app-display-name: "Frontend (${{ matrix.app }})"
+          auto-merge: "false"

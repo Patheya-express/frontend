@@ -1,0 +1,135 @@
+<div class="vehicles-page">
+  <div class="vehicles-page-header">
+    <h1>Vehicles</h1>
+    @if (!showForm()) {
+      <button type="button" class="vehicles-page-add" (click)="openForm()">+ Add Vehicle</button>
+    }
+  </div>
+
+  @if (facade.saveError()) {
+    <p class="vehicles-page-error" role="alert">{{ facade.saveError() }}</p>
+  }
+
+  @if (showForm()) {
+    <form class="vehicle-form" [formGroup]="vehicleForm" (ngSubmit)="onSubmitVehicle()">
+      <h2>Register a vehicle</h2>
+
+      <label>
+        Vehicle Type
+        <select formControlName="vehicleType">
+          @for (type of vehicleTypes; track type) {
+            <option [value]="type">{{ type }}</option>
+          }
+        </select>
+      </label>
+
+      <label>
+        Registration Number
+        <input type="text" formControlName="registrationNumber" placeholder="KA01AB1234" />
+      </label>
+
+      <label>
+        Brand
+        <input type="text" formControlName="brand" />
+      </label>
+
+      <label>
+        Model
+        <input type="text" formControlName="model" />
+      </label>
+
+      <label>
+        Year
+        <input type="number" formControlName="year" />
+      </label>
+
+      <label>
+        Fuel Type
+        <select formControlName="fuelType">
+          @for (type of fuelTypes; track type) {
+            <option [value]="type">{{ type }}</option>
+          }
+        </select>
+      </label>
+
+      <label>
+        Color
+        <input type="text" formControlName="color" />
+      </label>
+
+      <div class="vehicle-form-actions">
+        <button type="button" (click)="cancelForm()">Cancel</button>
+        <button type="submit" [disabled]="facade.saving()">
+          {{ facade.saving() ? 'Saving…' : 'Save Vehicle' }}
+        </button>
+      </div>
+    </form>
+  }
+
+  @if (facade.loading()) {
+    <lib-skeleton [count]="3" />
+  } @else if (facade.error()) {
+    <lib-error-state [message]="facade.error()!" (retry)="retry()" />
+  } @else if (facade.vehicles().length === 0) {
+    <lib-empty-state
+      title="No vehicles yet"
+      message="Register your first vehicle to continue onboarding."
+      actionLabel="Refresh"
+      (refresh)="retry()"
+    />
+  } @else {
+    <div class="vehicle-list">
+      @for (entry of facade.vehiclesWithWarnings(); track entry.vehicle.id) {
+        <div class="vehicle-card">
+          <div class="vehicle-card-header">
+            <h3>{{ entry.vehicle.registrationNumber }}</h3>
+            @if (entry.vehicle.isPrimary) {
+              <lib-status-chip label="Primary" tone="success" />
+            }
+            <lib-status-chip [label]="entry.vehicle.verificationStatus" [tone]="verificationTone(entry.vehicle.verificationStatus)" />
+          </div>
+
+          <p class="vehicle-card-meta">
+            {{ entry.vehicle.vehicleType }}
+            @if (entry.vehicle.brand) { · {{ entry.vehicle.brand }} }
+            @if (entry.vehicle.model) { {{ entry.vehicle.model }} }
+            @if (entry.vehicle.year) { ({{ entry.vehicle.year }}) }
+          </p>
+
+          @if (entry.insurance || entry.rc || entry.fitness || entry.pollution) {
+            <div class="vehicle-card-warnings">
+              @if (entry.insurance) { <span class="warning" [class.expired]="entry.insurance === 'expired'">Insurance {{ entry.insurance }}</span> }
+              @if (entry.rc) { <span class="warning" [class.expired]="entry.rc === 'expired'">RC {{ entry.rc }}</span> }
+              @if (entry.fitness) { <span class="warning" [class.expired]="entry.fitness === 'expired'">Fitness {{ entry.fitness }}</span> }
+              @if (entry.pollution) { <span class="warning" [class.expired]="entry.pollution === 'expired'">Pollution {{ entry.pollution }}</span> }
+            </div>
+          }
+
+          <div class="vehicle-card-actions">
+            @if (!entry.vehicle.isPrimary && entry.vehicle.isActive) {
+              <button type="button" (click)="setPrimary(entry.vehicle.id)" [disabled]="facade.saving()">Set as Primary</button>
+            }
+            @if (entry.vehicle.isActive) {
+              <button type="button" class="danger" (click)="requestDeactivate(entry.vehicle.id)" [disabled]="facade.saving()">
+                Replace / Deactivate
+              </button>
+            } @else {
+              <lib-status-chip label="Inactive" tone="neutral" />
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <lib-confirm-dialog
+    [open]="pendingDeactivateId() !== null"
+    title="Deactivate this vehicle?"
+    message="It will no longer be usable for deliveries. Its document history is preserved. You can register a replacement vehicle afterward."
+    confirmLabel="Deactivate"
+    tone="danger"
+    [busy]="facade.saving()"
+    (confirmed)="confirmDeactivate()"
+    (cancelled)="cancelDeactivate()"
+  />
+</div>

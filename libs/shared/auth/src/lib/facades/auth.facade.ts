@@ -1,5 +1,10 @@
 import { Injectable, inject } from '@angular/core';
-import type { LoginDto, RegisterDto } from '@patheya-express-frontend/api-sdk';
+import type {
+  ForgotPasswordDto,
+  LoginDto,
+  RegisterDto,
+  ResetPasswordDto,
+} from '@patheya-express-frontend/api-sdk';
 import { AuthStore } from '../store/auth.store';
 
 @Injectable({ providedIn: 'root' })
@@ -37,5 +42,18 @@ export class AuthFacade {
 
   logout(): Promise<void> {
     return this.store.logout();
+  }
+
+  /** Used only by the auth interceptor's 401-retry path. */
+  refreshSession(): Promise<boolean> {
+    return this.store.refreshSession();
+  }
+
+  forgotPassword(dto: ForgotPasswordDto): Promise<boolean> {
+    return this.store.forgotPassword(dto);
+  }
+
+  resetPassword(dto: ResetPasswordDto): Promise<boolean> {
+    return this.store.resetPassword(dto);
   }
 }

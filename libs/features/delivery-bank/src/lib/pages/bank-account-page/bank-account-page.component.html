@@ -1,0 +1,59 @@
+<div class="bank-account-page">
+  <h1>Bank Account</h1>
+
+  @if (facade.loading()) {
+    <lib-skeleton [count]="2" />
+  } @else if (facade.error()) {
+    <lib-error-state [message]="facade.error()!" (retry)="retry()" />
+  } @else {
+    @if (facade.bankAccount(); as account) {
+      <div class="bank-account-summary">
+        <span>Current account ending in <strong>••••{{ account.accountNumberLast4 }}</strong></span>
+        <lib-status-chip [label]="account.verificationStatus" [tone]="verificationTone(account.verificationStatus)" />
+      </div>
+    }
+
+    @if (facade.saveSuccessMessage(); as message) {
+      <p class="bank-account-success" role="status">{{ message }}</p>
+    }
+    @if (facade.saveError()) {
+      <p class="bank-account-error" role="alert">{{ facade.saveError() }}</p>
+    }
+
+    <form class="bank-form" [formGroup]="bankForm" (ngSubmit)="onSubmit()">
+      <label>
+        Account Holder Name
+        <input type="text" formControlName="accountHolderName" />
+      </label>
+
+      <label>
+        Account Number
+        <input type="text" formControlName="accountNumber" placeholder="Leave blank to keep the saved number" />
+      </label>
+
+      <label>
+        Bank Name
+        <input type="text" formControlName="bankName" />
+      </label>
+
+      <label>
+        Branch Name
+        <input type="text" formControlName="branchName" />
+      </label>
+
+      <label>
+        IFSC
+        <input type="text" formControlName="ifsc" (input)="onIfscInput($event)" placeholder="HDFC0000042" />
+      </label>
+
+      <label>
+        UPI ID
+        <input type="text" formControlName="upiId" placeholder="name@bank" />
+      </label>
+
+      <button type="submit" [disabled]="facade.saving()">
+        {{ facade.saving() ? 'Saving…' : 'Save Bank Account' }}
+      </button>
+    </form>
+  }
+</div>

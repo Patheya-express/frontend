@@ -1,17 +1,37 @@
 <div class="delivery-dashboard-page">
   <div class="delivery-dashboard-header">
     <h1>Dashboard</h1>
-    <button
-      type="button"
-      class="status-toggle"
-      [class.is-online]="isOnline()"
-      [disabled]="statusActionPending() || loading()"
-      (click)="toggleOnline()"
-    >
-      <span class="status-dot"></span>
-      {{ statusActionPending() ? 'Updating…' : isOnline() ? 'Online' : 'Offline' }}
-    </button>
+    @if (isApproved()) {
+      <button
+        type="button"
+        class="status-toggle"
+        [class.is-online]="isOnline()"
+        [disabled]="statusActionPending() || loading()"
+        (click)="toggleOnline()"
+      >
+        <span class="status-dot"></span>
+        {{ statusActionPending() ? 'Updating…' : isOnline() ? 'Online' : 'Offline' }}
+      </button>
+    }
   </div>
+
+  @if (!isApproved()) {
+    <div class="verification-required-banner">
+      <h2>Verification Required</h2>
+      <p>You must complete verification before you can go online and receive orders.</p>
+      <a routerLink="/verification">View Verification Status</a>
+    </div>
+  }
+
+  @if (complianceFacade.snapshot(); as compliance) {
+    <div class="compliance-summary-banner">
+      <lib-status-chip [label]="compliance.overallStatus" tone="info" />
+      <span>{{ compliance.documentsVerified }} / {{ compliance.documentsTotal }} documents verified</span>
+      @if (compliance.expired.length > 0 || compliance.missingDocumentTypes.length > 0) {
+        <span class="compliance-warning">Action needed — see Compliance page</span>
+      }
+    </div>
+  }
 
   @if (loading()) {
     <lib-skeleton [count]="3" />
@@ -39,22 +59,24 @@
   <div class="delivery-dashboard-quick-actions">
     <h2>Quick Actions</h2>
     <div class="delivery-dashboard-quick-actions-list">
-      <button
-        type="button"
-        class="quick-action"
-        [disabled]="statusActionPending() || isOnline()"
-        (click)="toggleOnline()"
-      >
-        Go Online
-      </button>
-      <button
-        type="button"
-        class="quick-action is-secondary"
-        [disabled]="statusActionPending() || !isOnline()"
-        (click)="toggleOnline()"
-      >
-        Go Offline
-      </button>
+      @if (isApproved()) {
+        <button
+          type="button"
+          class="quick-action"
+          [disabled]="statusActionPending() || isOnline()"
+          (click)="toggleOnline()"
+        >
+          Go Online
+        </button>
+        <button
+          type="button"
+          class="quick-action is-secondary"
+          [disabled]="statusActionPending() || !isOnline()"
+          (click)="toggleOnline()"
+        >
+          Go Offline
+        </button>
+      }
       <a routerLink="/assignments" class="quick-action is-link">View Assignments</a>
       <a routerLink="/fees" class="quick-action is-link">View Delivery Fees</a>
     </div>

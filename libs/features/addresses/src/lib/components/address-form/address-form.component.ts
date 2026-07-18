@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
 import type { AddressResponseDto, CreateAddressDto, UpdateAddressDto } from '@patheya-express-frontend/api-sdk';
+import { MapPickerComponent, type PickedLocation } from '@patheya-express-frontend/map-picker';
 import { AddressesFacade } from '../../facades/addresses.facade';
 
 type AddressLabel = 'HOME' | 'WORK' | 'OTHER';
@@ -7,6 +8,7 @@ type AddressLabel = 'HOME' | 'WORK' | 'OTHER';
 @Component({
   selector: 'lib-address-form',
   standalone: true,
+  imports: [MapPickerComponent],
   templateUrl: './address-form.component.html',
   styleUrl: './address-form.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -32,10 +34,19 @@ export class AddressFormComponent {
   protected readonly isDefault = signal(false);
   protected readonly latitude = signal<number | undefined>(undefined);
   protected readonly longitude = signal<number | undefined>(undefined);
+  protected readonly accuracy = signal<number | undefined>(undefined);
+  protected readonly altitude = signal<number | undefined>(undefined);
+  protected readonly heading = signal<number | undefined>(undefined);
+  protected readonly speed = signal<number | undefined>(undefined);
+  protected readonly locationSource = signal<PickedLocation['locationSource'] | undefined>(undefined);
+  protected readonly provider = signal<PickedLocation['provider'] | undefined>(undefined);
+  protected readonly providerPlaceId = signal<string | undefined>(undefined);
 
   protected readonly saving = signal(false);
-  protected readonly locating = signal(false);
   protected readonly formError = signal<string | null>(null);
+
+  /** Prefills the map picker's marker when editing an address that already has coordinates. */
+  protected initialMapPosition: { lat: number; lng: number } | undefined = undefined;
 
   constructor() {
     if (this.address) {
@@ -52,6 +63,17 @@ export class AddressFormComponent {
       this.isDefault.set(a.isDefault);
       this.latitude.set(a.latitude);
       this.longitude.set(a.longitude);
+      this.accuracy.set(a.accuracy);
+      this.altitude.set(a.altitude);
+      this.heading.set(a.heading);
+      this.speed.set(a.speed);
+      this.locationSource.set(a.locationSource);
+      this.provider.set(a.provider);
+      this.providerPlaceId.set(a.providerPlaceId);
+
+      if (a.latitude !== undefined && a.longitude !== undefined) {
+        this.initialMapPosition = { lat: a.latitude, lng: a.longitude };
+      }
     }
   }
 
@@ -59,26 +81,32 @@ export class AddressFormComponent {
     this.label.set(label);
   }
 
-  protected useCurrentLocation(): void {
-    if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      this.formError.set('Location is not available on this device.');
-      return;
+  /** Keeps the map picker, the address-line fields, and the GPS metadata all synchronized,
+   *  regardless of whether the location came from a search selection, a map click, a marker
+   *  drag, or the current-location button. */
+  protected onLocationChange(location: PickedLocation): void {
+    this.latitude.set(location.lat);
+    this.longitude.set(location.lng);
+    this.accuracy.set(location.accuracy);
+    this.altitude.set(location.altitude);
+    this.heading.set(location.heading);
+    this.speed.set(location.speed);
+    this.locationSource.set(location.locationSource);
+    this.provider.set(location.provider);
+    this.providerPlaceId.set(location.placeId);
+
+    if (location.addressLine1) {
+      this.addressLine1.set(location.addressLine1);
     }
-
-    this.locating.set(true);
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        this.latitude.set(position.coords.latitude);
-        this.longitude.set(position.coords.longitude);
-        this.locating.set(false);
-      },
-      () => {
-        this.formError.set('Unable to detect your location.');
-        this.locating.set(false);
-      },
-      { timeout: 8000 },
-    );
+    if (location.city) {
+      this.city.set(location.city);
+    }
+    if (location.state) {
+      this.state.set(location.state);
+    }
+    if (location.postalCode) {
+      this.postalCode.set(location.postalCode);
+    }
   }
 
   protected async submit(): Promise<void> {
@@ -102,6 +130,13 @@ export class AddressFormComponent {
       isDefault: this.isDefault(),
       latitude: this.latitude(),
       longitude: this.longitude(),
+      accuracy: this.accuracy(),
+      altitude: this.altitude(),
+      heading: this.heading(),
+      speed: this.speed(),
+      locationSource: this.locationSource(),
+      provider: this.provider(),
+      providerPlaceId: this.providerPlaceId(),
     };
 
     this.saving.set(true);

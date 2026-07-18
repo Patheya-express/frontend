@@ -11,6 +11,12 @@ import { StrictHttpResponse } from '../strict-http-response';
 
 import { presenceControllerGetStatus } from '../fn/presence/presence-controller-get-status';
 import { PresenceControllerGetStatus$Params } from '../fn/presence/presence-controller-get-status';
+import { presenceControllerListOnlineAgents } from '../fn/presence/presence-controller-list-online-agents';
+import { PresenceControllerListOnlineAgents$Params } from '../fn/presence/presence-controller-list-online-agents';
+import { presenceControllerMarkAgentOffline } from '../fn/presence/presence-controller-mark-agent-offline';
+import { PresenceControllerMarkAgentOffline$Params } from '../fn/presence/presence-controller-mark-agent-offline';
+import { presenceControllerMarkAgentOnline } from '../fn/presence/presence-controller-mark-agent-online';
+import { PresenceControllerMarkAgentOnline$Params } from '../fn/presence/presence-controller-mark-agent-online';
 import { presenceControllerMarkOffline } from '../fn/presence/presence-controller-mark-offline';
 import { PresenceControllerMarkOffline$Params } from '../fn/presence/presence-controller-mark-offline';
 import { presenceControllerMarkOnline } from '../fn/presence/presence-controller-mark-online';
@@ -28,7 +34,7 @@ export class PresenceService extends BaseService {
   /**
    * Mark delivery partner online.
    *
-   * Marks the authenticated delivery partner as online and available for realtime presence tracking.
+   * Marks the authenticated delivery partner as online and available for realtime presence tracking. Rejected until onboarding/verification is complete and the account is active (EDPH-1 online protection).
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `presenceControllerMarkOnline()` instead.
@@ -43,7 +49,7 @@ export class PresenceService extends BaseService {
   /**
    * Mark delivery partner online.
    *
-   * Marks the authenticated delivery partner as online and available for realtime presence tracking.
+   * Marks the authenticated delivery partner as online and available for realtime presence tracking. Rejected until onboarding/verification is complete and the account is active (EDPH-1 online protection).
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `presenceControllerMarkOnline$Response()` instead.
@@ -118,6 +124,105 @@ export class PresenceService extends BaseService {
    */
   presenceControllerGetStatus(params: PresenceControllerGetStatus$Params, context?: HttpContext): Promise<void> {
     const resp = this.presenceControllerGetStatus$Response(params, context);
+    return resp.then((r: StrictHttpResponse<void>): void => r.body);
+  }
+
+  /** Path part for operation `presenceControllerMarkAgentOnline()` */
+  static readonly PresenceControllerMarkAgentOnlinePath = '/api/v1/presence/agent/online';
+
+  /**
+   * Mark support agent online.
+   *
+   * Marks the authenticated support agent online for the live-chat admin console.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `presenceControllerMarkAgentOnline()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  presenceControllerMarkAgentOnline$Response(params?: PresenceControllerMarkAgentOnline$Params, context?: HttpContext): Promise<StrictHttpResponse<void>> {
+    const obs = presenceControllerMarkAgentOnline(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Mark support agent online.
+   *
+   * Marks the authenticated support agent online for the live-chat admin console.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `presenceControllerMarkAgentOnline$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  presenceControllerMarkAgentOnline(params?: PresenceControllerMarkAgentOnline$Params, context?: HttpContext): Promise<void> {
+    const resp = this.presenceControllerMarkAgentOnline$Response(params, context);
+    return resp.then((r: StrictHttpResponse<void>): void => r.body);
+  }
+
+  /** Path part for operation `presenceControllerMarkAgentOffline()` */
+  static readonly PresenceControllerMarkAgentOfflinePath = '/api/v1/presence/agent/offline';
+
+  /**
+   * Mark support agent offline.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `presenceControllerMarkAgentOffline()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  presenceControllerMarkAgentOffline$Response(params?: PresenceControllerMarkAgentOffline$Params, context?: HttpContext): Promise<StrictHttpResponse<void>> {
+    const obs = presenceControllerMarkAgentOffline(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Mark support agent offline.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `presenceControllerMarkAgentOffline$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  presenceControllerMarkAgentOffline(params?: PresenceControllerMarkAgentOffline$Params, context?: HttpContext): Promise<void> {
+    const resp = this.presenceControllerMarkAgentOffline$Response(params, context);
+    return resp.then((r: StrictHttpResponse<void>): void => r.body);
+  }
+
+  /** Path part for operation `presenceControllerListOnlineAgents()` */
+  static readonly PresenceControllerListOnlineAgentsPath = '/api/v1/presence/agents/online';
+
+  /**
+   * List currently online support agent IDs.
+   *
+   *
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `presenceControllerListOnlineAgents()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  presenceControllerListOnlineAgents$Response(params?: PresenceControllerListOnlineAgents$Params, context?: HttpContext): Promise<StrictHttpResponse<void>> {
+    const obs = presenceControllerListOnlineAgents(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * List currently online support agent IDs.
+   *
+   *
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `presenceControllerListOnlineAgents$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  presenceControllerListOnlineAgents(params?: PresenceControllerListOnlineAgents$Params, context?: HttpContext): Promise<void> {
+    const resp = this.presenceControllerListOnlineAgents$Response(params, context);
     return resp.then((r: StrictHttpResponse<void>): void => r.body);
   }
 
