@@ -25,10 +25,17 @@ export class FileUploadComponent {
   /** e.g. "image/png,image/jpeg,image/webp" or "image/png,image/jpeg,application/pdf" */
   @Input() accept = 'image/png,image/jpeg,image/webp';
   @Input() label = 'Upload file';
+  @Input() ariaLabel = 'Upload file';
   @Input() uploading = false;
   @Input() selectedFileName?: string;
   @Input() previewUrl?: string;
   @Input() hint?: string;
+  /** When true, projects `[filePreview]` content instead of the built-in preview box — for
+   *  callers needing a fundamentally different preview shape (e.g. a circular avatar). */
+  @Input() customPreview = false;
+  /** 'center' matches a standalone widget like an avatar picker; 'start' (default) matches this
+   *  component's original left-aligned, form-field layout. */
+  @Input() align: 'start' | 'center' = 'start';
 
   @Output() fileSelected = new EventEmitter<File>();
 

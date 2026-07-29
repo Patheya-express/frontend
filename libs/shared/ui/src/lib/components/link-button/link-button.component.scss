@@ -1,0 +1,52 @@
+.mobile-link-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  border: none;
+  background: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &--sm {
+    font-size: var(--font-size-xs);
+  }
+
+  &--neutral {
+    color: var(--color-text);
+
+    &:focus-visible {
+      outline-color: var(--color-text);
+    }
+  }
+
+  &--danger {
+    color: var(--color-error);
+
+    &:focus-visible {
+      outline-color: var(--color-error);
+    }
+  }
+}
+
+.mobile-link-button__label {
+  display: inline-flex;
+}

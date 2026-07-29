@@ -59,4 +59,8 @@ export class CustomerProfileFacade {
   deleteAccount(): Promise<boolean> {
     return this.store.deleteAccount();
   }
+
+  reset(): void {
+    this.store.reset();
+  }
 }

@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ErrorStateComponent, OrderStatusBadgeComponent, SkeletonComponent } from '@patheya-express-frontend/ui';
 import type { MapPoint } from '@patheya-express-frontend/core';
+import { CouponFacade } from '@patheya-express-frontend/coupons';
 import { OrderDetailsFacade } from '../../facades/order-details.facade';
 import { OrderStatusTimelineComponent } from '../../components/order-status-timeline/order-status-timeline.component';
 import { LiveTrackingMapComponent } from '../../components/live-tracking-map/live-tracking-map.component';
@@ -26,6 +27,7 @@ export class OrderDetailsPageComponent implements OnInit, OnDestroy {
   private readonly facade = inject(OrderDetailsFacade);
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly couponFacade = inject(CouponFacade);
 
   protected readonly order = this.facade.order;
   protected readonly restaurantName = this.facade.restaurantName;
@@ -50,6 +52,17 @@ export class OrderDetailsPageComponent implements OnInit, OnDestroy {
   protected readonly showLiveMap = computed(() => {
     const order = this.order();
     return !!order && order.status === 'OUT_FOR_DELIVERY' && !!this.destinationPoint();
+  });
+
+  /**
+   * `OrderResponseDto` only carries `couponId`, not the human-readable code — resolving a code
+   * from an id would need the admin-only coupon lookup endpoint, which customers can't call. This
+   * falls back to a same-session, client-remembered code (set at the moment of placing the
+   * order); it won't resolve for orders viewed later or on a different device.
+   */
+  protected readonly couponCode = computed(() => {
+    const order = this.order();
+    return order?.couponId ? this.couponFacade.getCodeForOrder(order.id) : null;
   });
 
   private orderId = '';

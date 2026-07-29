@@ -28,8 +28,18 @@ export class RegisterFormComponent {
     password: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.minLength(8)] }),
   });
 
+  /** `RegisterDto` has no terms-acceptance field — the backend doesn't enforce this, so it's
+   *  kept entirely outside `form`/`RegisterFormValue` and never sent; it's a client-side gate
+   *  only, same as any other required checkbox. */
+  protected readonly termsAccepted = new FormControl(false, {
+    nonNullable: true,
+    validators: [Validators.requiredTrue],
+  });
+
   protected onSubmit(): void {
-    if (this.form.invalid) {
+    this.termsAccepted.markAsTouched();
+
+    if (this.form.invalid || this.termsAccepted.invalid) {
       this.form.markAllAsTouched();
       return;
     }

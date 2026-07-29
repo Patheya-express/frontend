@@ -1,5 +1,11 @@
 import { Injectable, inject } from '@angular/core';
-import { DeliveryService, DispatchService, type DeliveryAssignmentResponseDto } from '@patheya-express-frontend/api-sdk';
+import {
+  DeliveryProofService,
+  DispatchService,
+  type DeliveryAssignmentResponseDto,
+  type ProofOtpGeneratedResponseDto,
+  type ProofOtpStatusResponseDto,
+} from '@patheya-express-frontend/api-sdk';
 import { CurrentDeliveryPartnerService } from '@patheya-express-frontend/core';
 
 // The API gateway wraps every response in a { success, timestamp, data } envelope via a
@@ -18,7 +24,7 @@ function unwrap<T>(response: T): T {
 @Injectable({ providedIn: 'root' })
 export class DeliveryAssignmentsService {
   private readonly dispatchService = inject(DispatchService);
-  private readonly deliveryService = inject(DeliveryService);
+  private readonly deliveryProofService = inject(DeliveryProofService);
   private readonly currentPartner = inject(CurrentDeliveryPartnerService);
 
   async getAssignments(): Promise<DeliveryAssignmentResponseDto[]> {
@@ -35,15 +41,26 @@ export class DeliveryAssignmentsService {
     await this.dispatchService.dispatchControllerRejectAssignment({ id: assignmentId });
   }
 
-  confirmPickup(orderId: string): Promise<void> {
-    return this.updateDeliveryStatus(orderId, 'OUT_FOR_DELIVERY');
+  // Sprint 4.1 — Delivery Proof & Trust. Pickup/delivery status no longer changes via a direct
+  // status-update call (the backend now rejects that path for delivery partners); it only
+  // advances as a side effect of a successful OTP verification below.
+  async generatePickupOtp(orderId: string): Promise<ProofOtpGeneratedResponseDto> {
+    const response = await this.deliveryProofService.proofControllerGeneratePickupOtp({ orderId });
+    return unwrap(response);
   }
 
-  confirmDelivery(orderId: string): Promise<void> {
-    return this.updateDeliveryStatus(orderId, 'DELIVERED');
+  async verifyPickupOtp(orderId: string, code: string): Promise<ProofOtpStatusResponseDto> {
+    const response = await this.deliveryProofService.proofControllerVerifyPickupOtp({ orderId, body: { code } });
+    return unwrap(response);
   }
 
-  private async updateDeliveryStatus(orderId: string, status: 'OUT_FOR_DELIVERY' | 'DELIVERED'): Promise<void> {
-    await this.deliveryService.deliveryControllerUpdateDeliveryStatus({ orderId, body: { status } });
+  async generateDeliveryOtp(orderId: string): Promise<ProofOtpGeneratedResponseDto> {
+    const response = await this.deliveryProofService.proofControllerGenerateDeliveryOtp({ orderId });
+    return unwrap(response);
+  }
+
+  async verifyDeliveryOtp(orderId: string, code: string): Promise<ProofOtpStatusResponseDto> {
+    const response = await this.deliveryProofService.proofControllerVerifyDeliveryOtp({ orderId, body: { code } });
+    return unwrap(response);
   }
 }

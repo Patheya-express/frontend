@@ -1,0 +1,16 @@
+{
+  "name": "restaurant-reviews",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/features/restaurant-reviews/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": [
+    "type:feature",
+    "scope:restaurant"
+  ],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

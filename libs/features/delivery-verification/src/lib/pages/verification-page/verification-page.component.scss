@@ -35,12 +35,12 @@
 }
 
 .verification-ready {
-  background: var(--color-success-bg, #dafbe1);
+  background: var(--color-success-soft);
   border-color: var(--color-success, #1a7f37);
 }
 
 .verification-banner.error {
-  background: var(--color-error-bg, #ffebe9);
+  background: var(--color-error-soft);
   border-color: var(--color-error, #d1242f);
 }
 
@@ -74,7 +74,7 @@
   }
 
   .timeline-date {
-    color: var(--color-text-secondary, #57606a);
+    color: var(--color-text-muted);
     font-size: 0.75rem;
   }
 

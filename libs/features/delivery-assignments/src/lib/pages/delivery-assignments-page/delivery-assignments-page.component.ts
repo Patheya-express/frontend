@@ -2,11 +2,12 @@ import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject } from '@
 import { EmptyStateComponent, ErrorStateComponent, SkeletonComponent } from '@patheya-express-frontend/ui';
 import { DeliveryAssignmentsFacade } from '../../facades/delivery-assignments.facade';
 import { AssignmentCardComponent } from '../../components/assignment-card/assignment-card.component';
+import { ProofOtpDialogComponent } from '../../components/proof-otp-dialog/proof-otp-dialog.component';
 
 @Component({
   selector: 'lib-delivery-assignments-page',
   standalone: true,
-  imports: [SkeletonComponent, EmptyStateComponent, ErrorStateComponent, AssignmentCardComponent],
+  imports: [SkeletonComponent, EmptyStateComponent, ErrorStateComponent, AssignmentCardComponent, ProofOtpDialogComponent],
   templateUrl: './delivery-assignments-page.component.html',
   styleUrl: './delivery-assignments-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

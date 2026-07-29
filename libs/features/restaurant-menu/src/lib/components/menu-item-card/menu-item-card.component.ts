@@ -4,6 +4,7 @@ import { CartFacade } from '@patheya-express-frontend/cart';
 import { MediaUrlService } from '@patheya-express-frontend/core';
 import { AuthFacade } from '@patheya-express-frontend/auth';
 import { FavoriteButtonComponent } from '@patheya-express-frontend/favorites';
+import { highlightSegments } from '@patheya-express-frontend/ui';
 import { MenuItemCustomizationSheetComponent } from '../menu-item-customization-sheet/menu-item-customization-sheet.component';
 
 @Component({
@@ -17,6 +18,8 @@ import { MenuItemCustomizationSheetComponent } from '../menu-item-customization-
 export class MenuItemCardComponent {
   @Input({ required: true }) item!: MenuItemResponseDto;
   @Input({ required: true }) restaurantName!: string;
+  /** Current menu search term, purely for highlighting matches — filtering itself happens server-side. */
+  @Input() searchQuery = '';
 
   private readonly cartFacade = inject(CartFacade);
   private readonly mediaUrlService = inject(MediaUrlService);
@@ -31,6 +34,10 @@ export class MenuItemCardComponent {
   protected readonly hasCustomizations = computed(
     () => this.item.variants.length > 0 || this.item.addons.length > 0,
   );
+  protected readonly hasVariants = computed(() => this.item.variants.length > 0);
+  protected readonly hasAddons = computed(() => this.item.addons.length > 0);
+
+  protected readonly nameSegments = computed(() => highlightSegments(this.item.name, this.searchQuery));
 
   /** The single, non-customized cart line for this item — the only one the inline +/- stepper can unambiguously control. */
   protected readonly simpleCartItem = computed(() =>

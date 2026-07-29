@@ -12,6 +12,11 @@ export interface OfferResponseDto {
   imageUrl?: string;
 
   /**
+   * Whether the offer is currently enabled. Every offer returned by a customer-facing endpoint is always true here — this only varies on the restaurant-owner management endpoints (GET /offers/manage/:restaurantId), which also return disabled offers.
+   */
+  isActive: boolean;
+
+  /**
    * Deep link the banner navigates to when tapped — e.g. a restaurant page.
    */
   linkUrl?: string;

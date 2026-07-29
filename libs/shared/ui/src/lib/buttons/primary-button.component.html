@@ -1,0 +1,17 @@
+<button
+  type="button"
+  class="mobile-primary-button"
+  [class.mobile-primary-button--sm]="size() === 'sm'"
+  [class.mobile-primary-button--lg]="size() === 'lg'"
+  [class.mobile-primary-button--full-width]="fullWidth()"
+  [disabled]="disabled() || loading()"
+  [attr.aria-busy]="loading() || null"
+  (click)="handleClick()"
+>
+  @if (loading()) {
+    <span class="mobile-spinner" aria-hidden="true"></span>
+  } @else {
+    <ng-content select="[mobileIcon]" />
+  }
+  <span class="mobile-primary-button__label"><ng-content /></span>
+</button>

@@ -1,0 +1,20 @@
+<section class="addon-section">
+  <div class="addon-section-header">
+    <h4>Add-ons</h4>
+    <button type="button" class="addon-section-add" (click)="openCreate()">+ Add Group</button>
+  </div>
+
+  @if (isCreating) {
+    <lib-addon-group-form [itemId]="item.id" (closed)="closeForm()" />
+  } @else if (editingGroup; as group) {
+    <lib-addon-group-form [itemId]="item.id" [group]="group" (closed)="closeForm()" />
+  }
+
+  <div class="addon-section-list">
+    @for (group of item.addons; track group.id) {
+      <lib-addon-group-card [group]="group" (editRequested)="openEdit(group)" />
+    } @empty {
+      <p class="addon-section-empty">No add-on groups yet — e.g. Extras, Toppings, Drinks.</p>
+    }
+  </div>
+</section>

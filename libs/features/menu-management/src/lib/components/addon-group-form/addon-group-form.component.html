@@ -1,0 +1,37 @@
+<form class="addon-group-form" [formGroup]="form" (ngSubmit)="submit()">
+  <h4 class="addon-group-form-title">{{ group ? 'Edit Add-on Group' : 'Add Add-on Group' }}</h4>
+
+  @if (facade.validationErrors().length > 0) {
+    <ul class="addon-group-form-errors">
+      @for (message of facade.validationErrors(); track message) {
+        <li>{{ message }}</li>
+      }
+    </ul>
+  }
+
+  <div class="form-field">
+    <label for="addon-group-name">Name</label>
+    <input id="addon-group-name" type="text" formControlName="name" placeholder="e.g. Extras, Toppings, Drinks" />
+  </div>
+
+  <div class="addon-group-form-row">
+    <div class="form-field">
+      <label for="addon-group-min">Minimum Selection</label>
+      <input id="addon-group-min" type="number" min="0" step="1" formControlName="minSelection" />
+    </div>
+
+    <div class="form-field">
+      <label for="addon-group-max">Maximum Selection</label>
+      <input id="addon-group-max" type="number" min="1" step="1" formControlName="maxSelection" />
+    </div>
+  </div>
+
+  <p class="addon-group-form-hint">Minimum Selection of 0 makes this group optional; 1 or more makes it required.</p>
+
+  <div class="addon-group-form-actions">
+    <button type="button" class="addon-group-form-cancel" [disabled]="isProcessing" (click)="cancel()">Cancel</button>
+    <button type="submit" class="addon-group-form-submit" [disabled]="form.invalid || isProcessing">
+      {{ isProcessing ? 'Saving…' : 'Save' }}
+    </button>
+  </div>
+</form>

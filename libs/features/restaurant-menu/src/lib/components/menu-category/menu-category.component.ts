@@ -13,4 +13,5 @@ import { MenuItemCardComponent } from '../menu-item-card/menu-item-card.componen
 export class MenuCategoryComponent {
   @Input({ required: true }) category!: MenuCategoryResponseDto;
   @Input({ required: true }) restaurantName!: string;
+  @Input() searchQuery = '';
 }

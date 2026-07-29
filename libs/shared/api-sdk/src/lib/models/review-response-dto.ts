@@ -12,6 +12,13 @@ export interface ReviewResponseDto {
   customerName?: string;
   id: string;
   rating: number;
+  replyCreatedAt?: string;
+
+  /**
+   * The restaurant owner/manager reply, if one has been posted.
+   */
+  replyText?: string;
+  replyUpdatedAt?: string;
   restaurantId: string;
   updatedAt: string;
 }

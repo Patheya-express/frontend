@@ -1,0 +1,59 @@
+<form class="offer-form" [formGroup]="form" (ngSubmit)="submit()">
+  <h3 class="offer-form-title">{{ offer ? 'Edit Offer' : 'Create Offer' }}</h3>
+
+  @if (facade.validationErrors().length > 0) {
+    <ul class="offer-form-errors">
+      @for (message of facade.validationErrors(); track message) {
+        <li>{{ message }}</li>
+      }
+    </ul>
+  }
+
+  <div class="form-field">
+    <label for="offer-title">Title</label>
+    <input id="offer-title" type="text" formControlName="title" placeholder="Flat 20% off on your first order" />
+  </div>
+
+  <div class="form-field">
+    <label for="offer-description">Description</label>
+    <input id="offer-description" type="text" formControlName="description" placeholder="Valid on orders above ₹299" />
+  </div>
+
+  <div class="form-field">
+    <label for="offer-type">Type</label>
+    <select id="offer-type" formControlName="type">
+      @for (option of offerTypes; track option.value) {
+        <option [value]="option.value ?? ''">{{ option.label }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="form-field">
+    <label for="offer-image">Image URL</label>
+    <input id="offer-image" type="text" formControlName="imageUrl" placeholder="https://cdn.patheya.com/offers/banner.png" />
+  </div>
+
+  <div class="form-field">
+    <label for="offer-link">Link URL</label>
+    <input id="offer-link" type="text" formControlName="linkUrl" />
+  </div>
+
+  <div class="offer-form-row">
+    <div class="form-field">
+      <label for="offer-starts">Starts</label>
+      <input id="offer-starts" type="date" formControlName="startsAt" />
+    </div>
+
+    <div class="form-field">
+      <label for="offer-ends">Ends</label>
+      <input id="offer-ends" type="date" formControlName="endsAt" />
+    </div>
+  </div>
+
+  <div class="offer-form-actions">
+    <lib-secondary-button [disabled]="isProcessing" (buttonClick)="cancel()">Cancel</lib-secondary-button>
+    <lib-primary-button [loading]="isProcessing" [disabled]="form.invalid" (buttonClick)="submit()">
+      {{ offer ? 'Save' : 'Create Offer' }}
+    </lib-primary-button>
+  </div>
+</form>

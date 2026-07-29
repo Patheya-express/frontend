@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Socket, io } from 'socket.io-client';
-import { AuthFacade } from '@patheya-express-frontend/auth';
+import { AuthFacade, LogoutCleanupRegistry } from '@patheya-express-frontend/auth';
 import { APP_ENVIRONMENT } from '../environment/app-environment';
 
 export interface JoinRoomResult {
@@ -23,6 +23,10 @@ export class RealtimeSocketService {
   private socket: Socket | null = null;
 
   readonly connected = signal(false);
+
+  constructor() {
+    inject(LogoutCleanupRegistry).register(() => this.disconnect());
+  }
 
   private connect(): Socket {
     if (this.socket) {

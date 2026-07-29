@@ -7,6 +7,7 @@ import type {
   UpdateProfileDto,
   UserResponseDto,
 } from '@patheya-express-frontend/api-sdk';
+import { LogoutCleanupRegistry } from '@patheya-express-frontend/auth';
 import { CustomerProfileService } from '../services/customer-profile.service';
 
 @Injectable({ providedIn: 'root' })
@@ -52,6 +53,10 @@ export class CustomerProfileStore {
   readonly deleted = this._deleted.asReadonly();
 
   readonly avatarUrl = computed(() => this._profile()?.avatarUrl);
+
+  constructor() {
+    inject(LogoutCleanupRegistry).register(() => this.reset());
+  }
 
   /** Idempotent — safe to call from multiple consumers (header + profile page) without duplicate requests. */
   async ensureProfileLoaded(): Promise<void> {
@@ -168,5 +173,29 @@ export class CustomerProfileStore {
     } finally {
       this._deleting.set(false);
     }
+  }
+
+  /**
+   * Clears every signal AND `loadPromise` on logout. Resetting `loadPromise` matters as much as
+   * `_profile` itself: `ensureProfileLoaded()` treats a non-null `_profile` (or an in-flight
+   * `loadPromise`) as "already loaded" and no-ops — without this reset, logging out and back in
+   * as a different customer in the same tab would silently keep showing the previous customer's
+   * name/avatar/email until something else forced a `loadProfile()` call.
+   */
+  reset(): void {
+    this._profile.set(null);
+    this._loading.set(false);
+    this._saving.set(false);
+    this._error.set(null);
+    this._preferences.set(null);
+    this._preferencesLoading.set(false);
+    this._preferencesSaving.set(false);
+    this._passwordSaving.set(false);
+    this._passwordError.set(null);
+    this._passwordSuccess.set(false);
+    this._avatarUploading.set(false);
+    this._deleting.set(false);
+    this._deleted.set(false);
+    this.loadPromise = null;
   }
 }

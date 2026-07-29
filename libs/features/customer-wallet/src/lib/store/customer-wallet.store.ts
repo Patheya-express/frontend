@@ -1,6 +1,6 @@
 import { Injectable, effect, inject, signal } from '@angular/core';
 import type { WalletTransactionResponseDto } from '@patheya-express-frontend/api-sdk';
-import { AuthFacade } from '@patheya-express-frontend/auth';
+import { AuthFacade, LogoutCleanupRegistry } from '@patheya-express-frontend/auth';
 import { RealtimeSocketService } from '@patheya-express-frontend/core';
 import { CustomerWalletService } from '../services/customer-wallet.service';
 
@@ -60,6 +60,8 @@ export class CustomerWalletStore {
         void this.connectRealtime();
       }
     });
+
+    inject(LogoutCleanupRegistry).register(() => this.reset());
   }
 
   private async connectRealtime(): Promise<void> {
@@ -146,5 +148,28 @@ export class CustomerWalletStore {
     } finally {
       this._applying.set(false);
     }
+  }
+
+  /** Resets `joinedUserRoom` along with the balance/transaction state — otherwise the
+   *  authenticated-effect above would see the next login's `isAuthenticated() === true` and
+   *  no-op, since connectRealtime() only skips when it thinks it's still joined to the *previous*
+   *  customer's room. */
+  reset(): void {
+    this._balance.set(0);
+    this._balanceLoading.set(false);
+    this._transactions.set([]);
+    this._total.set(0);
+    this._page.set(1);
+    this._totalPages.set(1);
+    this._transactionsLoading.set(false);
+    this._transactionsError.set(null);
+    this._referralCode.set('');
+    this._totalReferred.set(0);
+    this._totalRewarded.set(0);
+    this._totalEarned.set(0);
+    this._referralLoading.set(false);
+    this._applying.set(false);
+    this._applyError.set(null);
+    this.joinedUserRoom = false;
   }
 }

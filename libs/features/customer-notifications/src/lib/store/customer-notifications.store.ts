@@ -1,6 +1,6 @@
 import { Injectable, effect, inject, signal } from '@angular/core';
 import type { NotificationResponseDto } from '@patheya-express-frontend/api-sdk';
-import { AuthFacade } from '@patheya-express-frontend/auth';
+import { AuthFacade, LogoutCleanupRegistry } from '@patheya-express-frontend/auth';
 import { RealtimeSocketService } from '@patheya-express-frontend/core';
 import { CustomerNotificationsService, type GetNotificationsParams } from '../services/customer-notifications.service';
 
@@ -57,6 +57,8 @@ export class CustomerNotificationsStore {
         void this.connectRealtime();
       }
     });
+
+    inject(LogoutCleanupRegistry).register(() => this.reset());
   }
 
   private async connectRealtime(): Promise<void> {
@@ -185,6 +187,29 @@ export class CustomerNotificationsStore {
       void this.loadNotifications(this._page());
       void this.loadUnreadCount();
     }
+  }
+
+  /** Resets `joinedUserRoom` (and unsubscribes the old listener) along with the notification
+   *  list/badge state — otherwise the authenticated-effect above would see the next login's
+   *  `isAuthenticated() === true` and no-op, since connectRealtime() only skips when it thinks
+   *  it's still joined to the *previous* customer's room. */
+  reset(): void {
+    this._notifications.set([]);
+    this._total.set(0);
+    this._page.set(1);
+    this._totalPages.set(1);
+    this._loading.set(false);
+    this._error.set(null);
+    this._unreadCount.set(0);
+    this._search.set('');
+    this._type.set(undefined);
+    this._unreadOnly.set(false);
+    this._dateFrom.set(undefined);
+    this._dateTo.set(undefined);
+    this.hasLoadedList = false;
+    this.joinedUserRoom = false;
+    this.unsubscribeNotification?.();
+    this.unsubscribeNotification = null;
   }
 
   async markAllAsRead(): Promise<void> {

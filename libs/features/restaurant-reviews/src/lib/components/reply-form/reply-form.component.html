@@ -1,0 +1,30 @@
+<form class="reply-form" [formGroup]="form" (ngSubmit)="submit()">
+  <h4 class="reply-form-title">{{ isEditing ? 'Edit Reply' : 'Reply to Review' }}</h4>
+
+  @if (facade.validationErrors().length > 0) {
+    <ul class="reply-form-errors">
+      @for (message of facade.validationErrors(); track message) {
+        <li>{{ message }}</li>
+      }
+    </ul>
+  }
+
+  <div class="form-field">
+    <label for="reply-text">Your reply</label>
+    <textarea
+      id="reply-text"
+      rows="4"
+      [maxlength]="maxLength"
+      formControlName="replyText"
+      placeholder="Thank you for your feedback…"
+    ></textarea>
+    <span class="reply-form-count">{{ form.controls.replyText.value?.length ?? 0 }} / {{ maxLength }}</span>
+  </div>
+
+  <div class="reply-form-actions">
+    <lib-secondary-button [disabled]="isProcessing" (buttonClick)="cancel()">Cancel</lib-secondary-button>
+    <lib-primary-button [loading]="isProcessing" [disabled]="form.invalid" (buttonClick)="submit()">
+      {{ isEditing ? 'Save' : 'Post Reply' }}
+    </lib-primary-button>
+  </div>
+</form>

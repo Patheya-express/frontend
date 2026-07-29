@@ -5,6 +5,8 @@ import {
   DataTableComponent,
   EmptyStateComponent,
   ErrorStateComponent,
+  formatCurrency,
+  LinkButtonComponent,
   PaginationComponent,
   SearchInputComponent,
   SkeletonComponent,
@@ -68,6 +70,7 @@ interface PendingAction {
     StatusChipComponent,
     PaginationComponent,
     ConfirmDialogComponent,
+    LinkButtonComponent,
   ],
   templateUrl: './admin-delivery-page.component.html',
   styleUrl: './admin-delivery-page.component.scss',
@@ -266,7 +269,7 @@ export class AdminDeliveryPageComponent implements OnInit {
   }
 
   protected formattedAmount(value: number): string {
-    return `₹${Number(value).toFixed(2)}`;
+    return formatCurrency(Number(value));
   }
 
   protected dialogTitle(): string {

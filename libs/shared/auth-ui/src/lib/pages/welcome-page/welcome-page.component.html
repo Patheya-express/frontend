@@ -1,0 +1,15 @@
+<div class="welcome safe-area-inset">
+  <div class="welcome-brand">
+    <span class="brand-mark">P</span>
+  </div>
+
+  <h1 class="welcome-title">{{ brandName }}</h1>
+  <p class="welcome-tagline">{{ tagline }}</p>
+
+  <div class="welcome-actions">
+    <lib-primary-button [fullWidth]="true" (buttonClick)="goToLogin()">Log in</lib-primary-button>
+    <lib-secondary-button [fullWidth]="true" (buttonClick)="goToRegister()">Create account</lib-secondary-button>
+  </div>
+
+  <a class="welcome-skip" routerLink="/">Continue browsing without an account</a>
+</div>

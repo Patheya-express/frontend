@@ -1,0 +1,20 @@
+.menu-category-tabs {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: var(--space-3) var(--space-5) var(--space-3);
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  @media (max-width: 640px) {
+    padding: var(--space-2) var(--space-3);
+  }
+}
+
+lib-status-chip {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}

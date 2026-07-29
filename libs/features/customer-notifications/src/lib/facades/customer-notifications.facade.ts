@@ -61,4 +61,8 @@ export class CustomerNotificationsFacade {
   markAllAsRead(): Promise<void> {
     return this.store.markAllAsRead();
   }
+
+  reset(): void {
+    this.store.reset();
+  }
 }

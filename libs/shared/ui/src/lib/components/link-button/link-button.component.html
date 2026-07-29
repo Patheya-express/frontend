@@ -1,0 +1,20 @@
+<button
+  type="button"
+  class="mobile-link-button"
+  [class.mobile-link-button--sm]="size() === 'sm'"
+  [class.mobile-link-button--neutral]="tone() === 'neutral'"
+  [class.mobile-link-button--danger]="tone() === 'danger'"
+  [disabled]="disabled() || loading()"
+  [attr.aria-busy]="loading() || null"
+  (click)="handleClick()"
+>
+  @if (loading()) {
+    <span class="mobile-spinner" aria-hidden="true"></span>
+  } @else {
+    <ng-content select="[linkButtonIconLeading]" />
+  }
+  <span class="mobile-link-button__label"><ng-content /></span>
+  @if (!loading()) {
+    <ng-content select="[linkButtonIconTrailing]" />
+  }
+</button>

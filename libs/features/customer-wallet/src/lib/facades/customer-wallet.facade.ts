@@ -39,4 +39,8 @@ export class CustomerWalletFacade {
   applyToOrder(orderId: string, amount: number) {
     return this.store.applyToOrder(orderId, amount);
   }
+
+  reset(): void {
+    this.store.reset();
+  }
 }

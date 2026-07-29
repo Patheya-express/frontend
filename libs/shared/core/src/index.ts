@@ -10,3 +10,6 @@ export * from './lib/payments/razorpay-checkout.service';
 export * from './lib/payments/payments-checkout.service';
 export * from './lib/realtime/realtime-socket.service';
 export * from './lib/map/map.service';
+export * from './lib/mobile/mobile-platform.service';
+export * from './lib/mobile/mobile.providers';
+export * from './lib/responsive/breakpoint.service';

@@ -24,4 +24,8 @@ export class CheckoutFacade {
   placeOrder(): Promise<OrderResponseDto | null> {
     return this.store.placeOrder();
   }
+
+  reset(): void {
+    this.store.reset();
+  }
 }

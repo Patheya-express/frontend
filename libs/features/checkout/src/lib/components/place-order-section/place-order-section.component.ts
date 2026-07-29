@@ -1,10 +1,12 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { PrimaryButtonComponent } from '@patheya-express-frontend/ui';
 import { CheckoutFacade } from '../../facades/checkout.facade';
 
 @Component({
   selector: 'lib-place-order-section',
   standalone: true,
+  imports: [PrimaryButtonComponent],
   templateUrl: './place-order-section.component.html',
   styleUrl: './place-order-section.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

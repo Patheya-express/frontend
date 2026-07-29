@@ -1,12 +1,67 @@
-<div class="customer-home-page">
+<div
+  class="customer-home-page"
+  mobilePullToRefresh
+  #ptr="mobilePullToRefresh"
+  (refresh)="onPullToRefresh(ptr)"
+>
+  @if (ptr.pullState() !== 'idle') {
+    <div class="ptr-indicator" [style.height.px]="ptr.pullDistance()">
+      <lib-progress-indicator variant="circular" ariaLabel="Refreshing" />
+    </div>
+  }
+
+  <div class="customer-home-search">
+    <lib-search-bar
+      class="customer-home-search-bar"
+      ariaLabel="Search restaurants and food"
+      placeholder="Search restaurants and food"
+      [value]="searchValue()"
+      (valueChange)="searchValue.set($event)"
+      (cleared)="searchValue.set('')"
+      (keydown.enter)="onSearchSubmit()"
+    >
+      <svg libIcon viewBox="0 0 24 24" fill="none" aria-hidden="true" width="20" height="20">
+        <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.6" />
+        <path d="m20 20-3.6-3.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+      </svg>
+    </lib-search-bar>
+    <lib-icon-button ariaLabel="Voice search" (buttonClick)="onVoiceSearchTapped()">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" width="20" height="20">
+        <rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" stroke-width="1.6" />
+        <path d="M5 11a7 7 0 0 0 14 0M12 18v3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+      </svg>
+    </lib-icon-button>
+  </div>
+
+  @if (recentSearches().length > 0 && !searchValue()) {
+    <div class="customer-home-recent-searches" role="group" aria-label="Recent searches">
+      <span class="recent-label">Recent:</span>
+      @for (recent of recentSearches(); track trackById(recent)) {
+        <lib-status-chip
+          [label]="recent.query"
+          [selectable]="true"
+          (chipClick)="selectRecentSearch(recent.query)"
+        />
+      }
+    </div>
+  }
+
   @if (facade.loading()) {
-    <lib-skeleton [count]="4" />
+    <div role="status" aria-live="polite" aria-label="Loading home screen" class="customer-home-loading">
+      <lib-horizontal-shelf [loading]="true" [skeletonCount]="2" skeletonItemWidth="min(480px, 85vw)" skeletonItemHeight="140px" />
+      <lib-horizontal-shelf [loading]="true" [skeletonCount]="6" skeletonItemWidth="90px" skeletonItemHeight="36px" />
+      <lib-skeleton [count]="4" />
+    </div>
   } @else if (facade.error()) {
-    <lib-error-state [message]="facade.error()!" (retry)="retry()" />
+    <lib-error-state
+      [title]="errorTitle()"
+      [message]="facade.error()!"
+      (retry)="retry()"
+    />
   } @else {
     @if (facade.home().banners.length > 0) {
-      <div class="customer-home-banners">
-        @for (banner of facade.home().banners; track banner.id) {
+      <lib-carousel [slideCount]="facade.home().banners.length" ariaLabel="Promotions">
+        @for (banner of facade.home().banners; track trackById(banner)) {
           <a class="customer-home-banner" [class.no-image]="!banner.imageUrl" [routerLink]="['/offers', banner.id]">
             @if (bannerImageUrl(banner.imageUrl); as imageUrl) {
               <img [src]="imageUrl" [alt]="banner.title" loading="lazy" />
@@ -19,7 +74,7 @@
             </div>
           </a>
         }
-      </div>
+      </lib-carousel>
     }
 
     @if (offersFacade.featured().length > 0) {
@@ -27,13 +82,13 @@
     }
 
     @if (facade.home().cuisines.length > 0) {
-      <div class="customer-home-cuisines">
-        @for (cuisine of facade.home().cuisines; track cuisine.id) {
+      <lib-horizontal-shelf title="Categories">
+        @for (cuisine of facade.home().cuisines; track trackById(cuisine)) {
           <a class="customer-home-cuisine-chip" [routerLink]="['/restaurants']" [queryParams]="{ cuisine: cuisine.name }">
             {{ cuisine.name }}
           </a>
         }
-      </div>
+      </lib-horizontal-shelf>
     }
 
     @if (facade.isEmpty()) {
@@ -45,64 +100,100 @@
       />
     }
 
-    @if (facade.home().featuredRestaurants.length > 0) {
-      <section class="customer-home-shelf">
-        <div class="customer-home-shelf-header">
-          <h2>Featured</h2>
-        </div>
-        <div class="customer-home-shelf-row">
-          @for (restaurant of facade.home().featuredRestaurants; track restaurant.id) {
-            <div class="customer-home-shelf-item">
-              <lib-restaurant-card [restaurant]="restaurant" />
-            </div>
-          }
-        </div>
-      </section>
+    <lib-restaurant-section
+      title="Featured"
+      [restaurants]="facade.home().featuredRestaurants"
+      seeAllPath="/restaurants"
+    />
+
+    @if (facade.hasLocation()) {
+      <lib-restaurant-section
+        title="Near You"
+        [restaurants]="facade.home().nearbyRestaurants"
+        seeAllPath="/restaurants"
+      />
     }
 
-    @if (facade.hasLocation() && facade.home().nearbyRestaurants.length > 0) {
-      <section class="customer-home-shelf">
-        <div class="customer-home-shelf-header">
-          <h2>Near You</h2>
-        </div>
-        <div class="customer-home-shelf-row">
-          @for (restaurant of facade.home().nearbyRestaurants; track restaurant.id) {
-            <div class="customer-home-shelf-item">
-              <lib-restaurant-card [restaurant]="restaurant" />
-            </div>
-          }
-        </div>
-      </section>
+    @defer (on viewport) {
+      <lib-restaurant-section
+        title="Popular Right Now"
+        [restaurants]="facade.home().popularRestaurants"
+        seeAllPath="/restaurants"
+        [seeAllQueryParams]="{ sortBy: 'popularity', sortOrder: 'desc' }"
+      />
+    } @placeholder {
+      <lib-horizontal-shelf [loading]="true" />
     }
 
-    @if (facade.home().popularRestaurants.length > 0) {
-      <section class="customer-home-shelf">
-        <div class="customer-home-shelf-header">
-          <h2>Popular Right Now</h2>
-        </div>
-        <div class="customer-home-shelf-row">
-          @for (restaurant of facade.home().popularRestaurants; track restaurant.id) {
-            <div class="customer-home-shelf-item">
-              <lib-restaurant-card [restaurant]="restaurant" />
-            </div>
-          }
-        </div>
-      </section>
+    @if (facade.hasLocation()) {
+      @defer (on viewport) {
+        <lib-restaurant-section
+          title="Recommended For You"
+          [restaurants]="facade.home().recommendedRestaurants"
+          seeAllPath="/restaurants"
+        />
+      } @placeholder {
+        <lib-horizontal-shelf [loading]="true" />
+      }
     }
 
-    @if (facade.hasLocation() && facade.home().recommendedRestaurants.length > 0) {
-      <section class="customer-home-shelf">
-        <div class="customer-home-shelf-header">
-          <h2>Recommended For You</h2>
-        </div>
-        <div class="customer-home-shelf-row">
-          @for (restaurant of facade.home().recommendedRestaurants; track restaurant.id) {
-            <div class="customer-home-shelf-item">
-              <lib-restaurant-card [restaurant]="restaurant" />
-            </div>
+    @defer (on viewport) {
+      <lib-restaurant-section
+        title="Open Now"
+        [restaurants]="facade.openNowRestaurants()"
+        [loading]="facade.openNowLoading()"
+        seeAllPath="/restaurants"
+        [seeAllQueryParams]="{ openNow: true }"
+      />
+    } @placeholder {
+      <lib-horizontal-shelf [loading]="true" />
+    }
+
+    @defer (on viewport) {
+      <lib-restaurant-section
+        title="Fast Delivery"
+        [restaurants]="facade.fastDeliveryRestaurants()"
+        [loading]="facade.fastDeliveryLoading()"
+        seeAllPath="/restaurants"
+        [seeAllQueryParams]="{ sortBy: 'deliveryTime', sortOrder: 'asc' }"
+      />
+    } @placeholder {
+      <lib-horizontal-shelf [loading]="true" />
+    }
+
+    @defer (on viewport) {
+      <lib-restaurant-section
+        title="Top Rated"
+        [restaurants]="facade.topRatedRestaurants()"
+        [loading]="facade.topRatedLoading()"
+        seeAllPath="/restaurants"
+        [seeAllQueryParams]="{ sortBy: 'rating', sortOrder: 'desc' }"
+      />
+    } @placeholder {
+      <lib-horizontal-shelf [loading]="true" />
+    }
+
+    @defer (on viewport) {
+      <section
+        class="customer-home-more"
+        mobileInfiniteScroll
+        (reachedEnd)="onLoadMore()"
+      >
+        <h2>More Restaurants</h2>
+        <div class="customer-home-more-grid">
+          @for (restaurant of facade.more().items; track trackById(restaurant)) {
+            <lib-restaurant-card [restaurant]="restaurant" />
           }
         </div>
+        @if (facade.more().loading) {
+          <lib-skeleton [count]="2" />
+        }
+        @if (facade.more().error) {
+          <p class="more-error" role="alert">{{ facade.more().error }}</p>
+        }
       </section>
+    } @placeholder {
+      <lib-skeleton [count]="2" />
     }
 
     <div class="customer-home-browse-all">

@@ -40,4 +40,8 @@ export class AddressesFacade {
   remove(id: string): Promise<void> {
     return this.store.remove(id);
   }
+
+  reset(): void {
+    this.store.reset();
+  }
 }

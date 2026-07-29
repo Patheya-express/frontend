@@ -4,7 +4,10 @@
   "sourceRoot": "libs/shared/auth-ui/src",
   "prefix": "lib",
   "projectType": "library",
-  "tags": [],
+  "tags": [
+    "type:auth-ui",
+    "scope:shared"
+  ],
   "targets": {
     "lint": {
       "executor": "@nx/eslint:lint"

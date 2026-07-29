@@ -9,11 +9,14 @@
       id="login-email"
       type="email"
       autocomplete="email"
+      inputmode="email"
       formControlName="email"
       [class.invalid]="form.controls.email.invalid && form.controls.email.touched"
+      [attr.aria-invalid]="form.controls.email.invalid && form.controls.email.touched ? true : null"
+      [attr.aria-describedby]="form.controls.email.invalid && form.controls.email.touched ? 'login-email-error' : null"
     />
     @if (form.controls.email.invalid && form.controls.email.touched) {
-      <span class="form-field-error">Enter a valid email address.</span>
+      <span id="login-email-error" class="form-field-error">Enter a valid email address.</span>
     }
   </div>
 
@@ -25,13 +28,20 @@
       autocomplete="current-password"
       formControlName="password"
       [class.invalid]="form.controls.password.invalid && form.controls.password.touched"
+      [attr.aria-invalid]="form.controls.password.invalid && form.controls.password.touched ? true : null"
+      [attr.aria-describedby]="form.controls.password.invalid && form.controls.password.touched ? 'login-password-error' : null"
     />
     @if (form.controls.password.invalid && form.controls.password.touched) {
-      <span class="form-field-error">Password must be at least 8 characters.</span>
+      <span id="login-password-error" class="form-field-error">Password must be at least 8 characters.</span>
     }
   </div>
 
-  <button type="submit" class="form-submit" [disabled]="loading">
+  <label class="form-checkbox">
+    <input type="checkbox" formControlName="rememberMe" />
+    <span>Remember me</span>
+  </label>
+
+  <button type="submit" class="form-submit" [disabled]="loading" [attr.aria-busy]="loading || null">
     {{ loading ? 'Logging in…' : 'Log in' }}
   </button>
 </form>

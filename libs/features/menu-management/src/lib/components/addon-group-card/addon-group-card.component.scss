@@ -1,0 +1,89 @@
+.addon-group-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.addon-group-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.addon-group-card-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.addon-group-card-name {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.addon-group-card-selection {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.addon-group-card-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.addon-group-card-edit,
+.addon-group-card-delete {
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.addon-group-card-edit {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.addon-group-card-delete {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-error);
+}
+
+.addon-group-card-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-left: var(--space-3);
+}
+
+.addon-group-card-no-options {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.addon-group-card-add-option {
+  align-self: flex-start;
+  border: 1px dashed var(--color-border);
+  background: transparent;
+  color: var(--color-primary);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+}

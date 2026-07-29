@@ -1,0 +1,30 @@
+<div class="coupon-entry">
+  @if (couponFacade.appliedCoupon(); as coupon) {
+    <div class="coupon-entry-applied">
+      <lib-status-chip [label]="coupon.code" tone="success" [removable]="true" (removed)="removeCoupon()" />
+      <span class="coupon-entry-savings">You saved ₹{{ couponFacade.discountAmount() }}</span>
+    </div>
+  } @else {
+    <div class="coupon-entry-form">
+      <lib-search-input
+        placeholder="Enter coupon code"
+        [value]="code()"
+        [disabled]="couponFacade.loading()"
+        ariaLabel="Coupon code"
+        (valueChange)="onCodeChange($event)"
+      />
+      <lib-primary-button
+        size="sm"
+        [loading]="couponFacade.loading()"
+        [disabled]="!code().trim()"
+        (buttonClick)="applyCoupon()"
+      >
+        Apply
+      </lib-primary-button>
+    </div>
+
+    @if (couponFacade.validationError(); as error) {
+      <p class="coupon-entry-error">{{ error }}</p>
+    }
+  }
+</div>

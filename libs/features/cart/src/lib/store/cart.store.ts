@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { CartResponseDto } from '@patheya-express-frontend/api-sdk';
+import { LogoutCleanupRegistry } from '@patheya-express-frontend/auth';
 import type { CartItem } from '../models/cart-item.model';
 import { CartService, type AddCartItemRequest } from '../services/cart.service';
 
@@ -32,6 +33,10 @@ export class CartStore {
 
   readonly subtotal = computed(() => this._cart()?.subtotal ?? 0);
   readonly totalItems = computed(() => this._cart()?.totalItems ?? 0);
+
+  constructor() {
+    inject(LogoutCleanupRegistry).register(() => this.reset());
+  }
 
   /** Hydrates cart state from the backend. Call once at app bootstrap. */
   async restore(): Promise<void> {
@@ -167,5 +172,15 @@ export class CartStore {
     } catch {
       this._error.set('Unable to clear your cart.');
     }
+  }
+
+  /** Drops this device's in-memory cart view on logout — server-side cart state (if any) is
+   *  untouched, this only clears what this browser tab is currently displaying so a subsequent
+   *  login (as the same or a different customer) starts from restore(), not a stale cart. */
+  reset(): void {
+    this._cart.set(null);
+    this._loading.set(false);
+    this._error.set(null);
+    this._pendingConflict.set(null);
   }
 }

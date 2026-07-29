@@ -48,6 +48,7 @@
       "@patheya-express-frontend/cart": ["./libs/features/cart/src/index.ts"],
       "@patheya-express-frontend/cart-ui": ["./libs/features/cart-ui/src/index.ts"],
       "@patheya-express-frontend/checkout": ["./libs/features/checkout/src/index.ts"],
+      "@patheya-express-frontend/coupons": ["./libs/features/coupons/src/index.ts"],
       "@patheya-express-frontend/addresses": ["./libs/features/addresses/src/index.ts"],
       "@patheya-express-frontend/order-details": [
         "./libs/features/order-details/src/index.ts"
@@ -111,6 +112,15 @@
       ],
       "@patheya-express-frontend/restaurant-notifications": [
         "./libs/features/restaurant-notifications/src/index.ts"
+      ],
+      "@patheya-express-frontend/restaurant-offers": [
+        "./libs/features/restaurant-offers/src/index.ts"
+      ],
+      "@patheya-express-frontend/restaurant-reviews": [
+        "./libs/features/restaurant-reviews/src/index.ts"
+      ],
+      "@patheya-express-frontend/restaurant-reports": [
+        "./libs/features/restaurant-reports/src/index.ts"
       ],
       "@patheya-express-frontend/delivery-dashboard": [
         "./libs/features/delivery-dashboard/src/index.ts"

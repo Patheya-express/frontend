@@ -1,0 +1,33 @@
+<form class="variant-form" [formGroup]="form" (ngSubmit)="submit()">
+  <h4 class="variant-form-title">{{ variant ? 'Edit Variant' : 'Add Variant' }}</h4>
+
+  @if (facade.validationErrors().length > 0) {
+    <ul class="variant-form-errors">
+      @for (message of facade.validationErrors(); track message) {
+        <li>{{ message }}</li>
+      }
+    </ul>
+  }
+
+  <div class="form-field">
+    <label for="variant-name">Name</label>
+    <input id="variant-name" type="text" formControlName="name" placeholder="e.g. Small, Medium, Large" />
+  </div>
+
+  <div class="form-field">
+    <label for="variant-price">Price (₹)</label>
+    <input id="variant-price" type="number" min="0" step="0.01" formControlName="price" />
+  </div>
+
+  <label class="checkbox-field">
+    <input type="checkbox" formControlName="isDefault" />
+    Default option
+  </label>
+
+  <div class="variant-form-actions">
+    <button type="button" class="variant-form-cancel" [disabled]="isProcessing" (click)="cancel()">Cancel</button>
+    <button type="submit" class="variant-form-submit" [disabled]="form.invalid || isProcessing">
+      {{ isProcessing ? 'Saving…' : 'Save' }}
+    </button>
+  </div>
+</form>

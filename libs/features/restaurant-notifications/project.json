@@ -4,7 +4,10 @@
   "sourceRoot": "libs/features/restaurant-notifications/src",
   "prefix": "lib",
   "projectType": "library",
-  "tags": [],
+  "tags": [
+    "type:feature",
+    "scope:restaurant"
+  ],
   "targets": {
     "lint": {
       "executor": "@nx/eslint:lint"

@@ -9,7 +9,7 @@ import type {
   BranchResponseDto,
   StaffResponseDto,
 } from '@patheya-express-frontend/api-sdk';
-import { AuthFacade } from '@patheya-express-frontend/auth';
+import { AuthFacade, LogoutCleanupRegistry } from '@patheya-express-frontend/auth';
 
 // The API gateway wraps every response in a { success, timestamp, data } envelope via a
 // global interceptor that Swagger/the generated SDK types do not account for.
@@ -66,6 +66,10 @@ export class RestaurantContextService {
 
   private loadPromise: Promise<void> | null = null;
 
+  constructor() {
+    inject(LogoutCleanupRegistry).register(() => this.reset());
+  }
+
   /** Compatibility method for existing single-restaurant consumers. */
   async getRestaurantId(): Promise<string> {
     await this.ensureLoaded();
@@ -98,6 +102,18 @@ export class RestaurantContextService {
   hasRole(...roles: RestaurantRole[]): boolean {
     const role = this._currentRole();
     return !!role && roles.includes(role);
+  }
+
+  /** Called on logout — without clearing `loadPromise`, ensureLoaded() would keep resolving
+   *  with the previous owner's already-fetched restaurant/branch/role for the rest of this tab's
+   *  life, since it only ever fetches once per (unresolved) promise. */
+  reset(): void {
+    this._restaurants.set([]);
+    this._branches.set([]);
+    this._currentRestaurantId.set(null);
+    this._currentBranchId.set(null);
+    this._currentRole.set(null);
+    this.loadPromise = null;
   }
 
   private ensureLoaded(): Promise<void> {

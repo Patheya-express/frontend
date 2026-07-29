@@ -116,7 +116,7 @@
 
 .vehicle-card-meta {
   margin: 0;
-  color: var(--color-text-secondary, #57606a);
+  color: var(--color-text-muted);
   font-size: 0.875rem;
 }
 
@@ -129,11 +129,11 @@
     font-size: 0.75rem;
     padding: 0.125rem 0.5rem;
     border-radius: 999px;
-    background: var(--color-warning-bg, #fff8c5);
-    color: var(--color-warning-text, #7d4e00);
+    background: var(--color-warning-soft);
+    color: var(--color-warning);
 
     &.expired {
-      background: var(--color-error-bg, #ffebe9);
+      background: var(--color-error-soft);
       color: var(--color-error, #d1242f);
     }
   }

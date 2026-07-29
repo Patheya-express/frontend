@@ -125,6 +125,30 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'offers',
+    canActivate: [authGuard, onboardingGuard],
+    loadComponent: () =>
+      import('@patheya-express-frontend/restaurant-offers').then(
+        (m) => m.OfferListPageComponent,
+      ),
+  },
+  {
+    path: 'reviews',
+    canActivate: [authGuard, onboardingGuard],
+    loadComponent: () =>
+      import('@patheya-express-frontend/restaurant-reviews').then(
+        (m) => m.ReviewListPageComponent,
+      ),
+  },
+  {
+    path: 'reports',
+    canActivate: [authGuard, onboardingGuard],
+    loadComponent: () =>
+      import('@patheya-express-frontend/restaurant-reports').then(
+        (m) => m.ReportPageComponent,
+      ),
+  },
+  {
     path: 'notifications',
     canActivate: [authGuard, onboardingGuard],
     loadComponent: () =>

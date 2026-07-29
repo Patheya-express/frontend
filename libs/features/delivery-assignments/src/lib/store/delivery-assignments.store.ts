@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { DeliveryAssignmentResponseDto, OrderResponseDto } from '@patheya-express-frontend/api-sdk';
 import { DeliveryAssignmentsService } from '../services/delivery-assignments.service';
@@ -8,9 +9,31 @@ export interface AssignmentGroups {
   completed: DeliveryAssignmentResponseDto[];
 }
 
+export type ProofType = 'pickup' | 'delivery';
+
+/** Drives the Pickup/Delivery OTP dialog. One dialog can be open at a time, for one assignment. */
+export interface OtpDialogState {
+  assignmentId: string;
+  orderId: string;
+  type: ProofType;
+  expiresAt: string | null;
+  maxAttempts: number | null;
+  attemptsRemaining: number | null;
+  generating: boolean;
+  verifying: boolean;
+  error: string | null;
+}
+
 const TERMINAL_ORDER_STATUSES: ReadonlyArray<OrderResponseDto['status']> = ['DELIVERED', 'CANCELLED'];
 
 const POLL_INTERVAL_MS = 15_000;
+
+function extractMessage(error: unknown, fallback: string): string {
+  if (error instanceof HttpErrorResponse && typeof error.error?.message === 'string') {
+    return error.error.message;
+  }
+  return fallback;
+}
 
 function buildGroups(assignments: DeliveryAssignmentResponseDto[]): AssignmentGroups {
   const groups: AssignmentGroups = { active: [], available: [], completed: [] };
@@ -39,6 +62,7 @@ export class DeliveryAssignmentsStore {
   private readonly _error = signal<string | null>(null);
   private readonly _processingId = signal<string | null>(null);
   private readonly _actionError = signal<string | null>(null);
+  private readonly _otpDialog = signal<OtpDialogState | null>(null);
 
   private pollHandle: ReturnType<typeof setInterval> | null = null;
 
@@ -46,6 +70,7 @@ export class DeliveryAssignmentsStore {
   readonly error = this._error.asReadonly();
   readonly processingId = this._processingId.asReadonly();
   readonly actionError = this._actionError.asReadonly();
+  readonly otpDialog = this._otpDialog.asReadonly();
 
   readonly groups = computed<AssignmentGroups>(() => buildGroups(this._assignments()));
 
@@ -108,33 +133,115 @@ export class DeliveryAssignmentsStore {
     );
   }
 
-  /** READY_FOR_PICKUP → OUT_FOR_DELIVERY. Runs through the same transition path as accept/reject. */
-  confirmPickup(assignmentId: string): Promise<void> {
-    return this.transitionAssignment(
-      assignmentId,
-      (assignment) =>
-        assignment.order ? { ...assignment, order: { ...assignment.order, status: 'OUT_FOR_DELIVERY' } } : assignment,
-      (original) => {
-        if (!original.order) {
-          return Promise.reject(new Error('Assignment has no linked order'));
-        }
-        return this.assignmentsService.confirmPickup(original.order.id);
-      },
-    );
+  /**
+   * Opens the Pickup OTP dialog for this assignment and immediately requests a fresh code
+   * (sent to the customer) — matching the ORDER FLOW spec's "Arrive Restaurant → Pickup OTP
+   * Verification" step: tapping "Confirm Pickup" both opens the dialog and generates the code
+   * in one motion, rather than requiring a separate "send code" tap first.
+   */
+  openPickupOtpDialog(assignmentId: string): Promise<void> {
+    return this.openOtpDialog(assignmentId, 'pickup');
   }
 
-  /** OUT_FOR_DELIVERY → DELIVERED. Runs through the same transition path as accept/reject/pickup. */
-  confirmDelivery(assignmentId: string): Promise<void> {
-    return this.transitionAssignment(
+  /** Same as openPickupOtpDialog, for the OUT_FOR_DELIVERY → DELIVERED step. */
+  openDeliveryOtpDialog(assignmentId: string): Promise<void> {
+    return this.openOtpDialog(assignmentId, 'delivery');
+  }
+
+  closeOtpDialog(): void {
+    this._otpDialog.set(null);
+  }
+
+  /** Re-requests a fresh code for whichever dialog is currently open — this is also how a partner recovers from an expired or attempt-exceeded OTP, since generate always overwrites the previous code server-side. */
+  async regenerateOtp(): Promise<void> {
+    const dialog = this._otpDialog();
+    if (!dialog) {
+      return;
+    }
+
+    this._otpDialog.set({ ...dialog, generating: true, error: null });
+
+    try {
+      const generated =
+        dialog.type === 'pickup'
+          ? await this.assignmentsService.generatePickupOtp(dialog.orderId)
+          : await this.assignmentsService.generateDeliveryOtp(dialog.orderId);
+
+      this._otpDialog.set({
+        ...dialog,
+        generating: false,
+        error: null,
+        expiresAt: generated.expiresAt,
+        maxAttempts: generated.maxAttempts,
+        attemptsRemaining: generated.maxAttempts,
+      });
+    } catch (error) {
+      this._otpDialog.set({
+        ...dialog,
+        generating: false,
+        error: extractMessage(error, 'Unable to send a new code. Please try again.'),
+      });
+    }
+  }
+
+  /** Verifies the code the partner entered. On success the order's status advances server-side (as a side effect of verification, not a separate call) and the dialog closes. */
+  async verifyOtp(code: string): Promise<void> {
+    const dialog = this._otpDialog();
+    if (!dialog || dialog.verifying) {
+      return;
+    }
+
+    this._otpDialog.set({ ...dialog, verifying: true, error: null });
+
+    try {
+      const result =
+        dialog.type === 'pickup'
+          ? await this.assignmentsService.verifyPickupOtp(dialog.orderId, code)
+          : await this.assignmentsService.verifyDeliveryOtp(dialog.orderId, code);
+
+      this.replaceAssignmentOrderStatus(dialog.assignmentId, result.orderStatus);
+      this._otpDialog.set(null);
+    } catch (error) {
+      const current = this._otpDialog();
+      if (!current) {
+        return;
+      }
+      this._otpDialog.set({
+        ...current,
+        verifying: false,
+        error: extractMessage(error, 'Unable to verify this code. Please try again.'),
+      });
+    }
+  }
+
+  private async openOtpDialog(assignmentId: string, type: ProofType): Promise<void> {
+    const assignment = this._assignments().find((item) => item.id === assignmentId);
+    if (!assignment?.order) {
+      return;
+    }
+
+    this._otpDialog.set({
       assignmentId,
-      (assignment) =>
-        assignment.order ? { ...assignment, order: { ...assignment.order, status: 'DELIVERED' } } : assignment,
-      (original) => {
-        if (!original.order) {
-          return Promise.reject(new Error('Assignment has no linked order'));
-        }
-        return this.assignmentsService.confirmDelivery(original.order.id);
-      },
+      orderId: assignment.order.id,
+      type,
+      expiresAt: null,
+      maxAttempts: null,
+      attemptsRemaining: null,
+      generating: true,
+      verifying: false,
+      error: null,
+    });
+
+    await this.regenerateOtp();
+  }
+
+  private replaceAssignmentOrderStatus(assignmentId: string, status: OrderResponseDto['status']): void {
+    this._assignments.update((assignments) =>
+      assignments.map((assignment) =>
+        assignment.id === assignmentId && assignment.order
+          ? { ...assignment, order: { ...assignment.order, status } }
+          : assignment,
+      ),
     );
   }
 

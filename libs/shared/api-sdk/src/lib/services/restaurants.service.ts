@@ -12,6 +12,7 @@ import { StrictHttpResponse } from '../strict-http-response';
 import { PaginatedRestaurantsResponseDto } from '../models/paginated-restaurants-response-dto';
 import { PaginatedRestaurantSummariesResponseDto } from '../models/paginated-restaurant-summaries-response-dto';
 import { PaginatedReviewsResponseDto } from '../models/paginated-reviews-response-dto';
+import { RatingSummaryResponseDto } from '../models/rating-summary-response-dto';
 import { RestaurantResponseDto } from '../models/restaurant-response-dto';
 import { restaurantsControllerApproveRestaurant } from '../fn/restaurants/restaurants-controller-approve-restaurant';
 import { RestaurantsControllerApproveRestaurant$Params } from '../fn/restaurants/restaurants-controller-approve-restaurant';
@@ -38,14 +39,24 @@ import { RestaurantsControllerUploadBanner$Params } from '../fn/restaurants/rest
 import { restaurantsControllerUploadLogo } from '../fn/restaurants/restaurants-controller-upload-logo';
 import { RestaurantsControllerUploadLogo$Params } from '../fn/restaurants/restaurants-controller-upload-logo';
 import { ReviewResponseDto } from '../models/review-response-dto';
+import { reviewsControllerCreateReply } from '../fn/restaurants/reviews-controller-create-reply';
+import { ReviewsControllerCreateReply$Params } from '../fn/restaurants/reviews-controller-create-reply';
 import { reviewsControllerCreateReview } from '../fn/restaurants/reviews-controller-create-review';
 import { ReviewsControllerCreateReview$Params } from '../fn/restaurants/reviews-controller-create-review';
+import { reviewsControllerDeleteReply } from '../fn/restaurants/reviews-controller-delete-reply';
+import { ReviewsControllerDeleteReply$Params } from '../fn/restaurants/reviews-controller-delete-reply';
 import { reviewsControllerDeleteReview } from '../fn/restaurants/reviews-controller-delete-review';
 import { ReviewsControllerDeleteReview$Params } from '../fn/restaurants/reviews-controller-delete-review';
 import { reviewsControllerGetMyReview } from '../fn/restaurants/reviews-controller-get-my-review';
 import { ReviewsControllerGetMyReview$Params } from '../fn/restaurants/reviews-controller-get-my-review';
+import { reviewsControllerGetRatingSummary } from '../fn/restaurants/reviews-controller-get-rating-summary';
+import { ReviewsControllerGetRatingSummary$Params } from '../fn/restaurants/reviews-controller-get-rating-summary';
 import { reviewsControllerGetReviews } from '../fn/restaurants/reviews-controller-get-reviews';
 import { ReviewsControllerGetReviews$Params } from '../fn/restaurants/reviews-controller-get-reviews';
+import { reviewsControllerGetReviewsForManage } from '../fn/restaurants/reviews-controller-get-reviews-for-manage';
+import { ReviewsControllerGetReviewsForManage$Params } from '../fn/restaurants/reviews-controller-get-reviews-for-manage';
+import { reviewsControllerUpdateReply } from '../fn/restaurants/reviews-controller-update-reply';
+import { ReviewsControllerUpdateReply$Params } from '../fn/restaurants/reviews-controller-update-reply';
 
 @Injectable({ providedIn: 'root' })
 export class RestaurantsService extends BaseService {
@@ -578,6 +589,171 @@ export class RestaurantsService extends BaseService {
    */
   reviewsControllerGetMyReview(params: ReviewsControllerGetMyReview$Params, context?: HttpContext): Promise<ReviewResponseDto> {
     const resp = this.reviewsControllerGetMyReview$Response(params, context);
+    return resp.then((r: StrictHttpResponse<ReviewResponseDto>): ReviewResponseDto => r.body);
+  }
+
+  /** Path part for operation `reviewsControllerGetReviewsForManage()` */
+  static readonly ReviewsControllerGetReviewsForManagePath = '/api/v1/restaurants/{id}/reviews/manage';
+
+  /**
+   * Get a restaurant's reviews for management.
+   *
+   * Every review for the restaurant, with rating/date/hasReply filters the public listing does not support. Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `reviewsControllerGetReviewsForManage()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  reviewsControllerGetReviewsForManage$Response(params: ReviewsControllerGetReviewsForManage$Params, context?: HttpContext): Promise<StrictHttpResponse<PaginatedReviewsResponseDto>> {
+    const obs = reviewsControllerGetReviewsForManage(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Get a restaurant's reviews for management.
+   *
+   * Every review for the restaurant, with rating/date/hasReply filters the public listing does not support. Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `reviewsControllerGetReviewsForManage$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  reviewsControllerGetReviewsForManage(params: ReviewsControllerGetReviewsForManage$Params, context?: HttpContext): Promise<PaginatedReviewsResponseDto> {
+    const resp = this.reviewsControllerGetReviewsForManage$Response(params, context);
+    return resp.then((r: StrictHttpResponse<PaginatedReviewsResponseDto>): PaginatedReviewsResponseDto => r.body);
+  }
+
+  /** Path part for operation `reviewsControllerGetRatingSummary()` */
+  static readonly ReviewsControllerGetRatingSummaryPath = '/api/v1/restaurants/{id}/reviews/manage/summary';
+
+  /**
+   * Get a restaurant's rating summary.
+   *
+   * Average rating, total review count, and a per-star (1-5) breakdown. Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `reviewsControllerGetRatingSummary()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  reviewsControllerGetRatingSummary$Response(params: ReviewsControllerGetRatingSummary$Params, context?: HttpContext): Promise<StrictHttpResponse<RatingSummaryResponseDto>> {
+    const obs = reviewsControllerGetRatingSummary(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Get a restaurant's rating summary.
+   *
+   * Average rating, total review count, and a per-star (1-5) breakdown. Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `reviewsControllerGetRatingSummary$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  reviewsControllerGetRatingSummary(params: ReviewsControllerGetRatingSummary$Params, context?: HttpContext): Promise<RatingSummaryResponseDto> {
+    const resp = this.reviewsControllerGetRatingSummary$Response(params, context);
+    return resp.then((r: StrictHttpResponse<RatingSummaryResponseDto>): RatingSummaryResponseDto => r.body);
+  }
+
+  /** Path part for operation `reviewsControllerCreateReply()` */
+  static readonly ReviewsControllerCreateReplyPath = '/api/v1/restaurants/{id}/reviews/{reviewId}/reply';
+
+  /**
+   * Reply to a review.
+   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only. Fails if a reply already exists — use update instead. The reviewing customer is notified.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `reviewsControllerCreateReply()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  reviewsControllerCreateReply$Response(params: ReviewsControllerCreateReply$Params, context?: HttpContext): Promise<StrictHttpResponse<ReviewResponseDto>> {
+    const obs = reviewsControllerCreateReply(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Reply to a review.
+   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only. Fails if a reply already exists — use update instead. The reviewing customer is notified.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `reviewsControllerCreateReply$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  reviewsControllerCreateReply(params: ReviewsControllerCreateReply$Params, context?: HttpContext): Promise<ReviewResponseDto> {
+    const resp = this.reviewsControllerCreateReply$Response(params, context);
+    return resp.then((r: StrictHttpResponse<ReviewResponseDto>): ReviewResponseDto => r.body);
+  }
+
+  /** Path part for operation `reviewsControllerDeleteReply()` */
+  static readonly ReviewsControllerDeleteReplyPath = '/api/v1/restaurants/{id}/reviews/{reviewId}/reply';
+
+  /**
+   * Delete a reply.
+   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only. The underlying customer review is never affected.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `reviewsControllerDeleteReply()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  reviewsControllerDeleteReply$Response(params: ReviewsControllerDeleteReply$Params, context?: HttpContext): Promise<StrictHttpResponse<void>> {
+    const obs = reviewsControllerDeleteReply(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Delete a reply.
+   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only. The underlying customer review is never affected.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `reviewsControllerDeleteReply$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  reviewsControllerDeleteReply(params: ReviewsControllerDeleteReply$Params, context?: HttpContext): Promise<void> {
+    const resp = this.reviewsControllerDeleteReply$Response(params, context);
+    return resp.then((r: StrictHttpResponse<void>): void => r.body);
+  }
+
+  /** Path part for operation `reviewsControllerUpdateReply()` */
+  static readonly ReviewsControllerUpdateReplyPath = '/api/v1/restaurants/{id}/reviews/{reviewId}/reply';
+
+  /**
+   * Edit a reply.
+   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only. Fails if no reply exists yet — use create instead.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `reviewsControllerUpdateReply()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  reviewsControllerUpdateReply$Response(params: ReviewsControllerUpdateReply$Params, context?: HttpContext): Promise<StrictHttpResponse<ReviewResponseDto>> {
+    const obs = reviewsControllerUpdateReply(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Edit a reply.
+   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only. Fails if no reply exists yet — use create instead.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `reviewsControllerUpdateReply$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  reviewsControllerUpdateReply(params: ReviewsControllerUpdateReply$Params, context?: HttpContext): Promise<ReviewResponseDto> {
+    const resp = this.reviewsControllerUpdateReply$Response(params, context);
     return resp.then((r: StrictHttpResponse<ReviewResponseDto>): ReviewResponseDto => r.body);
   }
 

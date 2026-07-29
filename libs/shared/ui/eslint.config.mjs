@@ -32,7 +32,10 @@ export default [
                 "error",
                 {
                     type: "attribute",
-                    prefix: "lib",
+                    // "lib" is the library's general prefix; "mobile" is reserved specifically for
+                    // gesture/behavior directives under directives/ that originated as native-shell
+                    // infrastructure (mobileSwipe, mobileLongPress, …) — see directives/*.ts.
+                    prefix: ["lib", "mobile"],
                     style: "camelCase"
                 }
             ],
@@ -40,7 +43,12 @@ export default [
                 "error",
                 {
                     type: "element",
-                    prefix: "lib",
+                    // "lib" is the library's general prefix (every generic/platform-agnostic
+                    // component). "mobile" is reserved for layouts/mobile/* — components that are
+                    // specifically the native-shell chrome (bottom tabs, FAB, top app bar, bottom
+                    // sheet host's own <mobile-shell> root, …), so their tag name signals that
+                    // platform-specific role even though they live in this one unified library.
+                    prefix: ["lib", "mobile"],
                     style: "kebab-case"
                 }
             ]

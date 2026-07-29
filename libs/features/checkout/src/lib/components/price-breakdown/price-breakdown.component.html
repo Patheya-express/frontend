@@ -6,6 +6,13 @@
     <span>₹{{ orderSummary().subtotal }}</span>
   </div>
 
+  @if (orderSummary().discountAmount > 0) {
+    <div class="price-row discount">
+      <span>Discount</span>
+      <span>-₹{{ orderSummary().discountAmount }}</span>
+    </div>
+  }
+
   <div class="price-row">
     <span>Taxes</span>
     <span>₹{{ orderSummary().taxAmount }}</span>

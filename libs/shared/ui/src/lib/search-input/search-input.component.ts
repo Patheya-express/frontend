@@ -13,6 +13,10 @@ const DEBOUNCE_MS = 300;
 export class SearchInputComponent implements OnDestroy {
   @Input() placeholder = 'Search…';
   @Input() value = '';
+  @Input() disabled = false;
+  /** Falls back to `placeholder` when unset, so every existing usage (none of which pass this)
+   *  still gets a reasonable accessible name instead of nothing. */
+  @Input() ariaLabel?: string;
   /** Emits at most once every 300ms, and only when the value actually changes. */
   @Output() valueChange = new EventEmitter<string>();
 

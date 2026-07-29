@@ -58,4 +58,24 @@ infrastructure/**/terraform.tfvars
 infrastructure/**/.terraform/
 infrastructure/**/*.tfstate
 infrastructure/**/*.tfstate.*
+
+# Capacitor native shells — android/ and ios/ project files ARE committed (see
+# docs/mobile/CAPACITOR.md), only their local build/tooling output and signing secrets are not.
+apps/*/android/local.properties
+apps/*/android/.gradle/
+apps/*/android/**/build/
+apps/*/android/captures/
+apps/*/android/*.iml
+apps/*/android/**/*.iml
+apps/*/android/keystore.properties
+apps/*/android/**/*.keystore
+apps/*/android/**/*.jks
+apps/*/ios/exportOptions.plist
+apps/*/ios/App/Pods/
+apps/*/ios/App/build/
+apps/*/ios/App/DerivedData/
+apps/*/ios/**/*.xcuserstate
+apps/*/ios/**/xcuserdata/
+apps/*/ios/App/App/public/
+apps/*/android/app/src/main/assets/public/
 infrastructure/**/crash.log

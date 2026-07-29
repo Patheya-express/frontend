@@ -1,0 +1,16 @@
+@if (loading() || restaurants().length > 0) {
+  <lib-horizontal-shelf
+    [title]="title()"
+    [loading]="loading()"
+    [seeAllPath]="seeAllPath()"
+    [seeAllQueryParams]="seeAllQueryParams()"
+    skeletonItemWidth="260px"
+    skeletonItemHeight="180px"
+  >
+    @for (restaurant of restaurants(); track trackById(restaurant)) {
+      <div class="restaurant-section-item">
+        <lib-restaurant-card [restaurant]="restaurant" />
+      </div>
+    }
+  </lib-horizontal-shelf>
+}

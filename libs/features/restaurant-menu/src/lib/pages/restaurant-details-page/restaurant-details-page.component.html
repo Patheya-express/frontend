@@ -3,68 +3,84 @@
     <lib-skeleton [count]="4" />
   </div>
 } @else if (error()) {
-  <lib-error-state [message]="error()!" (retry)="retry()" />
-} @else if (isEmpty()) {
-  <lib-empty-state
-    title="No menu items yet"
-    message="This restaurant hasn't added their menu yet. Check back later."
-    (refresh)="retry()"
-  />
+  <lib-error-state [title]="errorTitle()" [message]="error()!" (retry)="retry()" />
+} @else if (isEmpty() && !search()) {
+  <lib-empty-state [title]="emptyStateTitle()" [message]="emptyStateMessage()" (refresh)="retry()" />
 } @else if (restaurant(); as restaurantValue) {
-  <header class="restaurant-header">
-    <div class="restaurant-header-image">
-      @if (coverImageUrl(restaurantValue.bannerUrl, restaurantValue.logoUrl); as coverUrl) {
-        <img [src]="coverUrl" [alt]="restaurantValue.name" />
-      } @else {
-        <div class="restaurant-header-placeholder" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none">
-            <path
-              d="M7 3v6M5 5h4M12 3l-1.5 7c-.3 1.4.8 2.5 2 2.5s2.3-1.1 2-2.5L13 3M12 12.5V21M17 3v18M17 3c1.9 0 3.5 2 3.5 5.5S18.9 14 17 14"
-              stroke="currentColor"
-              stroke-width="1.2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </div>
-      }
-    </div>
-
-    <div class="restaurant-header-info">
-      <div class="restaurant-header-title">
-        <h1>{{ restaurantValue.name }}</h1>
-        @if (isAuthenticated()) {
-          <lib-favorite-button [id]="restaurantValue.id" type="restaurant" [label]="restaurantValue.name" />
+  <div class="restaurant-sticky-stack">
+    <header class="restaurant-header" [class.collapsed]="headerCollapsed()">
+      <div class="restaurant-header-image">
+        @if (coverImageUrl(restaurantValue.bannerUrl, restaurantValue.logoUrl); as coverUrl) {
+          <img [src]="coverUrl" [alt]="restaurantValue.name" />
+        } @else {
+          <div class="restaurant-header-placeholder" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path
+                d="M7 3v6M5 5h4M12 3l-1.5 7c-.3 1.4.8 2.5 2 2.5s2.3-1.1 2-2.5L13 3M12 12.5V21M17 3v18M17 3c1.9 0 3.5 2 3.5 5.5S18.9 14 17 14"
+                stroke="currentColor"
+                stroke-width="1.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
         }
       </div>
-      <div class="restaurant-header-rating">
-        <lib-star-rating [rating]="restaurantValue.avgRating" size="sm" />
-        <span>{{ restaurantValue.avgRating.toFixed(1) }} ({{ restaurantValue.ratingCount }})</span>
-      </div>
-      @if (restaurantValue.cuisines && restaurantValue.cuisines.length > 0) {
-        <div class="restaurant-cuisines">
-          @for (cuisine of restaurantValue.cuisines; track cuisine.name) {
-            <span class="cuisine-chip">{{ cuisine.name }}</span>
+
+      <div class="restaurant-header-info">
+        <div class="restaurant-header-title">
+          <h1>{{ restaurantValue.name }}</h1>
+          @if (isOpenNow() !== undefined) {
+            <span class="open-status-chip" [class.closed]="!isOpenNow()">{{ isOpenNow() ? 'Open now' : 'Closed now' }}</span>
           }
+          @if (isAuthenticated()) {
+            <lib-favorite-button [id]="restaurantValue.id" type="restaurant" [label]="restaurantValue.name" />
+          }
+          <lib-icon-button ariaLabel="Share restaurant" (buttonClick)="onShareTapped()">
+            <svg viewBox="0 0 24 24" fill="none" width="18" height="18" aria-hidden="true">
+              <circle cx="6" cy="12" r="2.2" stroke="currentColor" stroke-width="1.5" />
+              <circle cx="17" cy="6" r="2.2" stroke="currentColor" stroke-width="1.5" />
+              <circle cx="17" cy="18" r="2.2" stroke="currentColor" stroke-width="1.5" />
+              <path d="M7.9 11l7.2-3.8M7.9 13l7.2 3.8" stroke="currentColor" stroke-width="1.5" />
+            </svg>
+          </lib-icon-button>
         </div>
-      } @else {
-        <p class="restaurant-header-cuisine">Multi-cuisine</p>
-      }
-      @if (restaurantValue.description) {
-        <p class="restaurant-header-description">{{ restaurantValue.description }}</p>
-      }
-      @if (restaurantValue.branches?.[0]?.operatingHours; as hours) {
-        <details class="restaurant-hours">
-          <summary>Operating hours</summary>
-          <ul>
-            @for (hour of hours; track hour.dayOfWeek) {
-              <li>{{ formatOperatingHours(hour.dayOfWeek, hour.opensAt, hour.closesAt, hour.isClosed) }}</li>
+        <div class="restaurant-header-rating">
+          <lib-star-rating [rating]="restaurantValue.avgRating" size="sm" />
+          <span>{{ restaurantValue.avgRating.toFixed(1) }} ({{ restaurantValue.ratingCount }})</span>
+        </div>
+        @if (restaurantValue.cuisines && restaurantValue.cuisines.length > 0) {
+          <div class="restaurant-cuisines">
+            @for (cuisine of restaurantValue.cuisines; track cuisine.name) {
+              <span class="cuisine-chip">{{ cuisine.name }}</span>
             }
-          </ul>
-        </details>
-      }
-    </div>
-  </header>
+          </div>
+        } @else {
+          <p class="restaurant-header-cuisine">Multi-cuisine</p>
+        }
+        @if (!headerCollapsed()) {
+          @if (restaurantValue.description) {
+            <p class="restaurant-header-description">{{ restaurantValue.description }}</p>
+          }
+          @if (restaurantValue.branches?.[0]; as branch) {
+            <p class="restaurant-header-address">{{ formatAddress(branch) }}</p>
+          }
+          @if (restaurantValue.branches?.[0]?.operatingHours; as hours) {
+            <details class="restaurant-hours">
+              <summary>Operating hours</summary>
+              <ul>
+                @for (hour of hours; track hour.dayOfWeek) {
+                  <li>{{ formatOperatingHours(hour) }}</li>
+                }
+              </ul>
+            </details>
+          }
+        }
+      </div>
+    </header>
+
+    <lib-menu-category-tabs [categories]="menu()" />
+  </div>
 
   @if (restaurantValue.offers && restaurantValue.offers.length > 0) {
     <div class="page-padding restaurant-offers">
@@ -77,12 +93,22 @@
   <div class="page-padding">
     <lib-search-input placeholder="Search this menu" [value]="search()" (valueChange)="onSearch($event)" />
 
-    @for (category of menu(); track category.id) {
-      <lib-menu-category
-        [category]="category"
-        [restaurantName]="restaurantValue.name"
-      />
-    }
+    <div class="menu-category-list" [class.menu-loading]="menuLoading()" [attr.aria-busy]="menuLoading()">
+      @if (isEmpty() && search()) {
+        <lib-empty-state [title]="emptyStateTitle()" [message]="emptyStateMessage()" [showDefaultIllustration]="false" />
+      } @else {
+        @for (category of menu(); track category.id) {
+          @if (category.menuItems.length > 0) {
+            <lib-menu-category
+              [id]="'category-' + category.id"
+              [category]="category"
+              [restaurantName]="restaurantValue.name"
+              [searchQuery]="search()"
+            />
+          }
+        }
+      }
+    </div>
 
     <lib-restaurant-reviews-section
       id="reviews"

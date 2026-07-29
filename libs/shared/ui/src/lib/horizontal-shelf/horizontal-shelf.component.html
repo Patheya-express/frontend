@@ -1,0 +1,28 @@
+@if (title() || seeAllPath()) {
+  <div class="shelf-header">
+    @if (title()) {
+      <h2>{{ title() }}</h2>
+    }
+    @if (seeAllPath() && !loading()) {
+      <a class="shelf-see-all" [routerLink]="seeAllPath()" [queryParams]="seeAllQueryParams()">{{ seeAllLabel() }}</a>
+    }
+  </div>
+}
+
+<div
+  class="shelf-row"
+  role="region"
+  [attr.aria-label]="title() ?? null"
+  [attr.aria-busy]="loading() || null"
+  tabindex="0"
+>
+  @if (loading()) {
+    @for (i of skeletonPlaceholders(); track i) {
+      <div class="shelf-item shelf-item--skeleton" [style.width]="skeletonItemWidth()">
+        <lib-skeleton variant="block" shape="rect" [width]="skeletonItemWidth()" [height]="skeletonItemHeight()" />
+      </div>
+    }
+  } @else {
+    <ng-content />
+  }
+</div>

@@ -14,8 +14,8 @@
     <lib-category-form [category]="category" (closed)="closeCategoryForm()" />
   }
 
-  @if (itemFormTarget; as target) {
-    <lib-menu-item-form [categoryId]="target.categoryId" [item]="target.item ?? undefined" (closed)="closeItemForm()" />
+  @if (itemFormTarget(); as target) {
+    <lib-menu-item-form [categoryId]="target.categoryId" [item]="editingItem() ?? undefined" (closed)="closeItemForm()" />
   }
 
   @if (loading()) {

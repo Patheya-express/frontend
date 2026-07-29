@@ -24,7 +24,7 @@ h1 {
 
 h2 {
   margin: 0 0 var(--space-3);
-  font-size: var(--font-size-md);
+  font-size: var(--font-size-lg);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text);
 }
@@ -54,17 +54,17 @@ h2 {
   font-size: var(--font-size-sm);
 
   &--warning {
-    background: var(--color-warning-subtle, #fff3cd);
-    color: var(--color-warning, #856404);
+    background: var(--color-warning-soft);
+    color: var(--color-warning);
   }
 
   &--error {
-    background: var(--color-error-subtle, #f8d7da);
+    background: var(--color-error-soft);
     color: var(--color-error, #721c24);
   }
 
   &--success {
-    background: var(--color-success-subtle, #d4edda);
+    background: var(--color-success-soft);
     color: var(--color-success, #155724);
   }
 }

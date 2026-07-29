@@ -1,0 +1,33 @@
+<form class="addon-option-form" [formGroup]="form" (ngSubmit)="submit()">
+  <h5 class="addon-option-form-title">{{ option ? 'Edit Option' : 'Add Option' }}</h5>
+
+  @if (facade.validationErrors().length > 0) {
+    <ul class="addon-option-form-errors">
+      @for (message of facade.validationErrors(); track message) {
+        <li>{{ message }}</li>
+      }
+    </ul>
+  }
+
+  <div class="form-field">
+    <label for="option-name">Name</label>
+    <input id="option-name" type="text" formControlName="name" />
+  </div>
+
+  <div class="form-field">
+    <label for="option-price">Price (₹)</label>
+    <input id="option-price" type="number" min="0" step="0.01" formControlName="price" />
+  </div>
+
+  <label class="checkbox-field">
+    <input type="checkbox" formControlName="isAvailable" />
+    Available
+  </label>
+
+  <div class="addon-option-form-actions">
+    <button type="button" class="addon-option-form-cancel" [disabled]="isProcessing" (click)="cancel()">Cancel</button>
+    <button type="submit" class="addon-option-form-submit" [disabled]="form.invalid || isProcessing">
+      {{ isProcessing ? 'Saving…' : 'Save' }}
+    </button>
+  </div>
+</form>

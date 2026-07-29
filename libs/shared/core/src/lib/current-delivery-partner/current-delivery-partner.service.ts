@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { DeliveryService, type DeliveryPartnerResponseDto } from '@patheya-express-frontend/api-sdk';
+import { LogoutCleanupRegistry } from '@patheya-express-frontend/auth';
 
 // The API gateway wraps every response in a { success, timestamp, data } envelope via a
 // global interceptor that Swagger/the generated SDK types do not account for.
@@ -24,6 +25,10 @@ export class CurrentDeliveryPartnerService {
   private readonly deliveryService = inject(DeliveryService);
 
   private partnerPromise: Promise<DeliveryPartnerResponseDto> | null = null;
+
+  constructor() {
+    inject(LogoutCleanupRegistry).register(() => this.invalidate());
+  }
 
   getPartner(): Promise<DeliveryPartnerResponseDto> {
     if (!this.partnerPromise) {

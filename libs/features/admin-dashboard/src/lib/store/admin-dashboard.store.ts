@@ -6,6 +6,7 @@ import type {
   AdminNotificationDto,
   HealthResponseDto,
 } from '@patheya-express-frontend/api-sdk';
+import { formatCurrency } from '@patheya-express-frontend/ui';
 import { AdminDashboardService } from '../services/admin-dashboard.service';
 
 export interface DashboardMetric {
@@ -59,7 +60,7 @@ function buildMetrics(metrics: AdminDashboardMetricsDto): DashboardMetric[] {
     { key: 'ordersToday', label: 'Orders Today', value: String(metrics.ordersToday) },
     { key: 'activeOrders', label: 'Active Orders', value: String(metrics.activeOrders) },
     { key: 'completedOrdersToday', label: 'Completed Orders Today', value: String(metrics.completedOrdersToday) },
-    { key: 'grossRevenueToday', label: 'Gross Revenue Today', value: `₹${metrics.grossRevenueToday.toFixed(2)}` },
+    { key: 'grossRevenueToday', label: 'Gross Revenue Today', value: formatCurrency(metrics.grossRevenueToday) },
   ];
 }
 

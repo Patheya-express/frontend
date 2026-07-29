@@ -3,3 +3,4 @@ export * from './lib/guards/auth.guard';
 export * from './lib/guards/guest.guard';
 export * from './lib/guards/role.guard';
 export * from './lib/interceptors/auth.interceptor';
+export * from './lib/services/logout-cleanup-registry.service';

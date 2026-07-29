@@ -10,6 +10,7 @@ export class DeliveryAssignmentsFacade {
   readonly error = this.store.error;
   readonly processingId = this.store.processingId;
   readonly actionError = this.store.actionError;
+  readonly otpDialog = this.store.otpDialog;
 
   /** Starts the assignment list loading and begins background polling. Call once on page init. */
   initialize(): void {
@@ -33,12 +34,24 @@ export class DeliveryAssignmentsFacade {
     return this.store.rejectAssignment(assignmentId);
   }
 
-  confirmPickup(assignmentId: string): Promise<void> {
-    return this.store.confirmPickup(assignmentId);
+  openPickupOtpDialog(assignmentId: string): Promise<void> {
+    return this.store.openPickupOtpDialog(assignmentId);
   }
 
-  confirmDelivery(assignmentId: string): Promise<void> {
-    return this.store.confirmDelivery(assignmentId);
+  openDeliveryOtpDialog(assignmentId: string): Promise<void> {
+    return this.store.openDeliveryOtpDialog(assignmentId);
+  }
+
+  closeOtpDialog(): void {
+    this.store.closeOtpDialog();
+  }
+
+  regenerateOtp(): Promise<void> {
+    return this.store.regenerateOtp();
+  }
+
+  verifyOtp(code: string): Promise<void> {
+    return this.store.verifyOtp(code);
   }
 
   dismissActionError(): void {

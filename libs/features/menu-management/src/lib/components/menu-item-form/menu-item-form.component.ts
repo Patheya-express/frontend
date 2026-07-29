@@ -2,11 +2,14 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnInit, Output
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import type { MenuItemResponseDto } from '@patheya-express-frontend/api-sdk';
 import { MenuManagementFacade } from '../../facades/menu-management.facade';
+import { VariantSectionComponent } from '../variant-section/variant-section.component';
+import { AddonSectionComponent } from '../addon-section/addon-section.component';
+import { MediaSectionComponent } from '../media-section/media-section.component';
 
 @Component({
   selector: 'lib-menu-item-form',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, VariantSectionComponent, AddonSectionComponent, MediaSectionComponent],
   templateUrl: './menu-item-form.component.html',
   styleUrl: './menu-item-form.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

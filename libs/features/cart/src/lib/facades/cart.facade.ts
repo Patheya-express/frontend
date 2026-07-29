@@ -49,4 +49,8 @@ export class CartFacade {
   clear(): Promise<void> {
     return this.store.clear();
   }
+
+  reset(): void {
+    this.store.reset();
+  }
 }

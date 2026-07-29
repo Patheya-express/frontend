@@ -1,0 +1,102 @@
+<div class="offer-list-page">
+  <div class="offer-list-header">
+    <h1>Offers</h1>
+    <lib-primary-button (buttonClick)="openCreate()">+ Create Offer</lib-primary-button>
+  </div>
+
+  <div class="offer-list-filters">
+    @for (item of filters; track item.value) {
+      <button
+        type="button"
+        class="offer-filter"
+        [class.is-active]="activeFilter === item.value"
+        (click)="onFilterChange(item.value)"
+      >
+        {{ item.label }}
+      </button>
+    }
+  </div>
+
+  @if (facade.actionError(); as message) {
+    <lib-error-state
+      title="Action failed"
+      [message]="message"
+      [showDefaultIllustration]="false"
+      (retry)="dismissActionError()"
+    />
+  }
+
+  @if (isCreating) {
+    <lib-offer-form (closed)="closeForm()" />
+  } @else if (editingOffer; as offer) {
+    <lib-offer-form [offer]="offer" (closed)="closeForm()" />
+  }
+
+  @if (facade.loading()) {
+    <lib-skeleton [count]="4" />
+  } @else if (facade.error()) {
+    <lib-error-state [message]="facade.error()!" (retry)="retry()" />
+  } @else if (facade.offers().length === 0) {
+    <lib-empty-state
+      title="No offers yet"
+      message="Create a promotional offer to attract more customers."
+      actionLabel="Create Offer"
+      (refresh)="openCreate()"
+    />
+  } @else {
+    <lib-data-table [columns]="columns">
+      @for (offer of facade.offers(); track offer.id) {
+        <tr>
+          <td>
+            <div class="offer-title-cell">{{ offer.title }}</div>
+            @if (offer.description) {
+              <small class="offer-description-cell">{{ offer.description }}</small>
+            }
+          </td>
+          <td>{{ typeLabel(offer.type) }}</td>
+          <td>
+            <lib-status-chip
+              [label]="offer.isActive ? 'Active' : 'Inactive'"
+              [tone]="offer.isActive ? 'success' : 'neutral'"
+            />
+          </td>
+          <td>{{ formatDate(offer.startsAt) }}</td>
+          <td>{{ formatDate(offer.endsAt) }}</td>
+          <td class="offer-actions">
+            <button type="button" [disabled]="isProcessing(offer.id)" (click)="openEdit(offer)">Edit</button>
+            <button type="button" [disabled]="isProcessing(offer.id)" (click)="toggleActive(offer)">
+              {{ offer.isActive ? 'Disable' : 'Enable' }}
+            </button>
+            <button
+              type="button"
+              class="offer-delete"
+              [disabled]="isProcessing(offer.id)"
+              (click)="requestDelete(offer.id)"
+            >
+              Delete
+            </button>
+          </td>
+        </tr>
+      }
+    </lib-data-table>
+
+    <lib-pagination
+      [page]="facade.pagination().page"
+      [totalPages]="facade.pagination().totalPages"
+      [total]="facade.pagination().total"
+      (pageChange)="onPageChange($event)"
+    />
+  }
+</div>
+
+<lib-confirm-dialog
+  [open]="!!confirmDeleteId"
+  title="Delete this offer?"
+  message="This offer will be permanently removed."
+  confirmLabel="Delete offer"
+  cancelLabel="Keep offer"
+  tone="danger"
+  [busy]="!!confirmDeleteId && isProcessing(confirmDeleteId)"
+  (confirmed)="confirmDelete()"
+  (cancelled)="cancelDelete()"
+/>

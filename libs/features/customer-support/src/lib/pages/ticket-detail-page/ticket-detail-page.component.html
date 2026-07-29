@@ -20,7 +20,7 @@
     <p class="ticket-detail-description">{{ ticket.description }}</p>
 
     @if (!isTerminal(ticket.status)) {
-      <button type="button" class="ticket-detail-close-btn" (click)="closeTicket()">Close ticket</button>
+      <lib-secondary-button size="sm" (buttonClick)="closeTicket()">Close ticket</lib-secondary-button>
     }
 
     <section class="ticket-thread">
@@ -58,13 +58,21 @@
             placeholder="Type a reply…"
           ></textarea>
           <div class="ticket-message-actions">
-            <input #fileInput type="file" hidden (change)="onFileSelected($event)" />
-            <button type="button" class="ticket-attach-btn" (click)="triggerFilePicker()" [disabled]="uploading()">
-              {{ uploading() ? 'Uploading…' : 'Attach file' }}
-            </button>
-            <button type="submit" class="ticket-send-btn" [disabled]="facade.sendingMessage() || !draftMessage().trim()">
-              {{ facade.sendingMessage() ? 'Sending…' : 'Send' }}
-            </button>
+            <lib-file-upload
+              [customPreview]="true"
+              label="Attach file"
+              ariaLabel="Attach a file to this ticket"
+              [uploading]="uploading()"
+              (fileSelected)="onFileSelected($event)"
+            />
+            <lib-primary-button
+              size="sm"
+              [disabled]="!draftMessage().trim()"
+              [loading]="facade.sendingMessage()"
+              (buttonClick)="sendMessage()"
+            >
+              Send
+            </lib-primary-button>
           </div>
         </form>
       }

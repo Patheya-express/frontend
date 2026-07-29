@@ -22,7 +22,7 @@ h1 {
 
 h2 {
   margin: 0 0 var(--space-3);
-  font-size: var(--font-size-md);
+  font-size: var(--font-size-lg);
   font-weight: var(--font-weight-semibold);
 }
 
@@ -62,7 +62,7 @@ h2 {
 }
 
 .staff-filter-badge {
-  background: var(--color-error, #b00020);
+  background: var(--color-error);
   color: #fff;
   border-radius: 999px;
   padding: 0 6px;
@@ -75,8 +75,8 @@ h2 {
   font-size: var(--font-size-sm);
 
   &--error {
-    background: var(--color-error-subtle, #f8d7da);
-    color: var(--color-error, #721c24);
+    background: var(--color-error-soft);
+    color: var(--color-error);
   }
 }
 
@@ -94,7 +94,7 @@ h2 {
 }
 
 .staff-remove {
-  color: var(--color-error, #b00020) !important;
+  color: var(--color-error) !important;
 }
 
 .staff-form-overlay {
@@ -108,7 +108,7 @@ h2 {
 }
 
 .staff-form {
-  background: var(--color-background, #fff);
+  background: var(--color-background);
   border-radius: var(--radius-md);
   padding: var(--space-5);
   display: flex;

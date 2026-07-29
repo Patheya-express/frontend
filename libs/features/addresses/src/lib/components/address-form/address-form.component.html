@@ -69,9 +69,9 @@
   }
 
   <div class="form-actions">
-    <button type="button" class="btn btn-secondary" (click)="cancel()">Cancel</button>
-    <button type="submit" class="btn btn-primary" [disabled]="saving()">
-      {{ saving() ? 'Saving…' : address ? 'Save changes' : 'Save address' }}
-    </button>
+    <lib-secondary-button (buttonClick)="cancel()">Cancel</lib-secondary-button>
+    <lib-primary-button [disabled]="saving()" [loading]="saving()" (buttonClick)="submit()">
+      {{ address ? 'Save changes' : 'Save address' }}
+    </lib-primary-button>
   </div>
 </form>

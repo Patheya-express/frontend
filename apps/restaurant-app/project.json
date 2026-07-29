@@ -4,7 +4,10 @@
   "projectType": "application",
   "prefix": "app",
   "sourceRoot": "apps/restaurant-app/src",
-  "tags": [],
+  "tags": [
+    "type:app",
+    "scope:restaurant"
+  ],
   "targets": {
     "build": {
       "executor": "@angular/build:application",
@@ -67,6 +70,15 @@
             }
           ]
         },
+        "mobile": {
+          "outputHashing": "all",
+          "fileReplacements": [
+            {
+              "replace": "apps/restaurant-app/src/environments/environment.ts",
+              "with": "apps/restaurant-app/src/environments/environment.mobile.ts"
+            }
+          ]
+        },
         "development": {
           "optimization": false,
           "extractLicenses": false,
@@ -103,6 +115,33 @@
         "buildTarget": "restaurant-app:build",
         "staticFilePath": "dist/apps/restaurant-app/browser",
         "spa": true
+      }
+    },
+    "cap-sync": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        {
+          "target": "build",
+          "params": "forward"
+        }
+      ],
+      "options": {
+        "command": "npx cap sync",
+        "cwd": "apps/restaurant-app"
+      }
+    },
+    "cap-open-android": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx cap open android",
+        "cwd": "apps/restaurant-app"
+      }
+    },
+    "cap-open-ios": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx cap open ios",
+        "cwd": "apps/restaurant-app"
       }
     }
   }

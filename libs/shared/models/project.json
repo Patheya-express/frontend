@@ -6,10 +6,16 @@
   "targets": {
     "build": {
       "executor": "@nx/angular:ng-packagr-lite",
-      "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+      "outputs": [
+        "{workspaceRoot}/dist/{projectRoot}"
+      ],
       "options": {
         "project": "libs/shared/models/ng-package.json"
       }
     }
-  }
+  },
+  "tags": [
+    "type:models",
+    "scope:shared"
+  ]
 }

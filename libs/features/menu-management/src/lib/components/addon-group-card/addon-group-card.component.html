@@ -1,0 +1,47 @@
+<article class="addon-group-card">
+  <header class="addon-group-card-header">
+    <div class="addon-group-card-heading">
+      <span class="addon-group-card-name">{{ group.name }}</span>
+      <lib-status-chip [label]="isRequired ? 'Required' : 'Optional'" [tone]="isRequired ? 'info' : 'neutral'" />
+    </div>
+    <span class="addon-group-card-selection">
+      Select {{ group.minSelection }}–{{ group.maxSelection }}
+    </span>
+    <div class="addon-group-card-actions">
+      <button type="button" class="addon-group-card-edit" [disabled]="isProcessing" (click)="editRequested.emit()">
+        Edit
+      </button>
+      <button type="button" class="addon-group-card-delete" [disabled]="isProcessing" (click)="requestDelete()">
+        Delete
+      </button>
+    </div>
+  </header>
+
+  @if (isCreatingOption) {
+    <lib-addon-option-form [addonId]="group.id" (closed)="closeOptionForm()" />
+  } @else if (editingOption; as option) {
+    <lib-addon-option-form [addonId]="group.id" [option]="option" (closed)="closeOptionForm()" />
+  }
+
+  <div class="addon-group-card-options">
+    @for (option of group.options; track option.id) {
+      <lib-addon-option-row [option]="option" (editRequested)="openEditOption(option)" />
+    } @empty {
+      <p class="addon-group-card-no-options">No options in this group yet.</p>
+    }
+  </div>
+
+  <button type="button" class="addon-group-card-add-option" (click)="openCreateOption()">+ Add Option</button>
+</article>
+
+<lib-confirm-dialog
+  [open]="deleteDialogOpen"
+  title="Delete this add-on group?"
+  [message]="'\'' + group.name + '\' and all of its options will be permanently removed.'"
+  confirmLabel="Delete group"
+  cancelLabel="Keep group"
+  tone="danger"
+  [busy]="isProcessing"
+  (confirmed)="confirmDelete()"
+  (cancelled)="cancelDelete()"
+/>

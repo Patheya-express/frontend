@@ -4,7 +4,10 @@
   "sourceRoot": "libs/features/admin-payments/src",
   "prefix": "lib",
   "projectType": "library",
-  "tags": [],
+  "tags": [
+    "type:feature",
+    "scope:admin"
+  ],
   "targets": {
     "lint": {
       "executor": "@nx/eslint:lint"

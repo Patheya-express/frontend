@@ -3,6 +3,7 @@ import type {
   MenuItemResponseDto,
   RestaurantSummaryDto,
 } from '@patheya-express-frontend/api-sdk';
+import { LogoutCleanupRegistry } from '@patheya-express-frontend/auth';
 import { FavoritesService } from '../services/favorites.service';
 
 const PAGE_SIZE = 20;
@@ -42,6 +43,10 @@ export class FavoritesStore {
   readonly menuItemsTotalPages = () => Math.ceil(this._menuItemsTotal() / PAGE_SIZE) || 1;
   readonly menuItemsLoading = this._menuItemsLoading.asReadonly();
   readonly menuItemsError = this._menuItemsError.asReadonly();
+
+  constructor() {
+    inject(LogoutCleanupRegistry).register(() => this.reset());
+  }
 
   isRestaurantFavorited(restaurantId: string): boolean {
     return this._favoritedRestaurantIds().has(restaurantId);
@@ -185,6 +190,21 @@ export class FavoritesStore {
     if (!favorited) {
       this._restaurants.update((items) => items.filter((r) => r.id !== restaurantId));
     }
+  }
+
+  reset(): void {
+    this._favoritedRestaurantIds.set(new Set());
+    this._favoritedMenuItemIds.set(new Set());
+    this._restaurants.set([]);
+    this._restaurantsTotal.set(0);
+    this._restaurantsPage.set(1);
+    this._restaurantsLoading.set(false);
+    this._restaurantsError.set(null);
+    this._menuItems.set([]);
+    this._menuItemsTotal.set(0);
+    this._menuItemsPage.set(1);
+    this._menuItemsLoading.set(false);
+    this._menuItemsError.set(null);
   }
 
   private setMenuItemFavorited(menuItemId: string, favorited: boolean): void {

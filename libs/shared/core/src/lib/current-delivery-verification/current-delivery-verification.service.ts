@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { DeliveryVerificationService, type DeliveryVerificationResponseDto } from '@patheya-express-frontend/api-sdk';
+import { LogoutCleanupRegistry } from '@patheya-express-frontend/auth';
 
 interface ApiEnvelope<T> {
   success: boolean;
@@ -24,6 +25,10 @@ export class CurrentDeliveryVerificationService {
   private readonly verificationService = inject(DeliveryVerificationService);
 
   private verificationPromise: Promise<DeliveryVerificationResponseDto> | null = null;
+
+  constructor() {
+    inject(LogoutCleanupRegistry).register(() => this.invalidate());
+  }
 
   getVerification(): Promise<DeliveryVerificationResponseDto> {
     if (!this.verificationPromise) {

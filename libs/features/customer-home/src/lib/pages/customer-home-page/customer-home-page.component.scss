@@ -11,22 +11,50 @@
 // Every direct child that contains a horizontally-scrolling row must have min-width: 0 —
 // otherwise, as flex items of the column above, their default min-width: auto lets the row's
 // full content width stretch the page instead of scrolling within itself.
-.customer-home-banners,
-.customer-home-shelf {
+.customer-home-page > * {
   min-width: 0;
 }
 
-.customer-home-banners {
+.ptr-indicator {
   display: flex;
-  gap: var(--space-4);
-  overflow-x: auto;
-  padding-bottom: var(--space-2);
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: height var(--transition-fast);
+}
+
+.customer-home-search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.customer-home-search-bar {
+  flex: 1;
+  min-width: 0;
+}
+
+.customer-home-recent-searches {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: calc(var(--space-6) * -1 + var(--space-2));
+}
+
+.recent-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.customer-home-loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
 }
 
 .customer-home-banner {
   position: relative;
-  flex: 0 0 auto;
-  width: min(480px, 85vw);
   aspect-ratio: 16 / 6;
   border-radius: var(--radius-lg);
   overflow: hidden;
@@ -73,20 +101,18 @@
   color: var(--color-text);
 }
 
-.customer-home-cuisines {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
 .customer-home-cuisine-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch-target-min, 44px);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-full, 999px);
-  padding: var(--space-1) var(--space-3);
+  padding: 0 var(--space-3);
   font-size: var(--font-size-sm);
   color: var(--color-text);
   text-decoration: none;
   background: var(--color-surface);
+  white-space: nowrap;
 
   &:hover {
     border-color: var(--color-primary);
@@ -94,35 +120,39 @@
   }
 }
 
-.customer-home-shelf-header {
+.customer-home-more {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: var(--space-3);
 
   h2 {
-    margin: 0 0 var(--space-3);
+    margin: 0;
     font-size: var(--font-size-lg);
     font-weight: var(--font-weight-semibold);
     color: var(--color-text);
   }
 }
 
-.customer-home-shelf-row {
-  display: flex;
+.customer-home-more-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: var(--space-4);
-  overflow-x: auto;
-  padding-bottom: var(--space-2);
 }
 
-.customer-home-shelf-item {
-  flex: 0 0 auto;
-  width: 260px;
+.more-error {
+  margin: 0;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
 }
 
 .customer-home-browse-all {
   text-align: center;
 
   a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch-target-min, 44px);
     color: var(--color-primary);
     font-weight: var(--font-weight-medium);
     text-decoration: none;
@@ -130,5 +160,23 @@
     &:hover {
       text-decoration: underline;
     }
+  }
+}
+
+// Responsive — desktop/tablet get a wider stage and larger touch-agnostic banner text; phones
+// keep the single-column, edge-to-edge-scrolling layout that's already correct by default.
+@media (min-width: 768px) {
+  .customer-home-page {
+    padding: var(--space-6) var(--space-6);
+  }
+
+  .customer-home-more-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .customer-home-banner-text h3 {
+    font-size: var(--font-size-xl);
   }
 }

@@ -10,8 +10,16 @@ import { ApiConfiguration } from '../api-configuration';
 import { StrictHttpResponse } from '../strict-http-response';
 
 import { OfferResponseDto } from '../models/offer-response-dto';
+import { offersControllerCreate } from '../fn/offers/offers-controller-create';
+import { OffersControllerCreate$Params } from '../fn/offers/offers-controller-create';
+import { offersControllerDisable } from '../fn/offers/offers-controller-disable';
+import { OffersControllerDisable$Params } from '../fn/offers/offers-controller-disable';
+import { offersControllerEnable } from '../fn/offers/offers-controller-enable';
+import { OffersControllerEnable$Params } from '../fn/offers/offers-controller-enable';
 import { offersControllerFindAll } from '../fn/offers/offers-controller-find-all';
 import { OffersControllerFindAll$Params } from '../fn/offers/offers-controller-find-all';
+import { offersControllerFindAllForRestaurant } from '../fn/offers/offers-controller-find-all-for-restaurant';
+import { OffersControllerFindAllForRestaurant$Params } from '../fn/offers/offers-controller-find-all-for-restaurant';
 import { offersControllerFindById } from '../fn/offers/offers-controller-find-by-id';
 import { OffersControllerFindById$Params } from '../fn/offers/offers-controller-find-by-id';
 import { offersControllerFindByRestaurant } from '../fn/offers/offers-controller-find-by-restaurant';
@@ -20,6 +28,10 @@ import { offersControllerFindFeatured } from '../fn/offers/offers-controller-fin
 import { OffersControllerFindFeatured$Params } from '../fn/offers/offers-controller-find-featured';
 import { offersControllerFindHome } from '../fn/offers/offers-controller-find-home';
 import { OffersControllerFindHome$Params } from '../fn/offers/offers-controller-find-home';
+import { offersControllerRemove } from '../fn/offers/offers-controller-remove';
+import { OffersControllerRemove$Params } from '../fn/offers/offers-controller-remove';
+import { offersControllerUpdate } from '../fn/offers/offers-controller-update';
+import { OffersControllerUpdate$Params } from '../fn/offers/offers-controller-update';
 import { PaginatedOffersResponseDto } from '../models/paginated-offers-response-dto';
 
 @Injectable({ providedIn: 'root' })
@@ -59,6 +71,39 @@ export class OffersService extends BaseService {
   offersControllerFindAll(params?: OffersControllerFindAll$Params, context?: HttpContext): Promise<PaginatedOffersResponseDto> {
     const resp = this.offersControllerFindAll$Response(params, context);
     return resp.then((r: StrictHttpResponse<PaginatedOffersResponseDto>): PaginatedOffersResponseDto => r.body);
+  }
+
+  /** Path part for operation `offersControllerCreate()` */
+  static readonly OffersControllerCreatePath = '/api/v1/offers';
+
+  /**
+   * Create a restaurant offer.
+   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `offersControllerCreate()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  offersControllerCreate$Response(params: OffersControllerCreate$Params, context?: HttpContext): Promise<StrictHttpResponse<OfferResponseDto>> {
+    const obs = offersControllerCreate(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Create a restaurant offer.
+   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `offersControllerCreate$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  offersControllerCreate(params: OffersControllerCreate$Params, context?: HttpContext): Promise<OfferResponseDto> {
+    const resp = this.offersControllerCreate$Response(params, context);
+    return resp.then((r: StrictHttpResponse<OfferResponseDto>): OfferResponseDto => r.body);
   }
 
   /** Path part for operation `offersControllerFindFeatured()` */
@@ -160,6 +205,39 @@ export class OffersService extends BaseService {
     return resp.then((r: StrictHttpResponse<PaginatedOffersResponseDto>): PaginatedOffersResponseDto => r.body);
   }
 
+  /** Path part for operation `offersControllerFindAllForRestaurant()` */
+  static readonly OffersControllerFindAllForRestaurantPath = '/api/v1/offers/manage/{restaurantId}';
+
+  /**
+   * Get a restaurant's offers for management.
+   *
+   * Every offer for the restaurant regardless of active window (enabled, disabled, expired, or not yet started) — unlike GET /offers/restaurants/:restaurantId, which only returns currently-live offers. Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `offersControllerFindAllForRestaurant()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  offersControllerFindAllForRestaurant$Response(params: OffersControllerFindAllForRestaurant$Params, context?: HttpContext): Promise<StrictHttpResponse<PaginatedOffersResponseDto>> {
+    const obs = offersControllerFindAllForRestaurant(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Get a restaurant's offers for management.
+   *
+   * Every offer for the restaurant regardless of active window (enabled, disabled, expired, or not yet started) — unlike GET /offers/restaurants/:restaurantId, which only returns currently-live offers. Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `offersControllerFindAllForRestaurant$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  offersControllerFindAllForRestaurant(params: OffersControllerFindAllForRestaurant$Params, context?: HttpContext): Promise<PaginatedOffersResponseDto> {
+    const resp = this.offersControllerFindAllForRestaurant$Response(params, context);
+    return resp.then((r: StrictHttpResponse<PaginatedOffersResponseDto>): PaginatedOffersResponseDto => r.body);
+  }
+
   /** Path part for operation `offersControllerFindById()` */
   static readonly OffersControllerFindByIdPath = '/api/v1/offers/{id}';
 
@@ -190,6 +268,138 @@ export class OffersService extends BaseService {
    */
   offersControllerFindById(params: OffersControllerFindById$Params, context?: HttpContext): Promise<OfferResponseDto> {
     const resp = this.offersControllerFindById$Response(params, context);
+    return resp.then((r: StrictHttpResponse<OfferResponseDto>): OfferResponseDto => r.body);
+  }
+
+  /** Path part for operation `offersControllerRemove()` */
+  static readonly OffersControllerRemovePath = '/api/v1/offers/{id}';
+
+  /**
+   * Delete a restaurant offer.
+   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `offersControllerRemove()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  offersControllerRemove$Response(params: OffersControllerRemove$Params, context?: HttpContext): Promise<StrictHttpResponse<void>> {
+    const obs = offersControllerRemove(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Delete a restaurant offer.
+   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `offersControllerRemove$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  offersControllerRemove(params: OffersControllerRemove$Params, context?: HttpContext): Promise<void> {
+    const resp = this.offersControllerRemove$Response(params, context);
+    return resp.then((r: StrictHttpResponse<void>): void => r.body);
+  }
+
+  /** Path part for operation `offersControllerUpdate()` */
+  static readonly OffersControllerUpdatePath = '/api/v1/offers/{id}';
+
+  /**
+   * Update a restaurant offer.
+   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `offersControllerUpdate()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  offersControllerUpdate$Response(params: OffersControllerUpdate$Params, context?: HttpContext): Promise<StrictHttpResponse<OfferResponseDto>> {
+    const obs = offersControllerUpdate(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Update a restaurant offer.
+   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `offersControllerUpdate$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  offersControllerUpdate(params: OffersControllerUpdate$Params, context?: HttpContext): Promise<OfferResponseDto> {
+    const resp = this.offersControllerUpdate$Response(params, context);
+    return resp.then((r: StrictHttpResponse<OfferResponseDto>): OfferResponseDto => r.body);
+  }
+
+  /** Path part for operation `offersControllerEnable()` */
+  static readonly OffersControllerEnablePath = '/api/v1/offers/{id}/enable';
+
+  /**
+   * Enable a restaurant offer.
+   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `offersControllerEnable()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  offersControllerEnable$Response(params: OffersControllerEnable$Params, context?: HttpContext): Promise<StrictHttpResponse<OfferResponseDto>> {
+    const obs = offersControllerEnable(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Enable a restaurant offer.
+   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `offersControllerEnable$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  offersControllerEnable(params: OffersControllerEnable$Params, context?: HttpContext): Promise<OfferResponseDto> {
+    const resp = this.offersControllerEnable$Response(params, context);
+    return resp.then((r: StrictHttpResponse<OfferResponseDto>): OfferResponseDto => r.body);
+  }
+
+  /** Path part for operation `offersControllerDisable()` */
+  static readonly OffersControllerDisablePath = '/api/v1/offers/{id}/disable';
+
+  /**
+   * Disable a restaurant offer.
+   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `offersControllerDisable()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  offersControllerDisable$Response(params: OffersControllerDisable$Params, context?: HttpContext): Promise<StrictHttpResponse<OfferResponseDto>> {
+    const obs = offersControllerDisable(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Disable a restaurant offer.
+   *
+   * Restaurant OWNER/CO_OWNER/BRANCH_MANAGER or platform ADMIN only.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `offersControllerDisable$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  offersControllerDisable(params: OffersControllerDisable$Params, context?: HttpContext): Promise<OfferResponseDto> {
+    const resp = this.offersControllerDisable$Response(params, context);
     return resp.then((r: StrictHttpResponse<OfferResponseDto>): OfferResponseDto => r.body);
   }
 

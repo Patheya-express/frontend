@@ -5,6 +5,7 @@ import type {
   DeliveryPartnerResponseDto,
   OrderResponseDto,
 } from '@patheya-express-frontend/api-sdk';
+import { formatCurrency } from '@patheya-express-frontend/ui';
 import { DeliveryDashboardService } from '../services/delivery-dashboard.service';
 
 export interface DashboardMetric {
@@ -33,7 +34,7 @@ function buildMetrics(orders: OrderResponseDto[], pendingAssignmentsCount: numbe
     { key: 'availableAssignments', label: 'Available Assignments', value: String(pendingAssignmentsCount) },
     { key: 'completedToday', label: 'Completed Deliveries Today', value: String(deliveredToday.length) },
     // Sum of delivery fees, not a final payout — no commission/earnings model exists yet.
-    { key: 'feesToday', label: 'Delivery Fees Today (Estimated)', value: `₹${feesToday.toFixed(2)}` },
+    { key: 'feesToday', label: 'Delivery Fees Today (Estimated)', value: formatCurrency(feesToday) },
   ];
 }
 

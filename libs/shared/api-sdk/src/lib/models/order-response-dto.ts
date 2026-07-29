@@ -7,6 +7,7 @@ import { OrderItemResponseDto } from '../models/order-item-response-dto';
 import { OrderStatusHistoryResponseDto } from '../models/order-status-history-response-dto';
 export interface OrderResponseDto {
   addressId?: string;
+  couponId?: string;
   createdAt: string;
   customer?: OrderCustomerSummaryResponseDto;
   customerId: string;
@@ -19,6 +20,7 @@ export interface OrderResponseDto {
    */
   deliveryPartner?: OrderDeliveryPartnerSummaryDto;
   deliveryPartnerId?: string;
+  discountAmount: number;
   id: string;
   items: Array<OrderItemResponseDto>;
 

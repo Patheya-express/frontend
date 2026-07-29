@@ -11,7 +11,12 @@
     <p class="place-order-error" role="alert">{{ error() }}</p>
   }
 
-  <button type="button" class="place-order-btn" [disabled]="placingOrder()" (click)="placeOrder()">
+  <lib-primary-button
+    size="lg"
+    [fullWidth]="true"
+    [loading]="placingOrder()"
+    (buttonClick)="placeOrder()"
+  >
     {{ placingOrder() ? 'Placing order…' : 'Place Order' }}
-  </button>
+  </lib-primary-button>
 </section>

@@ -12,9 +12,11 @@
         autocomplete="given-name"
         formControlName="firstName"
         [class.invalid]="form.controls.firstName.invalid && form.controls.firstName.touched"
+        [attr.aria-invalid]="form.controls.firstName.invalid && form.controls.firstName.touched ? true : null"
+        [attr.aria-describedby]="form.controls.firstName.invalid && form.controls.firstName.touched ? 'register-first-name-error' : null"
       />
       @if (form.controls.firstName.invalid && form.controls.firstName.touched) {
-        <span class="form-field-error">First name is required.</span>
+        <span id="register-first-name-error" class="form-field-error">First name is required.</span>
       }
     </div>
 
@@ -26,9 +28,11 @@
         autocomplete="family-name"
         formControlName="lastName"
         [class.invalid]="form.controls.lastName.invalid && form.controls.lastName.touched"
+        [attr.aria-invalid]="form.controls.lastName.invalid && form.controls.lastName.touched ? true : null"
+        [attr.aria-describedby]="form.controls.lastName.invalid && form.controls.lastName.touched ? 'register-last-name-error' : null"
       />
       @if (form.controls.lastName.invalid && form.controls.lastName.touched) {
-        <span class="form-field-error">Last name is required.</span>
+        <span id="register-last-name-error" class="form-field-error">Last name is required.</span>
       }
     </div>
   </div>
@@ -39,11 +43,14 @@
       id="register-email"
       type="email"
       autocomplete="email"
+      inputmode="email"
       formControlName="email"
       [class.invalid]="form.controls.email.invalid && form.controls.email.touched"
+      [attr.aria-invalid]="form.controls.email.invalid && form.controls.email.touched ? true : null"
+      [attr.aria-describedby]="form.controls.email.invalid && form.controls.email.touched ? 'register-email-error' : null"
     />
     @if (form.controls.email.invalid && form.controls.email.touched) {
-      <span class="form-field-error">Enter a valid email address.</span>
+      <span id="register-email-error" class="form-field-error">Enter a valid email address.</span>
     }
   </div>
 
@@ -55,13 +62,23 @@
       autocomplete="new-password"
       formControlName="password"
       [class.invalid]="form.controls.password.invalid && form.controls.password.touched"
+      [attr.aria-invalid]="form.controls.password.invalid && form.controls.password.touched ? true : null"
+      [attr.aria-describedby]="form.controls.password.invalid && form.controls.password.touched ? 'register-password-error' : null"
     />
     @if (form.controls.password.invalid && form.controls.password.touched) {
-      <span class="form-field-error">Password must be at least 8 characters.</span>
+      <span id="register-password-error" class="form-field-error">Password must be at least 8 characters.</span>
     }
   </div>
 
-  <button type="submit" class="form-submit" [disabled]="loading">
+  <label class="form-checkbox">
+    <input type="checkbox" [formControl]="termsAccepted" />
+    <span>I agree to the Terms of Service and Privacy Policy</span>
+  </label>
+  @if (termsAccepted.invalid && termsAccepted.touched) {
+    <span class="form-field-error">You must accept the terms to continue.</span>
+  }
+
+  <button type="submit" class="form-submit" [disabled]="loading" [attr.aria-busy]="loading || null">
     {{ loading ? 'Creating account…' : 'Create account' }}
   </button>
 </form>

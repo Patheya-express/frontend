@@ -27,4 +27,31 @@
     background: var(--color-error-soft);
     color: var(--color-error);
   }
+
+  &--interactive {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  &--selected {
+    background: var(--color-primary-soft);
+    color: var(--color-primary-hover);
+    outline: 1px solid var(--color-primary);
+  }
+}
+
+.status-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-left: var(--space-1);
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: inherit;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
 }

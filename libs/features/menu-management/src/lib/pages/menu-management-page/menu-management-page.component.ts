@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import type { MenuCategoryResponseDto, MenuItemResponseDto } from '@patheya-express-frontend/api-sdk';
 import { EmptyStateComponent, ErrorStateComponent, SkeletonComponent } from '@patheya-express-frontend/ui';
 import { MenuManagementFacade } from '../../facades/menu-management.facade';
@@ -8,7 +8,8 @@ import { MenuItemFormComponent } from '../../components/menu-item-form/menu-item
 
 interface ItemFormTarget {
   categoryId: string;
-  item: MenuItemResponseDto | null;
+  /** null when creating a new item; a real id when editing (looked up fresh from `categories()` on every read — see `editingItem` — so variant/add-on mutations made while this form is open are immediately reflected instead of needing the form to be reopened). */
+  itemId: string | null;
 }
 
 @Component({
@@ -36,7 +37,17 @@ export class MenuManagementPageComponent implements OnInit {
 
   /** 'create' for a new category, a category to edit, or null when the form is closed. */
   protected categoryFormTarget: 'create' | MenuCategoryResponseDto | null = null;
-  protected itemFormTarget: ItemFormTarget | null = null;
+  protected readonly itemFormTarget = signal<ItemFormTarget | null>(null);
+
+  /** Re-resolved from the live `categories()` tree on every change, rather than a frozen snapshot captured when the form opened — so the item's variants/add-ons stay current while its editor is open. */
+  protected readonly editingItem = computed<MenuItemResponseDto | null>(() => {
+    const target = this.itemFormTarget();
+    if (!target?.itemId) {
+      return null;
+    }
+    const category = this.categories().find((candidate) => candidate.id === target.categoryId);
+    return category?.menuItems.find((candidate) => candidate.id === target.itemId) ?? null;
+  });
 
   ngOnInit(): void {
     void this.facade.initialize();
@@ -71,15 +82,14 @@ export class MenuManagementPageComponent implements OnInit {
   }
 
   protected openAddItem(categoryId: string): void {
-    this.itemFormTarget = { categoryId, item: null };
+    this.itemFormTarget.set({ categoryId, itemId: null });
   }
 
   protected openEditItem(category: MenuCategoryResponseDto, itemId: string): void {
-    const item = category.menuItems.find((candidate) => candidate.id === itemId) ?? null;
-    this.itemFormTarget = { categoryId: category.id, item };
+    this.itemFormTarget.set({ categoryId: category.id, itemId });
   }
 
   protected closeItemForm(): void {
-    this.itemFormTarget = null;
+    this.itemFormTarget.set(null);
   }
 }

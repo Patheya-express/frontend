@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Patheya Express Delivery</string>
+    <string name="title_activity_main">Patheya Express Delivery</string>
+    <string name="package_name">com.patheyaexpress.delivery</string>
+    <string name="custom_url_scheme">com.patheyaexpress.delivery</string>
+</resources>

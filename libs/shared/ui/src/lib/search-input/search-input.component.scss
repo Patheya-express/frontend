@@ -12,4 +12,9 @@
     outline: none;
     border-color: var(--color-primary);
   }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 }

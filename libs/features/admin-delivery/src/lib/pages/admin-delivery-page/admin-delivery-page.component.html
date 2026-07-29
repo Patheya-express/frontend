@@ -78,41 +78,41 @@
           <td>{{ formattedAmount(partner.estimatedFeesToday) }}</td>
           <td>{{ formattedDate(partner.createdAt) }}</td>
           <td class="admin-delivery-row-actions">
-            <button type="button" class="admin-delivery-action-link" (click)="viewPartner(partner)">View</button>
+            <lib-link-button (buttonClick)="viewPartner(partner)">View</lib-link-button>
             @if (canApprove(partner)) {
-              <button type="button" class="admin-delivery-action-link" [disabled]="isProcessing(partner.id)" (click)="requestAction('approve', partner)">
+              <lib-link-button [disabled]="isProcessing(partner.id)" (buttonClick)="requestAction('approve', partner)">
                 Approve
-              </button>
+              </lib-link-button>
             }
             @if (canReject(partner)) {
-              <button type="button" class="admin-delivery-action-link admin-delivery-action-danger" [disabled]="isProcessing(partner.id)" (click)="requestAction('reject', partner)">
+              <lib-link-button tone="danger" [disabled]="isProcessing(partner.id)" (buttonClick)="requestAction('reject', partner)">
                 Reject
-              </button>
+              </lib-link-button>
             }
             @if (canSuspend(partner)) {
-              <button type="button" class="admin-delivery-action-link admin-delivery-action-danger" [disabled]="isProcessing(partner.id)" (click)="requestAction('suspend', partner)">
+              <lib-link-button tone="danger" [disabled]="isProcessing(partner.id)" (buttonClick)="requestAction('suspend', partner)">
                 Suspend
-              </button>
+              </lib-link-button>
             }
             @if (canRestore(partner)) {
-              <button type="button" class="admin-delivery-action-link" [disabled]="isProcessing(partner.id)" (click)="requestAction('restore', partner)">
+              <lib-link-button [disabled]="isProcessing(partner.id)" (buttonClick)="requestAction('restore', partner)">
                 Restore
-              </button>
+              </lib-link-button>
             }
             @if (canForceOffline(partner)) {
-              <button type="button" class="admin-delivery-action-link admin-delivery-action-danger" [disabled]="isProcessing(partner.id)" (click)="requestAction('force-offline', partner)">
+              <lib-link-button tone="danger" [disabled]="isProcessing(partner.id)" (buttonClick)="requestAction('force-offline', partner)">
                 Force Offline
-              </button>
+              </lib-link-button>
             }
             @if (canBlock(partner)) {
-              <button type="button" class="admin-delivery-action-link admin-delivery-action-danger" [disabled]="isProcessing(partner.id)" (click)="requestAction('block', partner)">
+              <lib-link-button tone="danger" [disabled]="isProcessing(partner.id)" (buttonClick)="requestAction('block', partner)">
                 Block
-              </button>
+              </lib-link-button>
             }
             @if (canUnblock(partner)) {
-              <button type="button" class="admin-delivery-action-link" [disabled]="isProcessing(partner.id)" (click)="requestAction('unblock', partner)">
+              <lib-link-button [disabled]="isProcessing(partner.id)" (buttonClick)="requestAction('unblock', partner)">
                 Unblock
-              </button>
+              </lib-link-button>
             }
           </td>
         </tr>

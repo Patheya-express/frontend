@@ -1,0 +1,12 @@
+<div class="splash safe-area-inset">
+  <div class="splash-brand">
+    <span class="brand-mark">P</span>
+    <span class="brand-name">{{ brandName }}</span>
+  </div>
+
+  <lib-progress-indicator variant="circular" ariaLabel="Loading" />
+
+  @if (isOffline()) {
+    <p class="splash-offline" role="status">You're offline — continuing without your saved cart.</p>
+  }
+</div>

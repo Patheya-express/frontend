@@ -128,7 +128,7 @@ export class AssignmentCardComponent {
       return [
         {
           key: 'confirmPickup',
-          label: this.isProcessing ? 'Processing…' : 'Confirm Pickup',
+          label: 'Verify Pickup',
           tone: 'primary',
           run: () => this.confirmPickup(),
         },
@@ -139,7 +139,7 @@ export class AssignmentCardComponent {
       return [
         {
           key: 'confirmDelivery',
-          label: this.isProcessing ? 'Processing…' : 'Confirm Delivery',
+          label: 'Verify Delivery',
           tone: 'primary',
           run: () => this.confirmDelivery(),
         },
@@ -173,16 +173,10 @@ export class AssignmentCardComponent {
   }
 
   protected confirmPickup(): void {
-    if (this.isProcessing) {
-      return;
-    }
-    void this.facade.confirmPickup(this.assignment.id);
+    void this.facade.openPickupOtpDialog(this.assignment.id);
   }
 
   protected confirmDelivery(): void {
-    if (this.isProcessing) {
-      return;
-    }
-    void this.facade.confirmDelivery(this.assignment.id);
+    void this.facade.openDeliveryOtpDialog(this.assignment.id);
   }
 }

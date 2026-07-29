@@ -60,7 +60,7 @@
                 <td><lib-status-chip [label]="partner.online ? 'Online' : 'Offline'" [tone]="onlineTone(partner)" /></td>
                 <td>{{ formattedDate(partner.createdAt) }}</td>
                 <td>
-                  <button type="button" class="action-link" (click)="selectPartner(partner)">Review</button>
+                  <lib-link-button (buttonClick)="selectPartner(partner)">Review</lib-link-button>
                 </td>
               </tr>
             }
@@ -86,7 +86,7 @@
 
           <div class="detail-header">
             <h2>{{ partnerName(partner) }}</h2>
-            <button type="button" class="link-button" (click)="closeDetail()">Close</button>
+            <lib-link-button (buttonClick)="closeDetail()">Close</lib-link-button>
           </div>
 
           <!-- Overview -->

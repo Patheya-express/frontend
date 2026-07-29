@@ -80,7 +80,7 @@
           <td>{{ ticket.createdAt | date: 'short' }}</td>
           <td>
             @if (!ticket.assignedAgentId) {
-              <button type="button" class="admin-support-action-link" (click)="assignToMe(ticket.id)">Assign to me</button>
+              <lib-link-button (buttonClick)="assignToMe(ticket.id)">Assign to me</lib-link-button>
             }
           </td>
         </tr>
@@ -122,9 +122,9 @@
           </label>
 
           @if (!ticket.assignedAgentId) {
-            <button type="button" class="admin-support-action-link" [disabled]="facade.actionBusy()" (click)="assignToMe(ticket.id)">
+            <lib-link-button [disabled]="facade.actionBusy()" (buttonClick)="assignToMe(ticket.id)">
               Assign to me
-            </button>
+            </lib-link-button>
           }
         </div>
 

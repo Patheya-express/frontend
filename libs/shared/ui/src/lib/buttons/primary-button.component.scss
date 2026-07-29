@@ -1,0 +1,23 @@
+@use './button' as button;
+
+.mobile-primary-button {
+  @include button.base;
+  background: var(--color-primary);
+  color: var(--color-text-on-primary);
+
+  &:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+  }
+
+  &--sm {
+    @include button.size-sm;
+  }
+
+  &--lg {
+    @include button.size-lg;
+  }
+
+  &--full-width {
+    @include button.full-width;
+  }
+}

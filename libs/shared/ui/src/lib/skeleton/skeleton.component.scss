@@ -44,6 +44,23 @@
   margin-top: var(--space-2);
 }
 
+.skeleton-block {
+  display: block;
+
+  &--text {
+    height: 1em;
+    border-radius: var(--radius-sm);
+  }
+
+  &--circle {
+    border-radius: var(--radius-full);
+  }
+
+  &--rect {
+    border-radius: var(--radius-md);
+  }
+}
+
 .skeleton-shimmer {
   background: linear-gradient(
     90deg,

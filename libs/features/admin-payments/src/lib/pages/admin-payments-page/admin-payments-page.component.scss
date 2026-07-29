@@ -62,28 +62,6 @@ h1 {
   white-space: nowrap;
 }
 
-.admin-payments-action-link {
-  border: none;
-  background: none;
-  padding: 0;
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-primary);
-  cursor: pointer;
-
-  &:hover:not(:disabled) {
-    text-decoration: underline;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}
-
-.admin-payments-action-danger {
-  color: var(--color-error);
-}
 
 .admin-payments-details-backdrop {
   position: fixed;
@@ -168,16 +146,4 @@ h1 {
 
 .admin-payments-details-close {
   margin-top: var(--space-5);
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-text);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  border-radius: var(--radius-md);
-  padding: var(--space-2) var(--space-4);
-  cursor: pointer;
-
-  &:hover {
-    background: var(--color-secondary-soft);
-  }
 }

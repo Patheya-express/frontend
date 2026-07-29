@@ -1,3 +1,8 @@
+// Single design-token entry point for every app — `@use`-ing this file (as each app's
+// `styles.scss` already does) also pulls in the animation keyframes/utility classes below, so
+// there's exactly one global stylesheet import to remember, not two.
+@use './lib/animations/keyframes';
+
 :root {
   // Color — brand
   --color-primary: #ff5200;
@@ -19,9 +24,22 @@
 
   // Color — feedback
   --color-success: #1ba672;
+  --color-success-soft: rgba(27, 166, 114, 0.12);
   --color-error: #d93025;
   --color-error-soft: #fdecea;
+  --color-warning: #856404;
+  --color-warning-soft: #fff3cd;
+  --color-info: #0969da;
+  --color-info-soft: #e8f0fe;
   --color-rating: #1ba672;
+
+  // Color — brand, extended
+  // A deeper primary for gradients/emphasis beyond what --color-primary-hover (a hover-state
+  // adjustment) covers — e.g. the wallet page's balance-card gradient.
+  --color-primary-strong: #b25b00;
+
+  // Color — surfaces, extended
+  --color-surface-hover: rgba(0, 0, 0, 0.04);
 
   // Typography
   --font-family: -apple-system, 'Segoe UI', Roboto, system-ui, sans-serif;
@@ -62,7 +80,135 @@
   // Layout
   --content-max-width: 1200px;
 
-  // Motion
+  // Motion — micro-interactions (hover/focus). See "Motion — layout-level" below for
+  // durations/easings sized for bigger transitions (page/modal/sheet/FAB).
   --transition-fast: 150ms ease;
   --transition-base: 220ms ease;
+
+  // Safe area (notches, Android gesture nav, iOS home indicator). `env()` resolves to 0px on
+  // web/desktop and browsers that don't support it, so these are safe to reference unconditionally
+  // — they only take on a non-zero value inside the Capacitor native shell with a matching
+  // `viewport-fit=cover` meta tag (see each mobile app's `index.html`).
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+
+  // Touch targets — Material/HIG both converge on 44–48px as the minimum comfortable tap area.
+  // Referenced by every interactive component (buttons, list tiles, tabs, icon buttons), web or
+  // native shell alike, instead of each hardcoding a pixel value.
+  --touch-target-min: 44px;
+  --touch-target-comfortable: 48px;
+  --touch-target-large: 56px;
+
+  // Elevation — numbered scale for layered surfaces (cards, sheets, app bars, FAB, dialogs).
+  // 0–2 alias the existing `--shadow-*` tokens above so a component looks the same whether it
+  // reads the older or newer name; 3–5 are deeper levels the native shell's overlays need.
+  --elevation-0: none;
+  --elevation-1: var(--shadow-sm);
+  --elevation-2: var(--shadow-md);
+  --elevation-3: var(--shadow-lg);
+  --elevation-4: 0 20px 48px rgba(20, 20, 24, 0.18);
+  --elevation-5: 0 28px 64px rgba(20, 20, 24, 0.24);
+
+  // Z-index — every stacking-context-sensitive component (dropdowns, overlays, sticky chrome)
+  // reads from this scale instead of inventing its own number, so overlays always order
+  // correctly relative to each other regardless of which host renders first.
+  --z-index-base: 0;
+  --z-index-sticky: 10;
+  --z-index-bottom-tabs: 20;
+  --z-index-top-app-bar: 20;
+  --z-index-fab: 30;
+  --z-index-overlay-backdrop: 1000;
+  --z-index-bottom-sheet: 1010;
+  --z-index-modal: 1020;
+  --z-index-dialog: 1030;
+  --z-index-toast: 1040;
+
+  // Motion — layout-level durations/easings (page transitions, modal/sheet enter-exit, FAB
+  // morph, list stagger) — see `animations/keyframes.scss` for the keyframes/utility classes
+  // that consume these.
+  --motion-duration-instant: 100ms;
+  --motion-duration-fast: 180ms;
+  --motion-duration-base: 260ms;
+  --motion-duration-slow: 360ms;
+  --motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --motion-easing-decelerate: cubic-bezier(0, 0, 0, 1);
+  --motion-easing-accelerate: cubic-bezier(0.3, 0, 1, 1);
+  --motion-stagger-step: 30ms;
+
+  // Dark theme scaffolding — light values are the tokens above; see `:root[data-theme="dark"]`
+  // below. Nothing renders differently until an app opts in.
+  --color-elevated-surface: #ffffff;
+  --color-overlay-backdrop: rgba(20, 20, 24, 0.48);
+}
+
+// Single source for the dark palette values, `@include`-d wherever dark mode should apply —
+// avoids `@extend`ing a selector across a `@media` boundary (unreliable across Sass versions)
+// while still keeping the values defined exactly once.
+@mixin dark-palette {
+  --color-primary: #ff6a29;
+  --color-primary-hover: #ff7d45;
+  --color-primary-soft: #3a1f10;
+  --color-secondary: #f0f0f2;
+  --color-secondary-soft: #2a2a2e;
+
+  --color-background: #121214;
+  --color-surface: #1c1c1f;
+  --color-elevated-surface: #232327;
+  --color-border: #313136;
+
+  --color-text: #f2f2f4;
+  --color-text-muted: #a8a8b0;
+  --color-text-subtle: #75757d;
+  --color-text-on-primary: #1c1c1e;
+
+  --color-success: #38c793;
+  --color-success-soft: rgba(56, 199, 147, 0.16);
+  --color-error: #ff5c4d;
+  --color-error-soft: #3a1512;
+  --color-warning: #f0c04a;
+  --color-warning-soft: #3d3212;
+  --color-info: #6cb6ff;
+  --color-info-soft: #16283f;
+  --color-rating: #38c793;
+
+  --color-primary-strong: #d9691f;
+  --color-surface-hover: rgba(255, 255, 255, 0.06);
+
+  --color-overlay-backdrop: rgba(0, 0, 0, 0.64);
+}
+
+:root[data-theme='dark'] {
+  @include dark-palette;
+}
+
+// Respect the OS-level preference automatically for apps that haven't built an explicit
+// light/dark toggle yet — an explicit `data-theme="light"` always wins over this.
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']):not([data-theme='dark']) {
+    @include dark-palette;
+  }
+}
+
+// Opt-in safe-area utilities — apply to whichever shell chrome (header/footer/tab-bar) sits
+// flush against a screen edge. Not applied globally so existing web layouts are untouched.
+.safe-area-top {
+  padding-top: var(--safe-area-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: var(--safe-area-bottom);
+}
+
+.safe-area-left {
+  padding-left: var(--safe-area-left);
+}
+
+.safe-area-right {
+  padding-right: var(--safe-area-right);
+}
+
+.safe-area-inset {
+  padding: var(--safe-area-top) var(--safe-area-right) var(--safe-area-bottom) var(--safe-area-left);
 }

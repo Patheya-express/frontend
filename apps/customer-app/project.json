@@ -4,7 +4,10 @@
   "projectType": "application",
   "prefix": "app",
   "sourceRoot": "apps/customer-app/src",
-  "tags": [],
+  "tags": [
+    "type:app",
+    "scope:customer"
+  ],
   "targets": {
     "build": {
       "executor": "@angular/build:application",
@@ -67,6 +70,15 @@
             }
           ]
         },
+        "mobile": {
+          "outputHashing": "all",
+          "fileReplacements": [
+            {
+              "replace": "apps/customer-app/src/environments/environment.ts",
+              "with": "apps/customer-app/src/environments/environment.mobile.ts"
+            }
+          ]
+        },
         "development": {
           "optimization": false,
           "extractLicenses": false,
@@ -103,6 +115,33 @@
         "buildTarget": "customer-app:build",
         "staticFilePath": "dist/apps/customer-app/browser",
         "spa": true
+      }
+    },
+    "cap-sync": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        {
+          "target": "build",
+          "params": "forward"
+        }
+      ],
+      "options": {
+        "command": "npx cap sync",
+        "cwd": "apps/customer-app"
+      }
+    },
+    "cap-open-android": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx cap open android",
+        "cwd": "apps/customer-app"
+      }
+    },
+    "cap-open-ios": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx cap open ios",
+        "cwd": "apps/customer-app"
       }
     }
   }

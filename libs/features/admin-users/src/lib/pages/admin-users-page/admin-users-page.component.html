@@ -49,36 +49,21 @@
           <td><lib-status-chip [label]="statusLabel(user)" [tone]="statusTone(user)" /></td>
           <td>{{ formattedDate(user.createdAt) }}</td>
           <td class="admin-users-row-actions">
-            <button type="button" class="admin-users-action-link" (click)="viewUser(user)">View</button>
+            <lib-link-button (buttonClick)="viewUser(user)">View</lib-link-button>
             @if (user.status === 'INACTIVE') {
-              <button
-                type="button"
-                class="admin-users-action-link"
-                [disabled]="isProcessing(user.id)"
-                (click)="requestAction('activate', user)"
-              >
+              <lib-link-button [disabled]="isProcessing(user.id)" (buttonClick)="requestAction('activate', user)">
                 Activate
-              </button>
+              </lib-link-button>
             }
             @if (user.status === 'ACTIVE') {
-              <button
-                type="button"
-                class="admin-users-action-link admin-users-action-danger"
-                [disabled]="isProcessing(user.id)"
-                (click)="requestAction('suspend', user)"
-              >
+              <lib-link-button tone="danger" [disabled]="isProcessing(user.id)" (buttonClick)="requestAction('suspend', user)">
                 Suspend
-              </button>
+              </lib-link-button>
             }
             @if (user.status === 'SUSPENDED' || user.status === 'BLOCKED') {
-              <button
-                type="button"
-                class="admin-users-action-link"
-                [disabled]="isProcessing(user.id)"
-                (click)="requestAction('restore', user)"
-              >
+              <lib-link-button [disabled]="isProcessing(user.id)" (buttonClick)="requestAction('restore', user)">
                 Restore
-              </button>
+              </lib-link-button>
             }
           </td>
         </tr>

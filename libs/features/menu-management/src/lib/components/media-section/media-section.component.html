@@ -1,0 +1,43 @@
+<section class="media-section">
+  <h4>Media</h4>
+
+  @if (localError(); as message) {
+    <p class="media-section-local-error">{{ message }}</p>
+  }
+
+  @if (facade.uploadError(); as message) {
+    <lib-error-state
+      [message]="message"
+      [retryLabel]="facade.canRetryUpload() ? 'Retry upload' : 'Try again'"
+      [showDefaultIllustration]="false"
+      (retry)="retry()"
+    />
+  }
+
+  <lib-file-upload
+    [label]="item.imageUrl ? 'Replace Image' : 'Upload Image'"
+    accept="image/png,image/jpeg,image/webp"
+    hint="PNG, JPEG, or WEBP."
+    [uploading]="isBusy"
+    [previewUrl]="item.imageUrl || undefined"
+    (fileSelected)="onFileSelected($event)"
+  />
+
+  @if (item.imageUrl) {
+    <lib-secondary-button size="sm" [disabled]="isBusy" (buttonClick)="requestRemove()">
+      Remove Image
+    </lib-secondary-button>
+  }
+</section>
+
+<lib-confirm-dialog
+  [open]="removeDialogOpen"
+  title="Remove this image?"
+  message="The item's image will be removed. You can upload a new one anytime."
+  confirmLabel="Remove image"
+  cancelLabel="Keep image"
+  tone="danger"
+  [busy]="isBusy"
+  (confirmed)="confirmRemove()"
+  (cancelled)="cancelRemove()"
+/>

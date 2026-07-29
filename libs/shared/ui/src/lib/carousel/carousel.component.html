@@ -1,0 +1,29 @@
+<div
+  #track
+  class="carousel-track"
+  role="region"
+  [attr.aria-label]="ariaLabel()"
+  tabindex="0"
+  (scroll)="onScroll()"
+  (pointerdown)="onInteractionStart()"
+  (keydown.arrowright)="next()"
+  (keydown.arrowleft)="previous()"
+>
+  <ng-content />
+</div>
+
+@if (slideCount() > 1) {
+  <div class="carousel-indicators" role="tablist" aria-label="Slides">
+    @for (index of indicators(); track index) {
+      <button
+        type="button"
+        class="carousel-dot"
+        role="tab"
+        [class.carousel-dot--active]="index === activeIndex()"
+        [attr.aria-selected]="index === activeIndex()"
+        [attr.aria-label]="'Go to slide ' + (index + 1)"
+        (click)="goTo(index); onInteractionStart()"
+      ></button>
+    }
+  </div>
+}

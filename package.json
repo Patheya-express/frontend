@@ -6,7 +6,18 @@
   "packageManager": "pnpm@11.5.3",
   "scripts": {
     "build": "nx run-many --target=build --all",
-    "generate:sdk": "cd libs/shared/api-sdk && ng-openapi-gen --config ng-openapi-gen.json"
+    "generate:sdk": "cd libs/shared/api-sdk && ng-openapi-gen --config ng-openapi-gen.json",
+    "mobile:build": "nx run-many --target=build --projects=customer-app,restaurant-app,delivery-app --configuration=mobile",
+    "mobile:sync": "nx run-many --target=cap-sync --projects=customer-app,restaurant-app,delivery-app --configuration=mobile",
+    "mobile:sync:customer": "nx run customer-app:cap-sync --configuration=mobile",
+    "mobile:sync:partner": "nx run restaurant-app:cap-sync --configuration=mobile",
+    "mobile:sync:delivery": "nx run delivery-app:cap-sync --configuration=mobile",
+    "mobile:android:customer": "nx run customer-app:cap-open-android",
+    "mobile:android:partner": "nx run restaurant-app:cap-open-android",
+    "mobile:android:delivery": "nx run delivery-app:cap-open-android",
+    "mobile:ios:customer": "nx run customer-app:cap-open-ios",
+    "mobile:ios:partner": "nx run restaurant-app:cap-open-ios",
+    "mobile:ios:delivery": "nx run delivery-app:cap-open-ios"
   },
   "devDependencies": {
     "@angular-devkit/core": "~21.2.0",
@@ -23,6 +34,9 @@
     "@angular/platform-browser-dynamic": "^21.2.0",
     "@angular/platform-server": "^21.2.0",
     "@angular/router": "^21.2.0",
+    "@capacitor/android": "^8.4.2",
+    "@capacitor/cli": "^8.4.2",
+    "@capacitor/ios": "^8.4.2",
     "@eslint/js": "^10.0.1",
     "@nx/angular": "23.0.1",
     "@nx/eslint": "23.0.1",
@@ -57,6 +71,11 @@
     "typescript-eslint": "^8.62.1"
   },
   "dependencies": {
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/core": "^8.4.2",
+    "@capacitor/keyboard": "^8.0.5",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.3",
     "@googlemaps/js-api-loader": "^2.1.1",
     "socket.io-client": "^4.8.3"
   }

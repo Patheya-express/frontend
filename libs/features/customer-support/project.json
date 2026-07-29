@@ -4,7 +4,10 @@
   "sourceRoot": "libs/features/customer-support/src",
   "prefix": "lib",
   "projectType": "library",
-  "tags": [],
+  "tags": [
+    "type:feature",
+    "scope:customer"
+  ],
   "targets": {
     "lint": {
       "executor": "@nx/eslint:lint"

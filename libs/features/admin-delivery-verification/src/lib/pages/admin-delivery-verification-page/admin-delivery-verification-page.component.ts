@@ -7,6 +7,8 @@ import {
   DataTableComponent,
   EmptyStateComponent,
   ErrorStateComponent,
+  formatCurrency,
+  LinkButtonComponent,
   PaginationComponent,
   SearchInputComponent,
   SkeletonComponent,
@@ -72,6 +74,7 @@ type VerificationActionType = 'advance' | 'reject' | 'suspend' | 'reinstate';
     StatusChipComponent,
     PaginationComponent,
     ConfirmDialogComponent,
+    LinkButtonComponent,
   ],
   templateUrl: './admin-delivery-verification-page.component.html',
   styleUrl: './admin-delivery-verification-page.component.scss',
@@ -162,7 +165,7 @@ export class AdminDeliveryVerificationPageComponent implements OnInit {
   }
 
   protected formattedAmount(value: number): string {
-    return `₹${Number(value).toFixed(2)}`;
+    return formatCurrency(Number(value));
   }
 
   protected resolveUrl(path: string | undefined): string | undefined {

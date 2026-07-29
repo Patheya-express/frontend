@@ -1,0 +1,31 @@
+<div class="variant-row">
+  <div class="variant-row-info">
+    <span class="variant-row-name">{{ variant.name }}</span>
+    @if (variant.isDefault) {
+      <span class="variant-row-badge">Default</span>
+    }
+  </div>
+
+  <span class="variant-row-price">₹{{ variant.price }}</span>
+
+  <div class="variant-row-actions">
+    <button type="button" class="variant-row-edit" [disabled]="isProcessing" (click)="editRequested.emit()">
+      Edit
+    </button>
+    <button type="button" class="variant-row-delete" [disabled]="isProcessing" (click)="requestDelete()">
+      Delete
+    </button>
+  </div>
+</div>
+
+<lib-confirm-dialog
+  [open]="deleteDialogOpen"
+  title="Delete this variant?"
+  [message]="'\'' + variant.name + '\' will be permanently removed.'"
+  confirmLabel="Delete variant"
+  cancelLabel="Keep variant"
+  tone="danger"
+  [busy]="isProcessing"
+  (confirmed)="confirmDelete()"
+  (cancelled)="cancelDelete()"
+/>

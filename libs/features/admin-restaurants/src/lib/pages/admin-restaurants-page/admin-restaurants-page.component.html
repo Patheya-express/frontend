@@ -48,44 +48,24 @@
           <td><lib-status-chip [label]="activeLabel(restaurant)" [tone]="activeTone(restaurant)" /></td>
           <td>{{ formattedDate(restaurant.createdAt) }}</td>
           <td class="admin-restaurants-row-actions">
-            <button type="button" class="admin-restaurants-action-link" (click)="viewRestaurant(restaurant)">View</button>
+            <lib-link-button (buttonClick)="viewRestaurant(restaurant)">View</lib-link-button>
             @if (restaurant.status === 'PENDING') {
-              <button
-                type="button"
-                class="admin-restaurants-action-link"
-                [disabled]="isProcessing(restaurant.id)"
-                (click)="requestAction('approve', restaurant)"
-              >
+              <lib-link-button [disabled]="isProcessing(restaurant.id)" (buttonClick)="requestAction('approve', restaurant)">
                 Approve
-              </button>
-              <button
-                type="button"
-                class="admin-restaurants-action-link admin-restaurants-action-danger"
-                [disabled]="isProcessing(restaurant.id)"
-                (click)="requestAction('reject', restaurant)"
-              >
+              </lib-link-button>
+              <lib-link-button tone="danger" [disabled]="isProcessing(restaurant.id)" (buttonClick)="requestAction('reject', restaurant)">
                 Reject
-              </button>
+              </lib-link-button>
             }
             @if (restaurant.status === 'APPROVED') {
-              <button
-                type="button"
-                class="admin-restaurants-action-link admin-restaurants-action-danger"
-                [disabled]="isProcessing(restaurant.id)"
-                (click)="requestAction('suspend', restaurant)"
-              >
+              <lib-link-button tone="danger" [disabled]="isProcessing(restaurant.id)" (buttonClick)="requestAction('suspend', restaurant)">
                 Suspend
-              </button>
+              </lib-link-button>
             }
             @if (restaurant.status === 'SUSPENDED') {
-              <button
-                type="button"
-                class="admin-restaurants-action-link"
-                [disabled]="isProcessing(restaurant.id)"
-                (click)="requestAction('restore', restaurant)"
-              >
+              <lib-link-button [disabled]="isProcessing(restaurant.id)" (buttonClick)="requestAction('restore', restaurant)">
                 Restore
-              </button>
+              </lib-link-button>
             }
           </td>
         </tr>

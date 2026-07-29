@@ -3,5 +3,7 @@
   type="search"
   [placeholder]="placeholder"
   [value]="value"
+  [disabled]="disabled"
+  [attr.aria-label]="ariaLabel ?? placeholder"
   (input)="onInput($any($event.target).value)"
 />

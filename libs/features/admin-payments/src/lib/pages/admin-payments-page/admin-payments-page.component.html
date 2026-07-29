@@ -73,19 +73,19 @@
           <td>{{ payment.providerPaymentId ?? '—' }}</td>
           <td>{{ formattedDate(payment.createdAt) }}</td>
           <td class="admin-payments-row-actions">
-            <button type="button" class="admin-payments-action-link" (click)="viewTransaction(payment)">View Transaction</button>
+            <lib-link-button (buttonClick)="viewTransaction(payment)">View Transaction</lib-link-button>
             @if (canRefund(payment)) {
-              <button type="button" class="admin-payments-action-link admin-payments-action-danger" [disabled]="isProcessing(payment.id)" (click)="requestRefund(payment)">
+              <lib-link-button tone="danger" [disabled]="isProcessing(payment.id)" (buttonClick)="requestRefund(payment)">
                 Refund
-              </button>
+              </lib-link-button>
             }
-            <button type="button" class="admin-payments-action-link" (click)="copyPaymentId(payment)">
+            <lib-link-button (buttonClick)="copyPaymentId(payment)">
               {{ copiedLabel() === 'payment' ? 'Copied!' : 'Copy Payment ID' }}
-            </button>
+            </lib-link-button>
             @if (payment.providerPaymentId) {
-              <button type="button" class="admin-payments-action-link" (click)="copyTransactionId(payment)">
+              <lib-link-button (buttonClick)="copyTransactionId(payment)">
                 {{ copiedLabel() === 'transaction' ? 'Copied!' : 'Copy Transaction ID' }}
-              </button>
+              </lib-link-button>
             }
           </td>
         </tr>
@@ -181,7 +181,7 @@
           <dd>{{ formattedDateTime(selected.updatedAt) }}</dd>
         </dl>
 
-        <button type="button" class="admin-payments-details-close" (click)="closeDetails()">Close</button>
+        <lib-secondary-button class="admin-payments-details-close" size="sm" (buttonClick)="closeDetails()">Close</lib-secondary-button>
       </div>
     </div>
   }

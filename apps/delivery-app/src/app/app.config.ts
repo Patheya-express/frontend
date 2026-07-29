@@ -3,7 +3,7 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter } from '@angular/router';
 import { ApiConfiguration } from '@patheya-express-frontend/api-sdk';
 import { AuthFacade, authInterceptor } from '@patheya-express-frontend/auth';
-import { APP_ENVIRONMENT } from '@patheya-express-frontend/core';
+import { APP_ENVIRONMENT, provideMobilePlatform } from '@patheya-express-frontend/core';
 import { provideAddressProvider } from '@patheya-express-frontend/map-picker';
 import { environment } from '../environments/environment';
 import { routes } from './app.routes';
@@ -15,6 +15,7 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([authInterceptor])),
     { provide: APP_ENVIRONMENT, useValue: environment },
     provideAddressProvider(),
+    provideMobilePlatform(),
     {
       provide: ApiConfiguration,
       useFactory: () => {

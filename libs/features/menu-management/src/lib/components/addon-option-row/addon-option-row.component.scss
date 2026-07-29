@@ -1,0 +1,66 @@
+.addon-option-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+
+  &.is-unavailable {
+    opacity: 0.6;
+  }
+}
+
+.addon-option-row-name {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+  flex: 1;
+  min-width: 100px;
+}
+
+.addon-option-row-price {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.addon-option-row-availability {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.addon-option-row-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.addon-option-row-edit,
+.addon-option-row-delete {
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.addon-option-row-edit {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.addon-option-row-delete {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-error);
+}

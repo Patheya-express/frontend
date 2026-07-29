@@ -1,7 +1,13 @@
 import { ChangeDetectionStrategy, Component, OnInit, effect, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { ErrorStateComponent, SkeletonComponent, StatusChipComponent, type StatusChipTone } from '@patheya-express-frontend/ui';
+import {
+  ErrorStateComponent,
+  PrimaryButtonComponent,
+  SkeletonComponent,
+  StatusChipComponent,
+  type StatusChipTone,
+} from '@patheya-express-frontend/ui';
 import { MapPickerComponent, type PickedLocation } from '@patheya-express-frontend/map-picker';
 import { DeliveryVerificationFacade } from '@patheya-express-frontend/delivery-verification';
 import type { DeliveryVerificationResponseDto } from '@patheya-express-frontend/api-sdk';
@@ -29,7 +35,15 @@ function stageTone(stage: DeliveryVerificationResponseDto['stage'] | undefined):
 @Component({
   selector: 'lib-profile-page',
   standalone: true,
-  imports: [DatePipe, ReactiveFormsModule, SkeletonComponent, ErrorStateComponent, StatusChipComponent, MapPickerComponent],
+  imports: [
+    DatePipe,
+    ReactiveFormsModule,
+    SkeletonComponent,
+    ErrorStateComponent,
+    StatusChipComponent,
+    MapPickerComponent,
+    PrimaryButtonComponent,
+  ],
   templateUrl: './profile-page.component.html',
   styleUrl: './profile-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

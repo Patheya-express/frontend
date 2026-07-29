@@ -1,0 +1,151 @@
+<div class="review-list-page">
+  <div class="review-list-header">
+    <h1>Reviews</h1>
+  </div>
+
+  @if (facade.ratingSummary(); as summary) {
+    <section class="rating-summary">
+      <div class="rating-summary-average">
+        <span class="rating-summary-average-value">{{ summary.averageRating.toFixed(1) }}</span>
+        <lib-star-rating [rating]="summary.averageRating" size="md" />
+        <span class="rating-summary-total">{{ summary.totalReviews }} review{{ summary.totalReviews === 1 ? '' : 's' }}</span>
+      </div>
+
+      <div class="rating-summary-breakdown">
+        @for (entry of summary.breakdown; track entry.rating) {
+          <div class="rating-summary-row">
+            <span class="rating-summary-row-label">{{ entry.rating }}★</span>
+            <div class="rating-summary-row-bar">
+              <div
+                class="rating-summary-row-fill"
+                [style.width.%]="summary.totalReviews > 0 ? (entry.count / summary.totalReviews) * 100 : 0"
+              ></div>
+            </div>
+            <span class="rating-summary-row-count">{{ entry.count }}</span>
+          </div>
+        }
+      </div>
+    </section>
+  }
+
+  <div class="review-list-filters">
+    <div class="review-list-filter-tabs">
+      @for (item of replyFilters; track item.value) {
+        <button
+          type="button"
+          class="review-filter"
+          [class.is-active]="replyFilter === item.value"
+          (click)="onReplyFilterChange(item.value)"
+        >
+          {{ item.label }}
+        </button>
+      }
+    </div>
+
+    <label class="review-list-rating-select">
+      <span>Rating</span>
+      <select (change)="onRatingFilterChange($any($event.target).value)">
+        <option value="">All</option>
+        @for (rating of ratingOptions; track rating) {
+          <option [value]="rating">{{ rating }}★</option>
+        }
+      </select>
+    </label>
+  </div>
+
+  @if (facade.actionError(); as message) {
+    <lib-error-state
+      title="Action failed"
+      [message]="message"
+      [showDefaultIllustration]="false"
+      (retry)="dismissActionError()"
+    />
+  }
+
+  @if (facade.loading()) {
+    <lib-skeleton [count]="4" />
+  } @else if (facade.error()) {
+    <lib-error-state [message]="facade.error()!" (retry)="retry()" />
+  } @else if (facade.reviews().length === 0) {
+    <lib-empty-state title="No reviews yet" message="Reviews from your customers will show up here." />
+  } @else {
+    <div class="review-list">
+      @for (review of facade.reviews(); track review.id) {
+        <article class="review-card">
+          <header class="review-card-header">
+            <div class="review-card-heading">
+              <span class="review-card-customer">{{ review.customerName ?? 'A customer' }}</span>
+              <lib-star-rating [rating]="review.rating" size="sm" />
+            </div>
+            <span class="review-card-date">{{ formatDate(review.createdAt) }}</span>
+          </header>
+
+          @if (review.comment) {
+            <p class="review-card-comment">{{ review.comment }}</p>
+          }
+
+          @if (review.replyText && !isReplyFormOpenFor(review.id)) {
+            <div class="review-reply">
+              <div class="review-reply-header">
+                <lib-status-chip label="Replied" tone="success" />
+                @if (review.replyUpdatedAt) {
+                  <span class="review-reply-date">{{ formatDate(review.replyUpdatedAt) }}</span>
+                }
+              </div>
+              <p class="review-reply-text">{{ review.replyText }}</p>
+              <div class="review-reply-actions">
+                <button type="button" [disabled]="isProcessing(review.id)" (click)="openEditReply(review)">
+                  Edit Reply
+                </button>
+                <button
+                  type="button"
+                  class="review-reply-delete"
+                  [disabled]="isProcessing(review.id)"
+                  (click)="requestDeleteReply(review.id)"
+                >
+                  Delete Reply
+                </button>
+              </div>
+            </div>
+          } @else if (!isReplyFormOpenFor(review.id)) {
+            <button
+              type="button"
+              class="review-card-reply-btn"
+              [disabled]="isProcessing(review.id)"
+              (click)="openCreateReply(review)"
+            >
+              + Reply
+            </button>
+          }
+
+          @if (isReplyFormOpenFor(review.id)) {
+            <lib-reply-form
+              [reviewId]="review.id"
+              [existingReplyText]="replyFormTarget?.existingReplyText"
+              (closed)="closeReplyForm()"
+            />
+          }
+        </article>
+      }
+    </div>
+
+    <lib-pagination
+      [page]="facade.pagination().page"
+      [totalPages]="facade.pagination().totalPages"
+      [total]="facade.pagination().total"
+      (pageChange)="onPageChange($event)"
+    />
+  }
+</div>
+
+<lib-confirm-dialog
+  [open]="!!confirmDeleteId"
+  title="Delete this reply?"
+  message="Your reply will be permanently removed. The customer's review is not affected."
+  confirmLabel="Delete reply"
+  cancelLabel="Keep reply"
+  tone="danger"
+  [busy]="!!confirmDeleteId && isProcessing(confirmDeleteId)"
+  (confirmed)="confirmDeleteReply()"
+  (cancelled)="cancelDeleteReply()"
+/>

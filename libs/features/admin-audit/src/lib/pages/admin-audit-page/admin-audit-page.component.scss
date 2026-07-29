@@ -59,19 +59,6 @@ h1 {
   white-space: nowrap;
 }
 
-.admin-audit-action-link {
-  border: none;
-  background: none;
-  padding: 0;
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-primary);
-  cursor: pointer;
-
-  &:hover:not(:disabled) {
-    text-decoration: underline;
-  }
-}
 
 .admin-audit-details-backdrop {
   position: fixed;

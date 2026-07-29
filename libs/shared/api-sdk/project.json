@@ -4,7 +4,10 @@
   "sourceRoot": "libs/shared/api-sdk/src",
   "prefix": "lib",
   "projectType": "library",
-  "tags": [],
+  "tags": [
+    "type:sdk",
+    "scope:shared"
+  ],
   "targets": {
     "build": {
       "executor": "@nx/angular:ng-packagr-lite",

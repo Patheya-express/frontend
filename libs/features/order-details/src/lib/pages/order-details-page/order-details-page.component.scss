@@ -76,7 +76,7 @@
 }
 
 .realtime-indicator.live {
-  --realtime-color: var(--color-success, #2e7d32);
+  --realtime-color: var(--color-success);
   color: var(--realtime-color);
 
   .realtime-dot {
@@ -198,6 +198,15 @@
   color: var(--color-text-subtle);
   text-transform: uppercase;
   letter-spacing: 0.02em;
+}
+
+.order-tracking-discount {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--color-success);
 }
 
 .order-tracking-total {

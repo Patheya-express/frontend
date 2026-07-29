@@ -65,8 +65,8 @@
                   [disabled]="isProcessing(order.id)"
                   (input)="onAssignInputChange($any($event.target).value)"
                 />
-                <button type="button" class="admin-orders-action-link" [disabled]="isProcessing(order.id)" (click)="confirmAssign(order.id)">Save</button>
-                <button type="button" class="admin-orders-action-link" [disabled]="isProcessing(order.id)" (click)="cancelAssign()">Cancel</button>
+                <lib-link-button [disabled]="isProcessing(order.id)" (buttonClick)="confirmAssign(order.id)">Save</lib-link-button>
+                <lib-link-button [disabled]="isProcessing(order.id)" (buttonClick)="cancelAssign()">Cancel</lib-link-button>
               </div>
             } @else {
               {{ deliveryPartnerName(order) }}
@@ -77,41 +77,26 @@
           <td>{{ formattedAmount(order.totalAmount) }}</td>
           <td>{{ formattedDate(order.createdAt) }}</td>
           <td class="admin-orders-row-actions">
-            <button type="button" class="admin-orders-action-link" (click)="viewOrder(order)">View</button>
+            <lib-link-button (buttonClick)="viewOrder(order)">View</lib-link-button>
             @if (canAssign(order) && assigningOrderId() !== order.id) {
-              <button type="button" class="admin-orders-action-link" [disabled]="isProcessing(order.id)" (click)="startAssign(order)">
+              <lib-link-button [disabled]="isProcessing(order.id)" (buttonClick)="startAssign(order)">
                 Assign
-              </button>
+              </lib-link-button>
             }
             @if (canForceComplete(order)) {
-              <button
-                type="button"
-                class="admin-orders-action-link"
-                [disabled]="isProcessing(order.id)"
-                (click)="requestAction('force-complete', order)"
-              >
+              <lib-link-button [disabled]="isProcessing(order.id)" (buttonClick)="requestAction('force-complete', order)">
                 Force Complete
-              </button>
+              </lib-link-button>
             }
             @if (canRefund(order)) {
-              <button
-                type="button"
-                class="admin-orders-action-link admin-orders-action-danger"
-                [disabled]="isProcessing(order.id)"
-                (click)="requestAction('refund', order)"
-              >
+              <lib-link-button tone="danger" [disabled]="isProcessing(order.id)" (buttonClick)="requestAction('refund', order)">
                 Refund
-              </button>
+              </lib-link-button>
             }
             @if (canCancel(order)) {
-              <button
-                type="button"
-                class="admin-orders-action-link admin-orders-action-danger"
-                [disabled]="isProcessing(order.id)"
-                (click)="requestAction('cancel', order)"
-              >
+              <lib-link-button tone="danger" [disabled]="isProcessing(order.id)" (buttonClick)="requestAction('cancel', order)">
                 Cancel
-              </button>
+              </lib-link-button>
             }
           </td>
         </tr>
@@ -204,7 +189,7 @@
           <p class="admin-orders-notes">{{ selected.notes }}</p>
         }
 
-        <button type="button" class="admin-orders-details-close" (click)="closeDetails()">Close</button>
+        <lib-secondary-button class="admin-orders-details-close" size="sm" (buttonClick)="closeDetails()">Close</lib-secondary-button>
       </div>
     </div>
   }

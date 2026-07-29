@@ -3,7 +3,15 @@
     <span class="diet-indicator" [class.veg]="item.isVegetarian" [class.non-veg]="!item.isVegetarian" [attr.aria-label]="item.isVegetarian ? 'Vegetarian' : 'Non-vegetarian'">
       <span class="diet-dot"></span>
     </span>
-    <h4>{{ item.name }}</h4>
+    <h4>
+      @for (segment of nameSegments(); track $index) {
+        @if (segment.match) {
+          <mark>{{ segment.text }}</mark>
+        } @else {
+          {{ segment.text }}
+        }
+      }
+    </h4>
     @if (item.isVegan) {
       <span class="vegan-badge">Vegan</span>
     }
@@ -14,6 +22,12 @@
       <span class="menu-item-price">₹{{ item.basePrice }}</span>
       @if (!item.isAvailable) {
         <span class="menu-item-badge">Unavailable</span>
+      }
+      @if (hasVariants()) {
+        <span class="menu-item-hint">{{ item.variants.length }} options</span>
+      }
+      @if (hasAddons()) {
+        <span class="menu-item-hint">Customizable</span>
       }
       @if (isAuthenticated()) {
         <lib-favorite-button [id]="item.id" type="menu-item" size="sm" [label]="item.name" />

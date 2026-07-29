@@ -1,1 +1,18 @@
-<span class="status-chip" [attr.data-tone]="tone">{{ label }}</span>
+<span
+  class="status-chip"
+  [class.status-chip--interactive]="interactive"
+  [class.status-chip--selected]="selectable && selected"
+  [attr.data-tone]="tone"
+  [attr.role]="selectable ? 'button' : null"
+  [attr.tabindex]="selectable ? '0' : null"
+  (click)="onActivate()"
+  (keydown.enter)="onActivate()"
+  (keydown.space)="onActivate($event)"
+>
+  {{ label }}
+  @if (removable) {
+    <button type="button" class="status-chip-remove" [attr.aria-label]="'Remove ' + label" (click)="onRemove($event)">
+      ×
+    </button>
+  }
+</span>

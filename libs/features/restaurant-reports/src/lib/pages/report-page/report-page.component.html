@@ -1,0 +1,134 @@
+<div class="report-page">
+  <div class="report-page-header">
+    <h1>Reports</h1>
+  </div>
+
+  <div class="report-selector">
+    @for (item of reportTypes; track item.value) {
+      <button
+        type="button"
+        class="report-type-tab"
+        [class.is-active]="facade.filters().reportType === item.value"
+        (click)="onReportTypeChange(item.value)"
+      >
+        {{ item.label }}
+      </button>
+    }
+  </div>
+
+  <div class="report-filters">
+    <label class="report-filter-field">
+      <span>From</span>
+      <input type="date" [value]="facade.filters().dateFrom ?? ''" (change)="onDateFromChange($any($event.target).value)" />
+    </label>
+
+    <label class="report-filter-field">
+      <span>To</span>
+      <input type="date" [value]="facade.filters().dateTo ?? ''" (change)="onDateToChange($any($event.target).value)" />
+    </label>
+
+    <label class="report-filter-field">
+      <span>Branch</span>
+      <select (change)="onBranchChange($any($event.target).value)">
+        <option value="">All branches</option>
+        @for (branch of context.branches(); track branch.id) {
+          <option [value]="branch.id">{{ branch.name }}</option>
+        }
+      </select>
+    </label>
+
+    @if (facade.filters().reportType === 'orders') {
+      <label class="report-filter-field">
+        <span>Status</span>
+        <select (change)="onStatusChange($any($event.target).value)">
+          <option value="">Any status</option>
+          @for (status of orderStatuses; track status) {
+            <option [value]="status">{{ status }}</option>
+          }
+        </select>
+      </label>
+    }
+
+    @if (facade.filters().reportType === 'payment-summary') {
+      <label class="report-filter-field">
+        <span>Payment Mode</span>
+        <select (change)="onPaymentModeChange($any($event.target).value)">
+          <option value="">Any mode</option>
+          @for (mode of paymentModes; track mode) {
+            <option [value]="mode">{{ mode }}</option>
+          }
+        </select>
+      </label>
+    }
+
+    <lib-primary-button size="sm" [loading]="facade.loading()" (buttonClick)="applyFilters()">
+      Generate Report
+    </lib-primary-button>
+  </div>
+
+  @if (facade.validationErrors().length > 0) {
+    <ul class="report-validation-errors">
+      @for (message of facade.validationErrors(); track message) {
+        <li>{{ message }}</li>
+      }
+    </ul>
+  }
+
+  <div class="report-export-actions">
+    <span class="report-export-label">Export:</span>
+    <lib-secondary-button size="sm" [loading]="isExporting('csv')" [disabled]="facade.exporting()" (buttonClick)="export('csv')">
+      CSV
+    </lib-secondary-button>
+    <lib-secondary-button size="sm" [loading]="isExporting('xlsx')" [disabled]="facade.exporting()" (buttonClick)="export('xlsx')">
+      Excel
+    </lib-secondary-button>
+    <lib-secondary-button size="sm" [loading]="isExporting('pdf')" [disabled]="facade.exporting()" (buttonClick)="export('pdf')">
+      PDF
+    </lib-secondary-button>
+  </div>
+
+  @if (facade.exportError(); as message) {
+    <lib-error-state
+      title="Export failed"
+      [message]="message"
+      [showDefaultIllustration]="false"
+      (retry)="dismissExportError()"
+    />
+  }
+
+  @if (facade.loading()) {
+    <lib-skeleton [count]="5" />
+  } @else if (facade.error()) {
+    <lib-error-state [message]="facade.error()!" (retry)="retry()" />
+  } @else if (!facade.reports() || facade.reports()!.rows.length === 0) {
+    <lib-empty-state
+      title="No data for this report"
+      message="Try widening the date range or clearing filters."
+    />
+  } @else {
+    <div class="report-result">
+      <h2>{{ facade.reports()!.title }}</h2>
+
+      <lib-data-table [columns]="columns">
+        @for (row of rows; track $index) {
+          <tr>
+            @for (column of columns; track column.key) {
+              <td>{{ row[column.key] }}</td>
+            }
+          </tr>
+        }
+      </lib-data-table>
+
+      @if (facade.reports()!.summary; as summary) {
+        <div class="report-summary">
+          @for (entry of summary; track entry.label) {
+            <div class="report-summary-row">
+              <span>{{ entry.label }}</span>
+              <strong>{{ entry.value }}</strong>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

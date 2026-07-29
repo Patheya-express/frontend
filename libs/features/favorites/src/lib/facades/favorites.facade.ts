@@ -53,4 +53,8 @@ export class FavoritesFacade {
   loadFavoriteMenuItems(page?: number): Promise<void> {
     return this.store.loadFavoriteMenuItems(page);
   }
+
+  reset(): void {
+    this.store.reset();
+  }
 }

@@ -9,11 +9,13 @@ import type {
 } from '@patheya-express-frontend/api-sdk';
 import { AuthService } from '../services/auth.service';
 import { AuthStorageService } from '../storage/auth-storage.service';
+import { LogoutCleanupRegistry } from '../services/logout-cleanup-registry.service';
 
 @Injectable({ providedIn: 'root' })
 export class AuthStore {
   private readonly authService = inject(AuthService);
   private readonly authStorage = inject(AuthStorageService);
+  private readonly logoutCleanupRegistry = inject(LogoutCleanupRegistry);
 
   private readonly _user = signal<AuthUserDto | null>(null);
   private readonly _accessToken = signal<string | null>(null);
@@ -24,6 +26,17 @@ export class AuthStore {
   readonly loading = this._loading.asReadonly();
   readonly error = this._error.asReadonly();
   readonly isAuthenticated = computed(() => !!this._accessToken());
+
+  constructor() {
+    // Same-browser tabs share localStorage: when a different tab logs out, it clears the auth
+    // keys there, but this tab's own in-memory signals and feature-store state are untouched
+    // until something tells it to react. Rather than call the backend logout again (nothing left
+    // to revoke — the other tab's request already did it), this just mirrors the already-cleared
+    // storage into this tab's own state.
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', () => this.handleStorageEvent());
+    }
+  }
 
   /** Hydrates session state from persisted storage. Call once at app bootstrap. */
   initialize(): void {
@@ -93,9 +106,39 @@ export class AuthStore {
       }
     }
 
+    this.clearLocalSession();
+  }
+
+  /**
+   * Fires on every `storage` event this tab receives — including sessionStorage changes and this
+   * tab's own writes reflected back, since jsdom/browser `StorageEvent.storageArea` isn't reliable
+   * enough to filter on. Deliberately re-derives everything from actual current state instead of
+   * trying to interpret the event payload: the only case that matters is a *different* tab having
+   * just logged out (authStorage.clear() removes the auth keys from localStorage), which this tab
+   * wouldn't otherwise notice until its next 401. Every other kind of storage change is a safe
+   * no-op here — a login, a token rotation, or an unrelated sessionStorage write all leave
+   * authStorage.load() returning non-null (or this tab was never logged in to begin with), so
+   * neither guard below fires.
+   */
+  private handleStorageEvent(): void {
+    if (this.authStorage.load() !== null) {
+      return;
+    }
+
+    if (!this._accessToken()) {
+      return;
+    }
+
+    this.clearLocalSession();
+  }
+
+  /** The local-only half of logout — used both by logout() itself (after the best-effort server
+   *  call) and by cross-tab sync (where the server call already happened, in the other tab). */
+  private clearLocalSession(): void {
     this.authStorage.clear();
     this._accessToken.set(null);
     this._user.set(null);
+    this.logoutCleanupRegistry.runAll();
   }
 
   /**

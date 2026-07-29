@@ -4,7 +4,10 @@
   "sourceRoot": "libs/features/delivery-vehicles/src",
   "prefix": "lib",
   "projectType": "library",
-  "tags": [],
+  "tags": [
+    "type:feature",
+    "scope:delivery"
+  ],
   "targets": {
     "lint": {
       "executor": "@nx/eslint:lint"

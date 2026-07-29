@@ -67,20 +67,6 @@
   border: 1px solid var(--color-border);
 }
 
-.ticket-detail-close-btn {
-  align-self: flex-start;
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-text);
-  font-size: var(--font-size-sm);
-  cursor: pointer;
-
-  &:hover {
-    border-color: var(--color-primary);
-  }
-}
 
 .ticket-thread h2 {
   margin: 0 0 var(--space-3);
@@ -166,32 +152,3 @@
   gap: var(--space-2);
 }
 
-.ticket-attach-btn,
-.ticket-send-btn {
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
-  cursor: pointer;
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-}
-
-.ticket-attach-btn {
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  color: var(--color-text);
-}
-
-.ticket-send-btn {
-  border: none;
-  background: var(--color-primary);
-  color: var(--color-text-on-primary);
-  font-weight: var(--font-weight-semibold);
-
-  &:hover:not(:disabled) {
-    filter: brightness(0.95);
-  }
-}

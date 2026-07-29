@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Copy to `exportOptions.plist` (gitignored) and fill in your real Apple Developer Team ID —
+  used by `xcodebuild -exportArchive -exportOptionsPlist exportOptions.plist` when producing a
+  signed .ipa. Requires macOS + Xcode; this cannot be done from Windows. `App.xcodeproj` itself
+  is left on `CODE_SIGN_STYLE = Automatic` (see project.pbxproj) so opening the project in Xcode
+  with a signed-in Apple ID also works without editing this file.
+-->
+<plist version="1.0">
+<dict>
+	<key>method</key>
+	<string>app-store-connect</string>
+	<key>teamID</key>
+	<string>REPLACE_WITH_APPLE_TEAM_ID</string>
+	<key>signingStyle</key>
+	<string>automatic</string>
+	<key>uploadSymbols</key>
+	<true/>
+</dict>
+</plist>

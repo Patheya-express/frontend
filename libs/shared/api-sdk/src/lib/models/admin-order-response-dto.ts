@@ -8,6 +8,7 @@ import { AdminOrderRestaurantSummaryDto } from '../models/admin-order-restaurant
 import { OrderItemResponseDto } from '../models/order-item-response-dto';
 import { OrderStatusHistoryResponseDto } from '../models/order-status-history-response-dto';
 export interface AdminOrderResponseDto {
+  couponId?: string;
   createdAt: string;
   customer: AdminOrderCustomerSummaryDto;
   customerId: string;
@@ -16,6 +17,7 @@ export interface AdminOrderResponseDto {
   deliveryFee: number;
   deliveryPartner?: AdminOrderDeliveryPartnerSummaryDto;
   deliveryPartnerId?: string;
+  discountAmount: number;
   id: string;
   items: Array<OrderItemResponseDto>;
   notes?: string;

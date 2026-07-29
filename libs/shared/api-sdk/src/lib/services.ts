@@ -19,6 +19,7 @@ export { RestaurantSettingsService } from './services/restaurant-settings.servic
 export { BranchOperatingHoursService } from './services/branch-operating-hours.service';
 export { RestaurantHolidaysService } from './services/restaurant-holidays.service';
 export { OffersService } from './services/offers.service';
+export { NotificationsService } from './services/notifications.service';
 export { RestaurantOnboardingService } from './services/restaurant-onboarding.service';
 export { MenuService } from './services/menu.service';
 export { OrdersService } from './services/orders.service';
@@ -35,10 +36,11 @@ export { DeliveryOnboardingAdminService } from './services/delivery-onboarding-a
 export { DeliveryComplianceService } from './services/delivery-compliance.service';
 export { DeliveryComplianceAdminService } from './services/delivery-compliance-admin.service';
 export { DeliveryProfileService } from './services/delivery-profile.service';
+export { DeliveryProofService } from './services/delivery-proof.service';
 export { PresenceService } from './services/presence.service';
 export { PaymentsService } from './services/payments.service';
 export { AddressesService } from './services/addresses.service';
-export { NotificationsService } from './services/notifications.service';
+export { CouponsService } from './services/coupons.service';
 export { MetricsService } from './services/metrics.service';
 export { SystemService } from './services/system.service';
 export { DispatchService } from './services/dispatch.service';
@@ -52,3 +54,4 @@ export { SearchService } from './services/search.service';
 export { WalletService } from './services/wallet.service';
 export { SupportTicketsService } from './services/support-tickets.service';
 export { HelpCenterFaQsService } from './services/help-center-fa-qs.service';
+export { RestaurantReportsService } from './services/restaurant-reports.service';

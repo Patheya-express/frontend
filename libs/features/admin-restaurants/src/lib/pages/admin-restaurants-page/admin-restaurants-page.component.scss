@@ -43,28 +43,6 @@ h1 {
   white-space: nowrap;
 }
 
-.admin-restaurants-action-link {
-  border: none;
-  background: none;
-  padding: 0;
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-primary);
-  cursor: pointer;
-
-  &:hover:not(:disabled) {
-    text-decoration: underline;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}
-
-.admin-restaurants-action-danger {
-  color: var(--color-error);
-}
 
 .admin-restaurants-details-backdrop {
   position: fixed;

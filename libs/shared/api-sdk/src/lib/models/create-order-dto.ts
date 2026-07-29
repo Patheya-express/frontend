@@ -11,9 +11,19 @@ export interface CreateOrderDto {
   branchId?: string;
 
   /**
+   * A coupon code to apply to this order, if any.
+   */
+  couponCode?: string;
+
+  /**
    * Free-text delivery address. Ignored if addressId is provided.
    */
   deliveryAddress?: string;
+
+  /**
+   * Client-generated UUID identifying this checkout attempt. Generate one per attempt and reuse the SAME value on any retry of the same attempt (double-click, network timeout, browser/mobile resubmit) — replaying a key that already produced an order returns that same order instead of creating a new one. Generate a new UUID only after a successful order or an explicit cancel.
+   */
+  idempotencyKey: string;
   items: Array<CreateOrderItemDto>;
   notes?: string;
   paymentMode?: 'ONLINE' | 'COD';

@@ -110,9 +110,9 @@
           <span>Description</span>
           <textarea formControlName="description" rows="3"></textarea>
         </label>
-        <button type="submit" [disabled]="facade.savingProfile()">
-          {{ facade.savingProfile() ? 'Saving…' : 'Save Business Info' }}
-        </button>
+        <lib-primary-button [disabled]="facade.savingProfile()" [loading]="facade.savingProfile()" (buttonClick)="onProfileSubmit()">
+          Save Business Info
+        </lib-primary-button>
       </form>
     </section>
 
@@ -205,9 +205,9 @@
             FSSAI: <lib-status-chip [label]="tax.fssaiVerificationStatus" tone="neutral" />
           </p>
         }
-        <button type="submit" [disabled]="facade.savingTaxProfile()">
-          {{ facade.savingTaxProfile() ? 'Saving…' : 'Save Tax Profile' }}
-        </button>
+        <lib-primary-button [disabled]="facade.savingTaxProfile()" [loading]="facade.savingTaxProfile()" (buttonClick)="onTaxSubmit()">
+          Save Tax Profile
+        </lib-primary-button>
       </form>
     </section>
 
@@ -243,9 +243,9 @@
             <input type="text" formControlName="upiId" />
           </label>
         </div>
-        <button type="submit" [disabled]="facade.savingBankAccount()">
-          {{ facade.savingBankAccount() ? 'Saving…' : 'Save Bank Account' }}
-        </button>
+        <lib-primary-button [disabled]="facade.savingBankAccount()" [loading]="facade.savingBankAccount()" (buttonClick)="onBankSubmit()">
+          Save Bank Account
+        </lib-primary-button>
       </form>
     </section>
   }

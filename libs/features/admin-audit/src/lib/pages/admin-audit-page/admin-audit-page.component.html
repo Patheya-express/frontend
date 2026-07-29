@@ -65,7 +65,7 @@
           <td>{{ log.ipAddress ?? '—' }}</td>
           <td><lib-status-chip label="Success" tone="success" /></td>
           <td class="admin-audit-row-actions">
-            <button type="button" class="admin-audit-action-link" (click)="viewDetails(log)">View Details</button>
+            <lib-link-button (buttonClick)="viewDetails(log)">View Details</lib-link-button>
           </td>
         </tr>
       }

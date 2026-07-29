@@ -36,18 +36,9 @@
   overflow-x: auto;
 }
 
-.action-link,
-.link-button {
-  border: none;
-  background: none;
-  color: var(--color-primary);
-  cursor: pointer;
-  padding: 0;
-  font: inherit;
-}
 
 tr.active {
-  background: var(--color-surface-alt, rgba(0, 0, 0, 0.03));
+  background: var(--color-surface-hover);
 }
 
 .detail-panel {
@@ -68,7 +59,7 @@ tr.active {
 
   h3 {
     margin: 0 0 var(--space-2);
-    font-size: var(--font-size-md);
+    font-size: var(--font-size-lg);
   }
 }
 
@@ -189,7 +180,7 @@ tr.active {
 }
 
 .health-warning {
-  color: var(--color-warning, #856404);
+  color: var(--color-warning);
 }
 
 .changes-requested-list {
@@ -245,8 +236,8 @@ tr.active {
 }
 
 .form-alert {
-  background: var(--color-danger-soft, #fdecec);
-  color: var(--color-danger, #b3261e);
+  background: var(--color-error-soft);
+  color: var(--color-error);
   border-radius: var(--radius-md);
   padding: var(--space-3);
   margin-bottom: var(--space-4);

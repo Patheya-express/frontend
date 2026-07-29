@@ -59,24 +59,6 @@ h1 {
   white-space: nowrap;
 }
 
-.admin-notifications-action-link {
-  border: none;
-  background: none;
-  padding: 0;
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-primary);
-  cursor: pointer;
-
-  &:hover:not(:disabled) {
-    text-decoration: underline;
-  }
-
-  &:disabled {
-    color: var(--color-text-muted);
-    cursor: not-allowed;
-  }
-}
 
 .admin-notifications-details-backdrop {
   position: fixed;

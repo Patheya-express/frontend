@@ -1,0 +1,16 @@
+<button
+  type="button"
+  class="mobile-icon-button"
+  [class.mobile-icon-button--sm]="size() === 'sm'"
+  [class.mobile-icon-button--lg]="size() === 'lg'"
+  [attr.aria-label]="ariaLabel()"
+  [disabled]="disabled() || loading()"
+  [attr.aria-busy]="loading() || null"
+  (click)="handleClick()"
+>
+  @if (loading()) {
+    <span class="mobile-spinner" aria-hidden="true"></span>
+  } @else {
+    <ng-content />
+  }
+</button>

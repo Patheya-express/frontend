@@ -5,8 +5,11 @@ import {
   DataTableComponent,
   EmptyStateComponent,
   ErrorStateComponent,
+  formatCurrency,
+  LinkButtonComponent,
   PaginationComponent,
   SearchInputComponent,
+  SecondaryButtonComponent,
   SkeletonComponent,
   StatusChipComponent,
   TableToolbarComponent,
@@ -68,6 +71,8 @@ const METHOD_OPTIONS: { value: PaymentMethodFilter; label: string }[] = [
     StatusChipComponent,
     PaginationComponent,
     ConfirmDialogComponent,
+    SecondaryButtonComponent,
+    LinkButtonComponent,
   ],
   templateUrl: './admin-payments-page.component.html',
   styleUrl: './admin-payments-page.component.scss',
@@ -224,6 +229,6 @@ export class AdminPaymentsPageComponent implements OnInit {
   }
 
   protected formattedAmount(value: number): string {
-    return `₹${Number(value).toFixed(2)}`;
+    return formatCurrency(Number(value));
   }
 }

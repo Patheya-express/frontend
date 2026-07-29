@@ -1,0 +1,66 @@
+:host {
+  display: block;
+}
+
+.carousel-track {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+
+  // Hide the scrollbar visually — scroll-snap + indicator dots are the intended navigation UI —
+  // while keeping the element genuinely scrollable/focusable for mouse-wheel, touch and keyboard.
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  // Every direct child of the projected content is a slide — full track width, snap-aligned.
+  // See the class doc comment for why this is a child combinator rather than a `.carousel-slide`
+  // class the caller would need to remember to add.
+  > * {
+    flex: 0 0 100%;
+    width: 100%;
+    scroll-snap-align: start;
+  }
+}
+
+.carousel-indicators {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.carousel-dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+  cursor: pointer;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+
+  // The dot itself stays small (visually correct at 8px) but its tap target is padded out to
+  // the full touch-target minimum via a transparent hit-area, not by inflating the dot itself.
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: calc((var(--touch-target-min, 44px) - 8px) / -2);
+  }
+
+  &--active {
+    background: var(--color-primary);
+    transform: scale(1.25);
+  }
+}

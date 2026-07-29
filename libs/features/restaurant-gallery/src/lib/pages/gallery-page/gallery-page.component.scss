@@ -16,7 +16,7 @@ h1 {
 
 h2 {
   margin: 0 0 var(--space-3);
-  font-size: var(--font-size-md);
+  font-size: var(--font-size-lg);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text);
 }
@@ -27,7 +27,7 @@ h2 {
   font-size: var(--font-size-sm);
 
   &--error {
-    background: var(--color-error-subtle, #f8d7da);
+    background: var(--color-error-soft);
     color: var(--color-error, #721c24);
   }
 }

@@ -34,3 +34,9 @@
     </button>
   </div>
 </form>
+
+@if (item; as savedItem) {
+  <lib-media-section [item]="savedItem" />
+  <lib-variant-section [item]="savedItem" />
+  <lib-addon-section [item]="savedItem" />
+}

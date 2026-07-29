@@ -1,0 +1,248 @@
+// Animation keyframes + utility classes — pure CSS, deliberately NOT `@angular/animations` (the
+// package.json install warning for this exact Angular version flags it as deprecated in favor of
+// native `animate.enter`/`animate.leave` bindings; a CSS-class-toggle approach here is
+// dependency-free, works identically on web and inside the Capacitor WebView, and needs no
+// runtime animation engine at all). Components toggle the `.mobile-anim-*` classes below using
+// the class-name constants exported by the sibling `*.animation.ts` files, so a class name never
+// gets hand-typed at a call site. (Class names keep their `mobile-anim-*` naming because they
+// originated with the native-shell-specific animations — page/modal/sheet/FAB/list transitions —
+// this file hasn't grown any desktop-only animations that would need a different prefix.)
+//
+// Already imported globally via `theme.scss` — every app that `@use`s the design system's theme
+// gets these for free (see `apps/*/src/styles.scss`):
+//   @use '../../../libs/shared/ui/src/theme';
+
+@keyframes mobile-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes mobile-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+// Page transition — forward navigation pushes in from the right / recedes to the left.
+@keyframes mobile-page-enter {
+  from {
+    opacity: 0;
+    transform: translateX(12%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes mobile-page-leave {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-8%);
+  }
+}
+
+// Modal — centered surface, scale + fade.
+@keyframes mobile-modal-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes mobile-modal-leave {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+}
+
+// Bottom sheet — slides up from off-screen; leave reverses it. `SwipeDirective` additionally
+// drives an interactive swipe-to-dismiss live via inline `transform`, independent of this
+// keyframe, which covers the tap-scrim / programmatic-close case.
+@keyframes mobile-sheet-enter {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes mobile-sheet-leave {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+// FAB — small pop-in/out so it doesn't just abruptly appear/disappear when a page mounts/scrolls.
+@keyframes mobile-fab-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes mobile-fab-leave {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+// List item entrance — pair with `--stagger-index` (set by `ListStaggerDirective`) for a
+// cascading reveal: `animation-delay: calc(var(--stagger-index, 0) * var(--motion-stagger-step))`.
+@keyframes mobile-list-item-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Spinner rotation — shared by `ProgressIndicatorComponent` (circular variant) and every button's
+// `loading` state, so both read the same keyframe instead of each declaring their own.
+@keyframes mobile-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.mobile-spinner {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentcolor;
+  border-right-color: transparent;
+  border-radius: var(--radius-full);
+  animation: mobile-spin 700ms linear infinite;
+  opacity: 0.85;
+}
+
+// Ripple (see RippleDirective) — expands from the touch point and fades.
+@keyframes mobile-ripple {
+  from {
+    opacity: 0.24;
+    transform: scale(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+// --- Applyable utility classes -------------------------------------------------------------
+// Each pairs a keyframe with the duration/easing tokens and `animation-fill-mode: both` (so the
+// element holds its start/end state rather than snapping back before/after the animation runs).
+
+.mobile-anim-page-enter {
+  animation: mobile-page-enter var(--motion-duration-base) var(--motion-easing-decelerate) both;
+}
+
+.mobile-anim-page-leave {
+  animation: mobile-page-leave var(--motion-duration-base) var(--motion-easing-accelerate) both;
+}
+
+.mobile-anim-modal-enter {
+  animation: mobile-modal-enter var(--motion-duration-fast) var(--motion-easing-decelerate) both;
+}
+
+.mobile-anim-modal-leave {
+  animation: mobile-modal-leave var(--motion-duration-fast) var(--motion-easing-accelerate) both;
+}
+
+.mobile-anim-backdrop-enter {
+  animation: mobile-fade-in var(--motion-duration-fast) var(--motion-easing-standard) both;
+}
+
+.mobile-anim-backdrop-leave {
+  animation: mobile-fade-out var(--motion-duration-fast) var(--motion-easing-standard) both;
+}
+
+.mobile-anim-sheet-enter {
+  animation: mobile-sheet-enter var(--motion-duration-base) var(--motion-easing-decelerate) both;
+}
+
+.mobile-anim-sheet-leave {
+  animation: mobile-sheet-leave var(--motion-duration-base) var(--motion-easing-accelerate) both;
+}
+
+.mobile-anim-fab-enter {
+  animation: mobile-fab-enter var(--motion-duration-fast) var(--motion-easing-decelerate) both;
+}
+
+.mobile-anim-fab-leave {
+  animation: mobile-fab-leave var(--motion-duration-fast) var(--motion-easing-accelerate) both;
+}
+
+.mobile-anim-list-item-enter {
+  animation: mobile-list-item-enter var(--motion-duration-base) var(--motion-easing-decelerate)
+    both;
+  animation-delay: calc(var(--stagger-index, 0) * var(--motion-stagger-step));
+}
+
+.mobile-ripple-effect {
+  position: absolute;
+  border-radius: var(--radius-full);
+  background: currentcolor;
+  pointer-events: none;
+  animation-name: mobile-ripple;
+  animation-timing-function: var(--motion-easing-standard);
+}
+
+// Lazy image fade-in (see LazyImageDirective).
+.mobile-lazy-image {
+  opacity: 0;
+  transition: opacity var(--motion-duration-base) var(--motion-easing-standard);
+}
+
+.mobile-lazy-image--loaded {
+  opacity: 1;
+}
+
+// Accessibility — every animation above collapses to an instant, no-motion state for users who
+// have asked the OS for reduced motion. This alone covers pure-CSS usage; JS-driven timing (e.g.
+// a directive computing when to fire a callback after an animation) additionally reads
+// `prefersReducedMotion()` from `reduced-motion.util.ts`.
+@media (prefers-reduced-motion: reduce) {
+  [class*='mobile-anim-'],
+  .mobile-ripple-effect,
+  .mobile-lazy-image {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}

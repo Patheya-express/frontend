@@ -1,0 +1,20 @@
+<section class="variant-section">
+  <div class="variant-section-header">
+    <h4>Variants</h4>
+    <button type="button" class="variant-section-add" (click)="openCreate()">+ Add Variant</button>
+  </div>
+
+  @if (isCreating) {
+    <lib-variant-form [itemId]="item.id" (closed)="closeForm()" />
+  } @else if (editingVariant; as variant) {
+    <lib-variant-form [itemId]="item.id" [variant]="variant" (closed)="closeForm()" />
+  }
+
+  <div class="variant-section-list">
+    @for (variant of item.variants; track variant.id) {
+      <lib-variant-row [variant]="variant" (editRequested)="openEdit(variant)" />
+    } @empty {
+      <p class="variant-section-empty">No variants yet — e.g. Size, Spice Level, Portion.</p>
+    }
+  </div>
+</section>

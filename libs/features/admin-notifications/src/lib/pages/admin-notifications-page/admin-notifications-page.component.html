@@ -75,16 +75,11 @@
           <td><lib-status-chip [label]="statusLabel(notification)" [tone]="statusTone(notification)" /></td>
           <td>{{ notification.attempts }}</td>
           <td class="admin-notifications-row-actions">
-            <button type="button" class="admin-notifications-action-link" (click)="viewNotification(notification)">View Details</button>
+            <lib-link-button (buttonClick)="viewNotification(notification)">View Details</lib-link-button>
             @if (canRetry(notification)) {
-              <button
-                type="button"
-                class="admin-notifications-action-link"
-                [disabled]="loading()"
-                (click)="requestRetry(notification)"
-              >
+              <lib-link-button [disabled]="loading()" (buttonClick)="requestRetry(notification)">
                 Retry
-              </button>
+              </lib-link-button>
             }
           </td>
         </tr>

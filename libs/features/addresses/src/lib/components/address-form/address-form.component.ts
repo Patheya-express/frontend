@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, inject, signal } from '@angular/core';
 import type { AddressResponseDto, CreateAddressDto, UpdateAddressDto } from '@patheya-express-frontend/api-sdk';
 import { MapPickerComponent, type PickedLocation } from '@patheya-express-frontend/map-picker';
+import { PrimaryButtonComponent, SecondaryButtonComponent } from '@patheya-express-frontend/ui';
 import { AddressesFacade } from '../../facades/addresses.facade';
 
 type AddressLabel = 'HOME' | 'WORK' | 'OTHER';
@@ -8,7 +9,7 @@ type AddressLabel = 'HOME' | 'WORK' | 'OTHER';
 @Component({
   selector: 'lib-address-form',
   standalone: true,
-  imports: [MapPickerComponent],
+  imports: [MapPickerComponent, PrimaryButtonComponent, SecondaryButtonComponent],
   templateUrl: './address-form.component.html',
   styleUrl: './address-form.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

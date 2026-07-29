@@ -78,7 +78,7 @@ h1 {
   font-family: inherit;
 
   &.is-unread {
-    background: var(--color-primary-subtle, #e8f0fe);
+    background: var(--color-info-soft);
     font-weight: var(--font-weight-medium);
   }
 }

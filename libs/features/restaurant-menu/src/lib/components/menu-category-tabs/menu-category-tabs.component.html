@@ -1,0 +1,16 @@
+@if (categories().length > 1) {
+  <div class="menu-category-tabs" role="tablist" aria-label="Menu categories" #tabsRow>
+    @for (category of categories(); track category.id) {
+      <lib-status-chip
+        role="tab"
+        [attr.data-tab-id]="category.id"
+        [attr.aria-selected]="activeCategoryId() === category.id"
+        [attr.tabindex]="activeCategoryId() === category.id ? 0 : -1"
+        [label]="category.name"
+        [selectable]="true"
+        [selected]="activeCategoryId() === category.id"
+        (chipClick)="selectCategory(category.id)"
+      />
+    }
+  </div>
+}

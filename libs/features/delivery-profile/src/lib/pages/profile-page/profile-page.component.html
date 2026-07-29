@@ -36,7 +36,7 @@
         Languages Spoken
         <input type="text" formControlName="languagesSpoken" placeholder="English, Hindi, Telugu" />
       </label>
-      <button type="submit" [disabled]="facade.saving()">Save</button>
+      <lib-primary-button size="sm" [disabled]="facade.saving()" [loading]="facade.saving()" (buttonClick)="onSubmitPersonal()">Save</lib-primary-button>
     </form>
 
     <form class="profile-section" [formGroup]="currentAddressForm" (ngSubmit)="onSubmitCurrentAddress()">
@@ -62,7 +62,7 @@
         Postal Code
         <input type="text" formControlName="currentPostalCode" />
       </label>
-      <button type="submit" [disabled]="facade.saving()">Save</button>
+      <lib-primary-button size="sm" [disabled]="facade.saving()" [loading]="facade.saving()" (buttonClick)="onSubmitCurrentAddress()">Save</lib-primary-button>
     </form>
 
     <form class="profile-section" [formGroup]="permanentAddressForm" (ngSubmit)="onSubmitPermanentAddress()">
@@ -94,7 +94,7 @@
           <input type="text" formControlName="permanentPostalCode" />
         </label>
       }
-      <button type="submit" [disabled]="facade.saving()">Save</button>
+      <lib-primary-button size="sm" [disabled]="facade.saving()" [loading]="facade.saving()" (buttonClick)="onSubmitPermanentAddress()">Save</lib-primary-button>
     </form>
 
     <form class="profile-section" [formGroup]="emergencyContactForm" (ngSubmit)="onSubmitEmergencyContact()">
@@ -111,7 +111,7 @@
         Relation
         <input type="text" formControlName="emergencyContactRelation" />
       </label>
-      <button type="submit" [disabled]="facade.saving()">Save</button>
+      <lib-primary-button size="sm" [disabled]="facade.saving()" [loading]="facade.saving()" (buttonClick)="onSubmitEmergencyContact()">Save</lib-primary-button>
     </form>
   }
 </div>

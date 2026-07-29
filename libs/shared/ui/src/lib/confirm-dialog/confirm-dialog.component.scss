@@ -1,12 +1,12 @@
 .confirm-dialog-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(20, 20, 24, 0.45);
+  background: var(--color-overlay-backdrop, rgba(20, 20, 24, 0.45));
   display: flex;
   align-items: center;
   justify-content: center;
   padding: var(--space-4);
-  z-index: 1000;
+  z-index: var(--z-index-dialog, 1000);
 }
 
 .confirm-dialog {

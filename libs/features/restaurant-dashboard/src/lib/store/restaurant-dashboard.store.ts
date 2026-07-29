@@ -7,6 +7,7 @@ import type {
 } from '@patheya-express-frontend/api-sdk';
 import { AuthFacade } from '@patheya-express-frontend/auth';
 import { RealtimeSocketService, RestaurantContextService } from '@patheya-express-frontend/core';
+import { formatCurrency } from '@patheya-express-frontend/ui';
 import { RestaurantDashboardService } from '../services/restaurant-dashboard.service';
 
 export interface DashboardMetric {
@@ -34,9 +35,9 @@ const DASHBOARD_REFRESH_EVENTS = [
 function buildMetrics(dashboard: RestaurantDashboardResponseDto): DashboardMetric[] {
   return [
     { key: 'ordersToday', label: "Today's Orders", value: String(dashboard.ordersToday) },
-    { key: 'revenueToday', label: 'Revenue Today', value: `₹${dashboard.revenueToday.toFixed(2)}` },
-    { key: 'revenueThisWeek', label: 'Revenue This Week', value: `₹${dashboard.revenueThisWeek.toFixed(2)}` },
-    { key: 'revenueThisMonth', label: 'Revenue This Month', value: `₹${dashboard.revenueThisMonth.toFixed(2)}` },
+    { key: 'revenueToday', label: 'Revenue Today', value: formatCurrency(dashboard.revenueToday) },
+    { key: 'revenueThisWeek', label: 'Revenue This Week', value: formatCurrency(dashboard.revenueThisWeek) },
+    { key: 'revenueThisMonth', label: 'Revenue This Month', value: formatCurrency(dashboard.revenueThisMonth) },
     { key: 'accepted', label: 'Accepted', value: String(dashboard.accepted) },
     { key: 'rejected', label: 'Rejected', value: String(dashboard.rejected) },
     { key: 'preparing', label: 'Preparing', value: String(dashboard.preparing) },

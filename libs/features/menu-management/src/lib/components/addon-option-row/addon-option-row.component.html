@@ -1,0 +1,30 @@
+<div class="addon-option-row" [class.is-unavailable]="!option.isAvailable">
+  <span class="addon-option-row-name">{{ option.name }}</span>
+  <span class="addon-option-row-price">₹{{ option.price }}</span>
+
+  <label class="addon-option-row-availability">
+    <input type="checkbox" [checked]="option.isAvailable" [disabled]="isProcessing" (change)="toggleAvailability()" />
+    Available
+  </label>
+
+  <div class="addon-option-row-actions">
+    <button type="button" class="addon-option-row-edit" [disabled]="isProcessing" (click)="editRequested.emit()">
+      Edit
+    </button>
+    <button type="button" class="addon-option-row-delete" [disabled]="isProcessing" (click)="requestDelete()">
+      Delete
+    </button>
+  </div>
+</div>
+
+<lib-confirm-dialog
+  [open]="deleteDialogOpen"
+  title="Delete this option?"
+  [message]="'\'' + option.name + '\' will be permanently removed.'"
+  confirmLabel="Delete option"
+  cancelLabel="Keep option"
+  tone="danger"
+  [busy]="isProcessing"
+  (confirmed)="confirmDelete()"
+  (cancelled)="cancelDelete()"
+/>

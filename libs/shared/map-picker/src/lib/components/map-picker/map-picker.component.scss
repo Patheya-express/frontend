@@ -10,12 +10,12 @@
   font-size: var(--font-size-sm);
 
   &--warning {
-    background: var(--color-warning-subtle, #fff3cd);
-    color: var(--color-warning, #856404);
+    background: var(--color-warning-soft);
+    color: var(--color-warning);
   }
 
   &--error {
-    background: var(--color-error-subtle, #f8d7da);
+    background: var(--color-error-soft);
     color: var(--color-error, #721c24);
   }
 }
@@ -87,7 +87,7 @@
 
     &:hover,
     &:focus-visible {
-      background: var(--color-surface-hover, #f5f5f5);
+      background: var(--color-surface-hover);
     }
   }
 }
@@ -132,7 +132,7 @@
 
   &:hover:not(:disabled),
   &:focus-visible {
-    background: var(--color-surface-hover, #f5f5f5);
+    background: var(--color-surface-hover);
   }
 }
 

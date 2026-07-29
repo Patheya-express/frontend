@@ -1,5 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { AddressResponseDto, CreateAddressDto, UpdateAddressDto } from '@patheya-express-frontend/api-sdk';
+import { LogoutCleanupRegistry } from '@patheya-express-frontend/auth';
 import { AddressesService } from '../services/addresses.service';
 
 @Injectable({ providedIn: 'root' })
@@ -23,6 +24,10 @@ export class AddressesStore {
   readonly selectedAddress = computed(
     () => this._addresses().find((address) => address.id === this.selectedAddressId()) ?? null,
   );
+
+  constructor() {
+    inject(LogoutCleanupRegistry).register(() => this.reset());
+  }
 
   /** Loads the address list once; call refresh() to force a reload after a mutation elsewhere. */
   async loadIfNeeded(): Promise<void> {
@@ -103,5 +108,16 @@ export class AddressesStore {
     } catch {
       this._error.set('Unable to delete this address.');
     }
+  }
+
+  /** Resets `loaded` along with the list itself — otherwise loadIfNeeded() would treat the
+   *  previous customer's already-fetched addresses as still current for whoever logs in next in
+   *  the same tab, and skip refetching entirely. */
+  reset(): void {
+    this._addresses.set([]);
+    this._loading.set(false);
+    this._error.set(null);
+    this._selectedAddressId.set(null);
+    this.loaded = false;
   }
 }
