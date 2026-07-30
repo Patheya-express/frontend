@@ -73,5 +73,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Verify ${{ matrix.app }} production environment config
+        run: node scripts/verify-production-env.mjs ${{ matrix.app }}
       - name: Build ${{ matrix.app }} (production configuration)
         run: pnpm exec nx build ${{ matrix.app }} --configuration=production
