@@ -1,16 +1,27 @@
 import type { AppEnvironment } from '@patheya-express-frontend/core';
 
 /**
- * Production build (`nx build customer-app --configuration=production`).
- * `razorpayKeyId` is a public key (safe to ship client-side) — replace it with the real live
- * Razorpay key before the first production deploy. `apiBaseUrl`/`socketUrl`/`mediaBaseUrl`
- * must point at the real production API origin.
+ * QA build (`nx build customer-app --configuration=qa`).
+ * Replace these placeholder origins with the real QA deployment's values (Render backend URL) —
+ * this file is deliberately not a secret and is safe to commit with the real QA origin.
  */
+
 export const environment: AppEnvironment = {
   production: true,
-  apiBaseUrl: 'https://api.patheyaexpress.com',
-  socketUrl: 'https://api.patheyaexpress.com',
-  mediaBaseUrl: 'https://api.patheyaexpress.com',
-  razorpayKeyId: 'rzp_live_REPLACE_WITH_REAL_KEY',
-  maps: { provider: 'GOOGLE_MAPS', googleMapsApiKey: '' },
+
+  apiBaseUrl:
+    'https://patheya-express-api-gateway-qa.onrender.com',
+
+  socketUrl:
+    'https://patheya-express-api-gateway-qa.onrender.com',
+
+  mediaBaseUrl:
+    'https://patheya-express-api-gateway-qa.onrender.com',
+
+  razorpayKeyId: 'rzp_test_Sop8avBtckAdw2',
+
+  maps: {
+    provider: 'GOOGLE_MAPS',
+    googleMapsApiKey: '',
+  },
 };
