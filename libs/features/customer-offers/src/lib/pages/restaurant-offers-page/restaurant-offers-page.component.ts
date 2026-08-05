@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { switchMap } from 'rxjs';
 import { EmptyStateComponent, ErrorStateComponent, PaginationComponent, SkeletonComponent } from '@patheya-express-frontend/ui';
@@ -16,10 +17,14 @@ import { OfferCardComponent } from '../../components/offer-card/offer-card.compo
 export class RestaurantOffersPageComponent implements OnInit {
   protected readonly facade = inject(CustomerOffersFacade);
   private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
 
   ngOnInit(): void {
     this.route.paramMap
-      .pipe(switchMap((params) => this.facade.loadRestaurantOffers(params.get('restaurantId') ?? '')))
+      .pipe(
+        switchMap((params) => this.facade.loadRestaurantOffers(params.get('restaurantId') ?? '')),
+        takeUntilDestroyed(this.destroyRef),
+      )
       .subscribe();
   }
 

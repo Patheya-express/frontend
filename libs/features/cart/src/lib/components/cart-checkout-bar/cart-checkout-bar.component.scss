@@ -1,3 +1,9 @@
+// Floating cart — squarely in the Neo-Glass zone (see neo-glass.mixins.scss's scope comment).
+// This component has exactly one consumer (the app shell renders it once, globally) so the
+// mixin is applied directly rather than gated behind a variant input — there is no second
+// visual treatment to opt out to.
+@use '../../../../../../shared/ui/src/lib/neo-glass/neo-glass.mixins' as neo;
+
 .checkout-bar {
   position: fixed;
   left: 50%;
@@ -9,11 +15,17 @@
   gap: var(--space-5);
   width: min(480px, calc(100vw - var(--space-6)));
   padding: var(--space-3) var(--space-3) var(--space-3) var(--space-5);
-  background: var(--color-text);
-  color: var(--color-text-on-primary);
-  border-radius: var(--radius-full);
-  box-shadow: var(--shadow-lg);
+  color: var(--color-text);
   z-index: 80;
+
+  @include neo.neo-glass-floating;
+
+  // Native Android/iOS shell: clear AppShellComponent's fixed bottom tab bar
+  // (--touch-target-large + safe-area-bottom, exactly matching its own height) plus this bar's
+  // usual --space-5 resting offset, instead of sitting underneath/overlapping it.
+  &.checkout-bar--native {
+    bottom: calc(var(--touch-target-large) + var(--safe-area-bottom) + var(--space-5));
+  }
 }
 
 .checkout-bar-summary {

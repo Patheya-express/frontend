@@ -48,6 +48,13 @@ export class LoginPageComponent {
   protected readonly loading = this.facade.loading;
   protected readonly error = this.facade.error;
 
+  /** Forwarded onto the Sign-up/Forgot-password links below so a guest bounced here from a
+   *  protected route (e.g. checkout, via `authGuard`'s own `redirectTo`) doesn't lose that
+   *  destination by detouring through either flow — without it, completing either one always
+   *  landed on the home page regardless of where the user was originally headed. */
+  protected readonly redirectTo = this.route.snapshot.queryParamMap.get('redirectTo');
+  protected readonly redirectToQueryParams = this.redirectTo ? { redirectTo: this.redirectTo } : {};
+
   /** UI-only convenience (see `LoginFormValue.rememberMe`) — `LoginDto` itself has no such field
    *  and `AuthStorageService` already persists every session to `localStorage` unconditionally,
    *  so this only remembers the *email* for next time, not session duration/behavior. */
@@ -66,8 +73,7 @@ export class LoginPageComponent {
       localStorage.removeItem(REMEMBERED_EMAIL_KEY);
     }
 
-    const redirectTo = this.route.snapshot.queryParamMap.get('redirectTo');
     const homePath = (this.route.snapshot.data['homePath'] as string | undefined) ?? '/';
-    await this.router.navigateByUrl(redirectTo ?? homePath);
+    await this.router.navigateByUrl(this.redirectTo ?? homePath);
   }
 }

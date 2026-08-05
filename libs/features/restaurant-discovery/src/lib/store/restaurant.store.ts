@@ -178,6 +178,17 @@ export class RestaurantStore {
     void this.refresh();
   }
 
+  /** Applies several filters in one update and refreshes once — for arriving with multiple query
+   *  params at once (e.g. a home-page "Trending"/"Fast Delivery" link setting both sortBy and
+   *  sortOrder). Calling the individual setters above in sequence for this would fire one
+   *  redundant fetch per field and risk an earlier-called-but-later-resolving request overwriting
+   *  the final state, since none of them cancel/sequence against each other. */
+  setFilters(partial: Partial<RestaurantFilters>): void {
+    this._filters.update((filters) => ({ ...filters, ...partial }));
+    this._pagination.update((pagination) => ({ ...pagination, page: 1 }));
+    void this.refresh();
+  }
+
   clearFilters(): void {
     this._filters.set(INITIAL_FILTERS);
     this._pagination.update((pagination) => ({ ...pagination, page: 1 }));

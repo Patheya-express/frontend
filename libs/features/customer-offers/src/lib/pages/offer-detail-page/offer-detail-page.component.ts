@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { switchMap } from 'rxjs';
 import { EmptyStateComponent, ErrorStateComponent, SkeletonComponent } from '@patheya-express-frontend/ui';
@@ -20,9 +21,15 @@ export class OfferDetailPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly mediaUrlService = inject(MediaUrlService);
+  private readonly destroyRef = inject(DestroyRef);
 
   ngOnInit(): void {
-    this.route.paramMap.pipe(switchMap((params) => this.facade.loadOfferById(params.get('id') ?? ''))).subscribe();
+    this.route.paramMap
+      .pipe(
+        switchMap((params) => this.facade.loadOfferById(params.get('id') ?? '')),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe();
   }
 
   protected get imageUrl(): string | undefined {

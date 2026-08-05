@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import type { UpdatePreferencesDto, NotificationPreferencesResponseDto } from '@patheya-express-frontend/api-sdk';
+import { ErrorStateComponent } from '@patheya-express-frontend/ui';
 import { CustomerProfileFacade } from '@patheya-express-frontend/customer-profile';
 
 type PreferenceKey = keyof NotificationPreferencesResponseDto;
@@ -21,6 +22,7 @@ const ROWS: PreferenceRow[] = [
 @Component({
   selector: 'lib-preferences-form',
   standalone: true,
+  imports: [ErrorStateComponent],
   templateUrl: './preferences-form.component.html',
   styleUrl: './preferences-form.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -31,9 +33,14 @@ export class PreferencesFormComponent implements OnInit {
   protected readonly rows = ROWS;
   protected readonly preferences = this.facade.preferences;
   protected readonly loading = this.facade.preferencesLoading;
+  protected readonly error = this.facade.preferencesError;
   protected readonly saving = this.facade.preferencesSaving;
 
   ngOnInit(): void {
+    void this.facade.loadPreferences();
+  }
+
+  protected retry(): void {
     void this.facade.loadPreferences();
   }
 

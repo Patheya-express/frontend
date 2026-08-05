@@ -70,6 +70,8 @@ h4 {
   justify-content: center;
   width: 24px;
   height: 24px;
+  min-width: var(--touch-target-min, 44px);
+  min-height: var(--touch-target-min, 44px);
   border: none;
   background: transparent;
   color: var(--color-primary);
@@ -104,7 +106,12 @@ h4 {
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
   cursor: pointer;
-  padding: 0;
+  // Was `padding: 0` — a hitbox equal to the text's own line height (~16-18px) on a destructive
+  // action. Real padding instead of the full 44px token: this sits directly under the stepper in
+  // a tight column (`.cart-item-controls`), where a full-height hitbox would visually bloat the
+  // row; this still roughly doubles the tappable area.
+  padding: var(--space-2);
+  margin: calc(var(--space-2) * -1);
 
   &:hover {
     text-decoration: underline;

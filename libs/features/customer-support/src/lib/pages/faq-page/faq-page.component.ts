@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { EmptyStateComponent, SkeletonComponent } from '@patheya-express-frontend/ui';
+import { EmptyStateComponent, ErrorStateComponent, SkeletonComponent } from '@patheya-express-frontend/ui';
 import { CustomerSupportFacade } from '../../facades/customer-support.facade';
 
 @Component({
   selector: 'lib-faq-page',
   standalone: true,
-  imports: [RouterLink, SkeletonComponent, EmptyStateComponent],
+  imports: [RouterLink, SkeletonComponent, EmptyStateComponent, ErrorStateComponent],
   templateUrl: './faq-page.component.html',
   styleUrl: './faq-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -21,6 +21,10 @@ export class FaqPageComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    void this.facade.loadFaqs();
+  }
+
+  protected retry(): void {
     void this.facade.loadFaqs();
   }
 

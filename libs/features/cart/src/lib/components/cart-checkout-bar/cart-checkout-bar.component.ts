@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, Input, computed, inject, signal } f
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { filter, map } from 'rxjs/operators';
+import { MobilePlatformService } from '@patheya-express-frontend/core';
 import { CartFacade } from '../../facades/cart.facade';
 
 /** Routes where the cart is already the focus (or not reachable) — showing the bar there would be redundant. */
@@ -27,6 +28,10 @@ function isHiddenRoute(url: string): boolean {
 export class CartCheckoutBarComponent {
   private readonly cartFacade = inject(CartFacade);
   private readonly router = inject(Router);
+
+  /** Native Android/iOS shell only — pushes this bar up above `AppShellComponent`'s fixed bottom
+   *  tab bar (see app-shell.component.scss); on web there's no tab bar to clear. */
+  protected readonly isNative = inject(MobilePlatformService).isNative();
 
   private readonly _drawerOpen = signal(false);
 

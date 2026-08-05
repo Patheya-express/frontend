@@ -12,4 +12,8 @@ export * from './lib/realtime/realtime-socket.service';
 export * from './lib/map/map.service';
 export * from './lib/mobile/mobile-platform.service';
 export * from './lib/mobile/mobile.providers';
+export * from './lib/mobile/haptics.service';
+export * from './lib/mobile/push-notifications.service';
+export * from './lib/mobile/back-button-overlay-handler.token';
 export * from './lib/responsive/breakpoint.service';
+export * from './lib/http/extract-http-error-message';

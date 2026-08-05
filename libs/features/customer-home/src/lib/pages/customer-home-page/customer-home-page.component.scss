@@ -1,3 +1,32 @@
+// Neo-Glass — used directly here (not gated behind a variant) for the page-local elements that
+// aren't shared components: the cuisine chip, quick-action chips, and the "See all" pill.
+// Everything that IS a shared component (search bar, status chip) opts in via its own
+// `variant="neo-glass"` input instead — see search-input.component.scss / status-chip.component.scss.
+@use '../../../../../../shared/ui/src/lib/neo-glass/neo-glass.mixins' as neo;
+
+:host {
+  // Warms this page's own background layer — cream instead of the app-wide cool neutral — via a
+  // scoped custom-property override, light mode only (guarded below). Every --neo-*/--glass-*
+  // token in theme.scss is *derived* from --color-background with color-mix(), resolved live at
+  // point of use rather than frozen at :root, so this single override warms the search pill,
+  // chips, and cards rendered inside this page too — without touching the shared theme file or
+  // affecting any other page.
+  --color-background: #faf5ef;
+}
+
+// Mirrors theme.scss's own two dark-mode activation conditions (explicit attribute, or OS
+// preference with no explicit override) so this page's warm override never fights dark mode —
+// it defers entirely back to the app's real dark palette instead.
+:host-context([data-theme='dark']) {
+  --color-background: #121214;
+}
+
+@media (prefers-color-scheme: dark) {
+  :host-context(:root:not([data-theme='light'])) {
+    --color-background: #121214;
+  }
+}
+
 .customer-home-page {
   display: flex;
   flex-direction: column;
@@ -6,6 +35,7 @@
   margin: 0 auto;
   padding: var(--space-5) var(--space-4);
   min-width: 0;
+  background: var(--color-background);
 }
 
 // Every direct child that contains a horizontally-scrolling row must have min-width: 0 —
@@ -15,18 +45,210 @@
   min-width: 0;
 }
 
+// --- Hero / search zone -----------------------------------------------------------------------
+// Bleeds out to the page's own edges (negative margin equal to .customer-home-page's own
+// padding, not the outer app-shell's) so the gradient wash reads as a deliberate zone rather than
+// a card floating inside the existing padding.
+.customer-home-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: calc(var(--space-5) * -1) calc(var(--space-4) * -1) 0;
+  padding: var(--space-6) var(--space-4) var(--space-2);
+  overflow: hidden;
+  isolation: isolate;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    width: 320px;
+    height: 320px;
+    border-radius: 50%;
+    filter: blur(72px);
+    opacity: 0.28;
+    z-index: -1;
+    pointer-events: none;
+  }
+
+  &::before {
+    top: -140px;
+    left: -80px;
+    background: radial-gradient(circle, var(--color-primary) 0%, transparent 70%);
+    animation: home-blob-float-a 16s var(--motion-easing-standard) infinite;
+  }
+
+  &::after {
+    top: -100px;
+    right: -110px;
+    background: radial-gradient(circle, var(--color-primary-strong, var(--color-primary)) 0%, transparent 70%);
+    animation: home-blob-float-b 20s var(--motion-easing-standard) infinite;
+  }
+}
+
+// Dynamic lighting — a soft diagonal sheen slowly drifting across the hero, layered above the
+// two gradient blobs for extra depth. `mix-blend-mode: overlay` + low opacity keeps it a lighting
+// cue rather than a visible shape; `filter: blur` + `transform` only, so it stays compositor-only.
+.customer-home-hero-sheen {
+  position: absolute;
+  top: -20%;
+  left: -30%;
+  width: 70%;
+  height: 140%;
+  background: linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, 0.5) 45%, transparent 70%);
+  mix-blend-mode: overlay;
+  filter: blur(18px);
+  opacity: 0.5;
+  z-index: -1;
+  pointer-events: none;
+  animation: home-hero-sheen 9s var(--motion-easing-standard) infinite;
+}
+
+@keyframes home-hero-sheen {
+  0% {
+    transform: translateX(-20%);
+  }
+  50% {
+    transform: translateX(140%);
+  }
+  100% {
+    transform: translateX(140%);
+  }
+}
+
+@keyframes home-blob-float-a {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(28px, 20px) scale(1.08);
+  }
+}
+
+@keyframes home-blob-float-b {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-24px, 16px) scale(1.05);
+  }
+}
+
+.customer-home-hero-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.customer-home-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.02em;
+  color: var(--color-text-muted);
+
+  .eyebrow-icon {
+    color: var(--color-primary);
+    flex-shrink: 0;
+    animation: home-sparkle-pulse 2.6s ease-in-out infinite;
+  }
+}
+
+@keyframes home-sparkle-pulse {
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15) rotate(8deg);
+  }
+}
+
+.customer-home-headline {
+  margin: 0;
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: -0.02em;
+  line-height: var(--line-height-tight);
+  text-wrap: balance;
+  // Gradient stays within dark tones only (text -> primary-strong, never the brighter
+  // --color-primary) so every glyph keeps AA contrast against the surface behind it.
+  background: linear-gradient(120deg, var(--color-text) 45%, var(--color-primary-strong, var(--color-primary)) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: var(--color-text);
+}
+
 .ptr-indicator {
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   transition: height var(--transition-fast);
+
+  lib-progress-indicator {
+    display: inline-flex;
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-full);
+    background: var(--color-surface);
+    background: color-mix(in srgb, var(--color-surface) 82%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: var(--shadow-md);
+  }
 }
 
+// --- Search bar --------------------------------------------------------------------------------
+// `lib-search-bar variant="neo-glass"` owns its own soft-neumorphic pill surface (see
+// search-input.component.scss). This wrapper adds one more layer on top: a light glass "tray"
+// that visually holds the search pill and the separate voice-search button together as one
+// integrated control — deliberately subtle (thin border, soft shadow) so it reads as a shared
+// tray rather than competing with the pill's own, stronger raised shadow. That's the three-layer
+// depth this page is built on: warm background canvas -> this glass tray -> the neo-glass pill
+// and restaurant cards on top of it.
+//
+// Sticky: `.app-shell-content` (the page's scroll ancestor) has no `overflow` of its own, so the
+// window is the scrolling box and `position: sticky` resolves against it correctly. If a future
+// shell wraps this page in its own scroll container, this simply degrades to static positioning
+// — no functional loss, just no longer sticks.
 .customer-home-search {
+  position: sticky;
+  top: calc(var(--safe-area-top) + var(--space-3));
+  z-index: var(--z-index-sticky);
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  padding: var(--space-2);
+  border-radius: var(--radius-full);
+  background: var(--glass-surface);
+  backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur-sm)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--motion-duration-base) var(--motion-easing-standard);
+
+  // The search-bar/search-input pairing is our own direct template child, so its host element
+  // (not its inner Shadow-DOM-less template) can be styled without ::ng-deep.
+  lib-icon-button {
+    flex-shrink: 0;
+    border-radius: var(--radius-full);
+  }
+}
+
+// Glow on focus — targets the search-bar's own host element (a plain descendant selector reaches
+// it, since it's this page's direct template child) so the whole tray brightens the instant focus
+// lands inside the field, not just the input itself.
+.customer-home-search:focus-within {
+  box-shadow: var(--shadow-md), 0 0 0 4px var(--color-primary-soft);
 }
 
 .customer-home-search-bar {
@@ -34,12 +256,82 @@
   min-width: 0;
 }
 
+// A slow, subtle breathing pulse on the leading search icon — standing in for an "animated
+// placeholder" (animating the placeholder string itself would need cycling text, which needs a
+// TS-driven signal this pass can't add) with the same "the search is alive" cue, opacity/transform
+// only.
+.search-icon-pulse {
+  animation: home-search-icon-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes home-search-icon-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+// The voice-search button's actual `<button>` lives inside IconButtonComponent's own template,
+// one level past what a plain descendant selector can reach — ::ng-deep is the correct tool here,
+// and `:host` keeps it scoped to this page's own instance rather than every icon-button app-wide.
+:host ::ng-deep .customer-home-search .mobile-icon-button {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+  color: var(--color-text-on-primary);
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform var(--motion-duration-fast) var(--motion-easing-standard),
+    box-shadow var(--motion-duration-fast) var(--motion-easing-standard);
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+    transform: scale(1.06);
+    box-shadow: var(--shadow-md);
+  }
+
+  &:active:not(:disabled) {
+    transform: scale(0.92);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-text-on-primary);
+    outline-offset: 2px;
+  }
+}
+
+// Progressive enhancement — a subtle scroll-linked condense on the search tray as the page
+// scrolls past the hero, using native CSS scroll-driven animation (no JS, no new TS signal).
+// `@supports`-gated so unsupported browsers (older Safari/Firefox) simply keep the static tray —
+// no error, no layout shift, nothing missing but the extra polish. Nested inside the
+// reduced-motion check so it never runs for users who've asked for less motion.
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: scroll()) {
+    .customer-home-search {
+      animation: home-search-condense linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 220px;
+    }
+  }
+}
+
+@keyframes home-search-condense {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(0.96);
+  }
+}
+
 .customer-home-recent-searches {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-top: calc(var(--space-6) * -1 + var(--space-2));
 }
 
 .recent-label {
@@ -47,10 +339,103 @@
   color: var(--color-text-muted);
 }
 
+// Recent-search chips carry `variant="neo-glass"` directly (see the template) — the pill
+// treatment lives in status-chip.component.scss itself.
+
+// --- Quick actions ------------------------------------------------------------------------------
+// Trending / Reorder / Nearby / Offers — floating Neo-Glass chips, one scroll-edge-fade row, each
+// a plain routerLink into an existing route (Nearby and Offers reuse "/restaurants" and "/offers"
+// exactly as the rest of the app already does; Trending reuses the identical sortBy/sortOrder
+// query params the "Popular Right Now" section below already sends). "Nearby" only renders when
+// `facade.hasLocation()` is true — the same signal the "Near You" section already gates on.
+.customer-home-quick-actions {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding: 2px 2px var(--space-1);
+  mask-image: linear-gradient(to right, transparent 0, black 16px, black calc(100% - 16px), transparent 100%);
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 16px,
+    black calc(100% - 16px),
+    transparent 100%
+  );
+}
+
+.quick-action-chip {
+  @include neo.neo-interactive;
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 0 0 auto;
+  min-height: var(--touch-target-min, 44px);
+  padding: 0 var(--space-4);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+
+  svg {
+    color: var(--color-primary-strong, var(--color-primary));
+    flex-shrink: 0;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gradient-primary);
+    opacity: 0;
+    transition: opacity var(--motion-duration-base) var(--motion-easing-standard);
+  }
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-text);
+
+    &::before {
+      opacity: 0.1;
+    }
+  }
+}
+
+// --- Loading / error / empty states -------------------------------------------------------------
 .customer-home-loading {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
+  animation: home-fade-in var(--motion-duration-base) var(--motion-easing-standard) both;
+}
+
+.customer-home-state-panel {
+  animation: home-reveal var(--motion-duration-slow) var(--motion-easing-decelerate) both;
+}
+
+:host ::ng-deep .customer-home-state-panel .empty-state-illustration,
+:host ::ng-deep .customer-home-state-panel .error-state-illustration {
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -20%;
+    z-index: -1;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--color-primary-soft) 0%, transparent 72%);
+  }
+}
+
+// --- Banners -------------------------------------------------------------------------------------
+// The first real food imagery on the page — an ambient drop-shadow (compositor-only, same family
+// as `transform`/`opacity`/`filter`) gives the whole carousel extra presence/prominence without
+// changing its layout or the size of any slide.
+lib-carousel.customer-home-reveal {
+  display: block;
+  filter: drop-shadow(0 20px 40px rgba(20, 12, 4, 0.1));
 }
 
 .customer-home-banner {
@@ -62,12 +447,31 @@
   display: block;
   text-decoration: none;
   color: inherit;
+  transition: transform var(--motion-duration-base) var(--motion-easing-standard);
 
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
+    transition: transform var(--motion-duration-slow) var(--motion-easing-standard);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 3px;
+  }
+
+  // Hover-only, pointer-only — avoids the tap-to-hover "stuck zoom" some touch browsers apply
+  // to `:hover` after a tap on devices with no true hover capability.
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      transform: translateY(-3px);
+
+      img {
+        transform: scale(1.05);
+      }
+    }
   }
 }
 
@@ -78,18 +482,20 @@
   flex-direction: column;
   justify-content: flex-end;
   padding: var(--space-4);
-  background: linear-gradient(0deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0));
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.68) 0%, rgba(0, 0, 0, 0.28) 55%, rgba(0, 0, 0, 0) 100%);
   color: #fff;
 
   h3 {
     margin: 0;
     font-size: var(--font-size-lg);
     font-weight: var(--font-weight-semibold);
+    letter-spacing: -0.01em;
   }
 
   p {
     margin: var(--space-1) 0 0;
     font-size: var(--font-size-sm);
+    opacity: 0.92;
   }
 }
 
@@ -101,35 +507,269 @@
   color: var(--color-text);
 }
 
-.customer-home-cuisine-chip {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--touch-target-min, 44px);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-full, 999px);
-  padding: 0 var(--space-3);
-  font-size: var(--font-size-sm);
-  color: var(--color-text);
-  text-decoration: none;
-  background: var(--color-surface);
-  white-space: nowrap;
+// Carousel dot indicators, pill-morph via `transform: scaleX` only (never animating `width`) so
+// the active/inactive swap stays GPU-composited.
+:host ::ng-deep .customer-home-page > lib-carousel {
+  .carousel-indicators {
+    margin-top: var(--space-4);
+  }
 
-  &:hover {
-    border-color: var(--color-primary);
-    color: var(--color-primary);
+  .carousel-dot {
+    width: 20px;
+    height: 6px;
+    border-radius: var(--radius-full);
+    background: var(--color-border);
+    transform: scaleX(0.4);
+    transition:
+      transform var(--motion-duration-base) var(--motion-easing-standard),
+      background var(--motion-duration-base) var(--motion-easing-standard);
+
+    &--active {
+      background: linear-gradient(90deg, var(--color-primary), var(--color-primary-hover));
+      transform: scaleX(1);
+    }
   }
 }
 
+// --- Shelf / section headers (Categories, Featured, Near You, Popular, …, Featured Offers) ------
+// One rule reaches every `lib-horizontal-shelf` / `lib-offer-carousel` instance this page renders,
+// however deep it's nested behind `lib-restaurant-section` — `:host` keeps it off other pages that
+// also compose these shared components. Each section keeps the same accent-bar language (shared
+// design system) rather than color-coding per section by DOM position: which section renders at
+// which sibling index shifts at runtime (banners/offers/location can each be absent), so a
+// position-based per-section palette would risk mislabeling a section's own color — content
+// (title, imagery, restaurants) is what makes each section distinct, not chrome color.
+:host ::ng-deep .shelf-header h2,
+:host ::ng-deep .offer-carousel-title {
+  position: relative;
+  padding-left: var(--space-3);
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  letter-spacing: -0.01em;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 4px;
+    height: 1.05em;
+    border-radius: var(--radius-full);
+    background: linear-gradient(180deg, var(--color-primary), var(--color-primary-hover));
+    transform: translateY(-50%);
+  }
+}
+
+:host ::ng-deep .shelf-see-all {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--color-primary-soft);
+  transition:
+    background var(--motion-duration-fast) var(--motion-easing-standard),
+    color var(--motion-duration-fast) var(--motion-easing-standard);
+
+  &::after {
+    content: '';
+    display: inline-block;
+    width: 5px;
+    height: 5px;
+    margin-left: 6px;
+    border-right: 1.6px solid currentcolor;
+    border-bottom: 1.6px solid currentcolor;
+    transform: rotate(-45deg);
+    transition: transform var(--motion-duration-fast) var(--motion-easing-standard);
+  }
+
+  &:hover {
+    background: var(--color-primary);
+    color: var(--color-text-on-primary);
+    text-decoration: none;
+
+    &::after {
+      transform: rotate(-45deg) translate(2px, -2px);
+    }
+  }
+}
+
+// Fade the scroll edges of every horizontally-scrolling row on the page (category chips,
+// restaurant shelves, offer carousel) so content visibly continues past the viewport edge instead
+// of hard-clipping — a cheap, GPU-friendly `mask-image`, not a layout change.
+:host ::ng-deep .shelf-row,
+:host ::ng-deep .offer-carousel-row {
+  mask-image: linear-gradient(to right, transparent 0, black 20px, black calc(100% - 20px), transparent 100%);
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 20px,
+    black calc(100% - 20px),
+    transparent 100%
+  );
+}
+
+// --- Category chips --------------------------------------------------------------------------
+// A page-local `<a>`, not `lib-status-chip` — the Neo-Glass mixin is included directly rather
+// than opted into via a component variant, same reasoning as the quick-action chips.
+.customer-home-cuisine-chip {
+  @include neo.neo-interactive;
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--touch-target-min, 44px);
+  border-radius: var(--radius-full);
+  padding: 0 var(--space-4);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+
+  svg {
+    color: var(--color-text-subtle);
+    flex-shrink: 0;
+    transition: color var(--motion-duration-fast) var(--motion-easing-standard);
+  }
+
+  // Animated gradient "selection" wash — fades in on hover/focus rather than tracking a real
+  // selected state (there's no active-cuisine-filter signal on this page to bind to), so it reads
+  // as a rich interactive cue without claiming a selection state that doesn't exist.
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gradient-primary);
+    opacity: 0;
+    transition: opacity var(--motion-duration-base) var(--motion-easing-standard);
+  }
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-primary-strong, var(--color-primary));
+
+    svg {
+      color: var(--color-primary);
+    }
+
+    &::before {
+      opacity: 0.12;
+    }
+  }
+}
+
+// --- Restaurant cards (Featured / Near You / Popular / … / More Restaurants grid) ----------------
+// RestaurantCardComponent is shared app-wide (also used on the standalone restaurant list route);
+// `:host ::ng-deep` + the page root keeps this elevation exclusive to cards rendered on this page.
+:host ::ng-deep .restaurant-card {
+  transition:
+    transform var(--motion-duration-base) var(--motion-easing-standard),
+    box-shadow var(--motion-duration-base) var(--motion-easing-standard),
+    border-color var(--motion-duration-base) var(--motion-easing-standard);
+
+  .restaurant-card-image img {
+    transition: transform var(--motion-duration-slow) var(--motion-easing-standard);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      transform: translateY(-6px);
+      box-shadow: var(--shadow-lg), 0 12px 28px -12px color-mix(in srgb, var(--color-primary) 45%, transparent);
+
+      .restaurant-card-image img {
+        transform: scale(1.06);
+      }
+    }
+  }
+}
+
+// Favorite hearts on every restaurant card — the fill-pop plays automatically whenever
+// FavoriteButtonComponent's `[class.favorited]="isFavorited()"` binding newly applies the class,
+// since a CSS `animation` (re)starts the moment its selector starts matching. No JS trigger, no
+// new signal.
+:host ::ng-deep .favorite-button.favorited svg {
+  animation: home-heart-pop var(--motion-duration-base) var(--motion-easing-standard);
+}
+
+@keyframes home-heart-pop {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+// --- Scroll / entrance animations -----------------------------------------------------------------
+@keyframes home-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes home-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+// Applied directly to every top-level shelf/carousel/section this page renders — plays once on
+// mount whether that happens eagerly (Featured, Near You) or lazily via `@defer (on viewport)`
+// (Popular, Recommended, Open Now, Fast Delivery, Top Rated, More Restaurants): a CSS animation
+// fires whenever its element is inserted into the DOM, regardless of what triggered the insert.
+.customer-home-reveal {
+  min-width: 0;
+  animation: home-reveal var(--motion-duration-slow) var(--motion-easing-decelerate) both;
+}
+
+// Small, bounded stagger across whichever reveal sections are mounted together at once (e.g.
+// Featured + Near You on initial load) — capped at the first 8 direct children since a page this
+// size never has more concurrently-mounting reveal sections, and the cascade is imperceptible
+// past that many steps anyway.
+@for $i from 1 through 8 {
+  .customer-home-page > .customer-home-reveal:nth-child(#{$i}) {
+    animation-delay: calc((#{$i} - 1) * var(--motion-stagger-step) * 2);
+  }
+}
+
+// --- More Restaurants grid -------------------------------------------------------------------
 .customer-home-more {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
 
   h2 {
+    position: relative;
     margin: 0;
-    font-size: var(--font-size-lg);
-    font-weight: var(--font-weight-semibold);
+    padding-left: var(--space-3);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: -0.01em;
     color: var(--color-text);
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      width: 4px;
+      height: 1.05em;
+      border-radius: var(--radius-full);
+      background: linear-gradient(180deg, var(--color-primary), var(--color-primary-hover));
+      transform: translateY(-50%);
+    }
   }
 }
 
@@ -137,6 +777,15 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: var(--space-4);
+
+  // Bounded per-card stagger, same reasoning as `.customer-home-reveal` above — capped rather
+  // than scaled to an unbounded list, since anything past ~10 cards enters below the fold anyway.
+  @for $i from 1 through 10 {
+    > *:nth-child(#{$i}) {
+      animation: home-reveal var(--motion-duration-base) var(--motion-easing-decelerate) both;
+      animation-delay: calc((#{$i} - 1) * var(--motion-stagger-step));
+    }
+  }
 }
 
 .more-error {
@@ -146,21 +795,42 @@
   font-size: var(--font-size-sm);
 }
 
+// --- Browse-all CTA ------------------------------------------------------------------------------
 .customer-home-browse-all {
   text-align: center;
 
   a {
     display: inline-flex;
     align-items: center;
+    gap: var(--space-2);
     min-height: var(--touch-target-min, 44px);
+    padding: 0 var(--space-4);
+    border-radius: var(--radius-full);
     color: var(--color-primary);
     font-weight: var(--font-weight-medium);
     text-decoration: none;
+    transition:
+      background var(--motion-duration-fast) var(--motion-easing-standard),
+      transform var(--motion-duration-fast) var(--motion-easing-standard);
 
     &:hover {
-      text-decoration: underline;
+      background: var(--color-primary-soft);
+      text-decoration: none;
+
+      .browse-all-arrow {
+        transform: translateX(4px);
+      }
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
     }
   }
+}
+
+.browse-all-arrow {
+  transition: transform var(--motion-duration-fast) var(--motion-easing-standard);
 }
 
 // Responsive — desktop/tablet get a wider stage and larger touch-agnostic banner text; phones
@@ -168,6 +838,15 @@
 @media (min-width: 768px) {
   .customer-home-page {
     padding: var(--space-6) var(--space-6);
+  }
+
+  .customer-home-hero {
+    margin: calc(var(--space-6) * -1) calc(var(--space-6) * -1) 0;
+    padding: var(--space-7) var(--space-6) var(--space-2);
+  }
+
+  .customer-home-headline {
+    font-size: 2.25rem;
   }
 
   .customer-home-more-grid {
@@ -178,5 +857,45 @@
 @media (min-width: 1024px) {
   .customer-home-banner-text h3 {
     font-size: var(--font-size-xl);
+  }
+}
+
+// --- Accessibility: reduced motion ------------------------------------------------------------
+// Every animation/transform-heavy affordance introduced above collapses to its resting state —
+// mirrors the pattern already established globally in `animations/keyframes.scss`.
+@media (prefers-reduced-motion: reduce) {
+  .customer-home-hero::before,
+  .customer-home-hero::after,
+  .customer-home-hero-sheen,
+  .eyebrow-icon,
+  .search-icon-pulse,
+  .customer-home-reveal,
+  .customer-home-loading,
+  .customer-home-state-panel,
+  .customer-home-more-grid > *,
+  :host ::ng-deep .favorite-button.favorited svg {
+    animation: none !important;
+  }
+
+  .customer-home-banner,
+  .customer-home-banner img,
+  .browse-all-arrow,
+  .quick-action-chip,
+  .quick-action-chip::before,
+  .customer-home-cuisine-chip,
+  .customer-home-cuisine-chip::before,
+  :host ::ng-deep .restaurant-card,
+  :host ::ng-deep .restaurant-card-image img,
+  :host ::ng-deep .customer-home-page > lib-carousel .carousel-dot,
+  :host ::ng-deep .customer-home-search .mobile-icon-button,
+  :host ::ng-deep .shelf-see-all::after {
+    transition-duration: 1ms !important;
+  }
+
+  :host ::ng-deep .restaurant-card:hover,
+  .customer-home-banner:hover,
+  .customer-home-cuisine-chip:hover,
+  .quick-action-chip:hover {
+    transform: none !important;
   }
 }

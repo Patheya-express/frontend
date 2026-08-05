@@ -3,6 +3,7 @@
     @for (category of categories(); track category.id) {
       <lib-status-chip
         role="tab"
+        variant="neo-glass"
         [attr.data-tab-id]="category.id"
         [attr.aria-selected]="activeCategoryId() === category.id"
         [attr.tabindex]="activeCategoryId() === category.id ? 0 : -1"

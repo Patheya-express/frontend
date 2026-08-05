@@ -74,12 +74,18 @@
 
 .my-review-actions {
   display: flex;
-  gap: var(--space-3);
+  // Was `gap: var(--space-3)` with `padding: 0` buttons (a hitbox equal to the raw text height on
+  // Edit/Delete — one of which is destructive). Same fix as address-card's identical pattern:
+  // padding grows the tap target, gap drops to 0 so the row's overall rhythm looks the same.
+  gap: 0;
 
   button {
+    display: inline-flex;
+    align-items: center;
     border: none;
     background: none;
-    padding: 0;
+    padding: var(--space-2);
+    min-height: var(--touch-target-min, 44px);
     font-size: var(--font-size-xs);
     font-weight: var(--font-weight-medium);
     color: var(--color-primary);

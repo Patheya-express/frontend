@@ -86,7 +86,8 @@ export class CustomerHomeStore {
     this._hasLocation.set(query.lat !== undefined && query.lng !== undefined);
 
     try {
-      this._home.set(await this.customerHomeService.getHome(query));
+      const home = await this.customerHomeService.getHome(query);
+      this._home.set(home);
     } catch {
       this._error.set(
         this.networkStatus.isOffline()

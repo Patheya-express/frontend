@@ -11,11 +11,13 @@ export class AddressesStore {
   private readonly _loading = signal(false);
   private readonly _error = signal<string | null>(null);
   private readonly _selectedAddressId = signal<string | null>(null);
+  private readonly _saving = signal(false);
   private loaded = false;
 
   readonly addresses = this._addresses.asReadonly();
   readonly loading = this._loading.asReadonly();
   readonly error = this._error.asReadonly();
+  readonly saving = this._saving.asReadonly();
 
   readonly defaultAddress = computed(() => this._addresses().find((address) => address.isDefault) ?? null);
 
@@ -57,6 +59,11 @@ export class AddressesStore {
   }
 
   async create(dto: CreateAddressDto): Promise<AddressResponseDto | null> {
+    if (this._saving()) {
+      return null;
+    }
+
+    this._saving.set(true);
     this._error.set(null);
 
     try {
@@ -67,10 +74,17 @@ export class AddressesStore {
     } catch {
       this._error.set('Unable to save this address.');
       return null;
+    } finally {
+      this._saving.set(false);
     }
   }
 
   async update(id: string, dto: UpdateAddressDto): Promise<AddressResponseDto | null> {
+    if (this._saving()) {
+      return null;
+    }
+
+    this._saving.set(true);
     this._error.set(null);
 
     try {
@@ -80,6 +94,8 @@ export class AddressesStore {
     } catch {
       this._error.set('Unable to update this address.');
       return null;
+    } finally {
+      this._saving.set(false);
     }
   }
 

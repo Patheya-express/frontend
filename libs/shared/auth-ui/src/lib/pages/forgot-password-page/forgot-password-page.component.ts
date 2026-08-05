@@ -24,6 +24,12 @@ export class ForgotPasswordPageComponent {
   protected readonly loading = this.facade.loading;
   protected readonly error = this.facade.error;
 
+  /** Forwarded here from the login page's Forgot-password link — carried onto the "Log in" link
+   *  below so a guest who arrived via a protected route doesn't lose that destination bouncing
+   *  through this page. */
+  private readonly redirectTo = this.route.snapshot.queryParamMap.get('redirectTo');
+  protected readonly redirectToQueryParams = this.redirectTo ? { redirectTo: this.redirectTo } : {};
+
   /** The backend returns the same generic message whether or not the email matched an
    *  account — this only tracks "the request itself succeeded," not "an email was sent." */
   protected readonly submitted = signal(false);

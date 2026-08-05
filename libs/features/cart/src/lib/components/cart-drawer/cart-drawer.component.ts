@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { EmptyStateComponent } from '@patheya-express-frontend/ui';
+import { MobilePlatformService } from '@patheya-express-frontend/core';
 import { CartFacade } from '../../facades/cart.facade';
 import { CartItemComponent } from '../cart-item/cart-item.component';
 import { CartSummaryComponent } from '../cart-summary/cart-summary.component';
@@ -19,6 +20,11 @@ export class CartDrawerComponent {
 
   private readonly cartFacade = inject(CartFacade);
   private readonly router = inject(Router);
+
+  /** Native Android/iOS shell only — pushes the footer's bottom padding out to clear
+   *  AppShellComponent's fixed bottom tab bar, same pattern as `CartCheckoutBarComponent` in this
+   *  same library. */
+  protected readonly isNative = inject(MobilePlatformService).isNative();
 
   protected readonly items = this.cartFacade.items;
   protected readonly error = this.cartFacade.error;

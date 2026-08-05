@@ -21,6 +21,7 @@ export class CustomerProfileStore {
 
   private readonly _preferences = signal<NotificationPreferencesResponseDto | null>(null);
   private readonly _preferencesLoading = signal(false);
+  private readonly _preferencesError = signal<string | null>(null);
   private readonly _preferencesSaving = signal(false);
 
   private readonly _passwordSaving = signal(false);
@@ -41,6 +42,7 @@ export class CustomerProfileStore {
 
   readonly preferences = this._preferences.asReadonly();
   readonly preferencesLoading = this._preferencesLoading.asReadonly();
+  readonly preferencesError = this._preferencesError.asReadonly();
   readonly preferencesSaving = this._preferencesSaving.asReadonly();
 
   readonly passwordSaving = this._passwordSaving.asReadonly();
@@ -117,10 +119,16 @@ export class CustomerProfileStore {
 
   async loadPreferences(): Promise<void> {
     this._preferencesLoading.set(true);
+    this._preferencesError.set(null);
 
     try {
       const preferences = await this.customerProfileService.getPreferences();
       this._preferences.set(preferences);
+    } catch {
+      // Was previously uncaught. preferences() stayed null, which the form's isChecked() reads
+      // as "false" for every toggle — rendering as "you've opted out of everything" rather than
+      // "this failed to load".
+      this._preferencesError.set('Unable to load your notification preferences.');
     } finally {
       this._preferencesLoading.set(false);
     }
@@ -189,6 +197,7 @@ export class CustomerProfileStore {
     this._error.set(null);
     this._preferences.set(null);
     this._preferencesLoading.set(false);
+    this._preferencesError.set(null);
     this._preferencesSaving.set(false);
     this._passwordSaving.set(false);
     this._passwordError.set(null);

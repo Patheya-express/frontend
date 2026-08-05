@@ -1,5 +1,5 @@
 @if (visible()) {
-  <div class="checkout-bar">
+  <div class="checkout-bar" [class.checkout-bar--native]="isNative">
     <span class="checkout-bar-summary">
       {{ totalItems() }} {{ totalItems() === 1 ? 'item' : 'items' }} · ₹{{ subtotal() }}
     </span>

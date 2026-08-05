@@ -6,9 +6,17 @@
 .app-header {
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: var(--z-index-top-app-bar, 20);
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
+}
+
+// Native Android/iOS shell only — the status bar/notch inset. Desktop/mobile-web are unaffected
+// (--safe-area-top resolves to 0px there via env()'s fallback, so this rule is a harmless no-op
+// off native, but gating it behind the modifier class keeps the intent explicit rather than
+// relying on that fallback silently doing the right thing).
+.app-header--native {
+  padding-top: var(--safe-area-top);
 }
 
 .app-header-inner {
@@ -85,6 +93,18 @@
 
   &:hover {
     border-color: var(--color-primary);
+  }
+
+  // Below 420px, .location-picker-text is already hidden (see its own media query) but the
+  // button still carries a trailing chevron + full padding, leaving the search input squeezed to
+  // an unusably narrow strip alongside the brand mark and three action icons. Drop to icon-only
+  // to give search the room it needs on the smallest phones.
+  @media (max-width: 420px) {
+    padding: var(--space-2);
+
+    .icon-sm {
+      display: none;
+    }
   }
 }
 

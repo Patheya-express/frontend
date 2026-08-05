@@ -19,6 +19,7 @@ export class CustomerProfileFacade {
 
   readonly preferences = this.store.preferences;
   readonly preferencesLoading = this.store.preferencesLoading;
+  readonly preferencesError = this.store.preferencesError;
   readonly preferencesSaving = this.store.preferencesSaving;
 
   readonly passwordSaving = this.store.passwordSaving;

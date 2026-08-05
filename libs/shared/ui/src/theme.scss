@@ -60,6 +60,9 @@
   --radius-sm: 6px;
   --radius-md: 12px;
   --radius-lg: 20px;
+  // Large rounded corners for the biggest floating/soft-UI surfaces (wallet balance card,
+  // floating cart, settings cards) — see Neo-Glass section below for where this is used.
+  --radius-xl: 28px;
   --radius-full: 999px;
 
   // Shadow
@@ -135,7 +138,50 @@
   --motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
   --motion-easing-decelerate: cubic-bezier(0, 0, 0, 1);
   --motion-easing-accelerate: cubic-bezier(0.3, 0, 1, 1);
+  // Slight overshoot (spring-like settle) — reserved for Neo-Glass press/release feedback
+  // (chips, stepper, FAB) where the other three easings above read as too clinical.
+  --motion-easing-soft: cubic-bezier(0.34, 1.56, 0.64, 1);
   --motion-stagger-step: 30ms;
+
+  // --- Neo-Glass — Patheya Express's soft-neumorphic + glassmorphism hybrid ---------------------
+  // Scope is intentionally narrow: search bars, filter/category chips, floating cart, floating
+  // buttons, quantity controls, bottom navigation, settings cards, wallet cards. Everything else
+  // (restaurant cards, food imagery, checkout forms, menu lists, other text-heavy areas) stays on
+  // the flat --shadow-*/--elevation-* system above — soft, low-contrast depth actively hurts
+  // legibility and scanability on content-first surfaces. See
+  // `libs/shared/ui/src/lib/neo-glass/neo-glass.mixins.scss` for the `@use`-able shapes built
+  // from these tokens.
+  //
+  // Deliberately not classic neumorphism: every Neo-Glass mixin pairs its soft shadow with a real
+  // border, tint, or gradient cue, so affordance/selection state never depends on shadow alone —
+  // classic neumorphism's well-known accessibility failure.
+  //
+  // The shadow pair below is *derived*, not a raw palette value, so it re-themes automatically:
+  // `color-mix` reads whatever `--color-background` resolves to for the current element, light or
+  // dark, with no separate override needed inside the dark-palette mixin further down this file.
+  --neo-highlight: color-mix(in srgb, var(--color-background) 88%, white);
+  --neo-shadow: color-mix(in srgb, var(--color-background) 80%, black);
+
+  --neo-elevation-flat: 3px 3px 6px var(--neo-shadow), -3px -3px 6px var(--neo-highlight);
+  --neo-elevation-raised: 7px 7px 14px var(--neo-shadow), -7px -7px 14px var(--neo-highlight);
+  --neo-elevation-floating: 12px 12px 24px var(--neo-shadow), -10px -10px 20px var(--neo-highlight);
+  --neo-elevation-pressed: inset 4px 4px 8px var(--neo-shadow), inset -4px -4px 8px var(--neo-highlight);
+
+  // Glass — paired with the neo-elevation-* shadows above on the same surfaces; also usable
+  // standalone for sticky/overlay chrome (as already hand-rolled ad hoc on a couple of pages —
+  // these tokens are the codification of that, so future pages don't reinvent the values).
+  --glass-blur-sm: 8px;
+  --glass-blur-md: 16px;
+  --glass-blur-lg: 28px;
+  --glass-saturate: 160%;
+  --glass-surface: color-mix(in srgb, var(--color-surface) 72%, transparent);
+  --glass-surface-strong: color-mix(in srgb, var(--color-surface) 90%, transparent);
+  --glass-border: color-mix(in srgb, var(--color-border) 70%, transparent);
+
+  // Gradient accents — codifies the `linear-gradient(135deg, primary, hover|strong)` combos
+  // already hand-rolled across recent pages, so they're consistent and reusable going forward.
+  --gradient-primary: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+  --gradient-premium: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-strong) 100%);
 
   // Dark theme scaffolding — light values are the tokens above; see `:root[data-theme="dark"]`
   // below. Nothing renders differently until an app opts in.

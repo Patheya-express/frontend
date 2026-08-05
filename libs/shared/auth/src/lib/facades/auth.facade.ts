@@ -15,6 +15,12 @@ export class AuthFacade {
   readonly loading = this.store.loading;
   readonly error = this.store.error;
   readonly isAuthenticated = this.store.isAuthenticated;
+  readonly sessionExpired = this.store.sessionExpired;
+
+  /** Native only — no-op on web. See `AuthStore.hydrateNativeSession()`. */
+  hydrateNativeSession(): Promise<void> {
+    return this.store.hydrateNativeSession();
+  }
 
   initialize(): void {
     this.store.initialize();
@@ -47,6 +53,10 @@ export class AuthFacade {
   /** Used only by the auth interceptor's 401-retry path. */
   refreshSession(): Promise<boolean> {
     return this.store.refreshSession();
+  }
+
+  acknowledgeSessionExpiry(): void {
+    this.store.acknowledgeSessionExpiry();
   }
 
   forgotPassword(dto: ForgotPasswordDto): Promise<boolean> {

@@ -15,6 +15,11 @@ let overlayIdSequence = 0;
 export abstract class OverlayStackService<TData = unknown, TResult = unknown> {
   private readonly stack = signal<OverlayEntry<TData, TResult>[]>([]);
 
+  /** The element focused right before each still-open overlay was opened, keyed by overlay id —
+   *  restored on close so keyboard/screen-reader focus returns to what triggered the overlay
+   *  instead of being lost to `<body>`. */
+  private readonly triggerElements = new Map<string, HTMLElement | null>();
+
   /** Every currently-open overlay of this kind, oldest first. The matching host component
    *  renders one per entry via `@for` (typically just zero or one, but stacking is supported). */
   readonly entries = this.stack.asReadonly();
@@ -33,6 +38,12 @@ export abstract class OverlayStackService<TData = unknown, TResult = unknown> {
       resolveClose,
     };
 
+    this.triggerElements.set(
+      id,
+      typeof document !== 'undefined' && document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null,
+    );
     this.stack.update((current) => [...current, entry]);
 
     return {
@@ -50,12 +61,20 @@ export abstract class OverlayStackService<TData = unknown, TResult = unknown> {
 
     this.stack.update((current) => current.filter((item) => item.id !== id));
     entry.resolveClose(result);
+    this.restoreFocus(id);
   }
 
   closeAll(): void {
     for (const entry of this.stack()) {
       entry.resolveClose(undefined);
+      this.restoreFocus(entry.id);
     }
     this.stack.set([]);
+  }
+
+  private restoreFocus(id: string): void {
+    const trigger = this.triggerElements.get(id);
+    this.triggerElements.delete(id);
+    trigger?.focus({ preventScroll: true });
   }
 }

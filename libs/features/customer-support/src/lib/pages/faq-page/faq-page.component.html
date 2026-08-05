@@ -6,6 +6,8 @@
 
   @if (facade.faqsLoading()) {
     <lib-skeleton [count]="4" />
+  } @else if (facade.faqsError()) {
+    <lib-error-state [message]="facade.faqsError()!" (retry)="retry()" />
   } @else if (facade.faqs().length === 0) {
     <lib-empty-state title="No FAQs yet" message="Check back soon, or contact support directly." />
   } @else {

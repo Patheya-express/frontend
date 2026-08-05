@@ -22,6 +22,9 @@ import { NotificationBadgeComponent } from '../notification-badge/notification-b
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HeaderComponent {
+  /** Native Android/iOS shell only — see the `.app-header--native` rule in the stylesheet for why
+   *  this is an `@Input()` rather than this component injecting `MobilePlatformService` itself. */
+  @Input() isNative = false;
   @Input() isAuthenticated = false;
   @Input() cartItemCount = 0;
   @Input() notificationCount = 0;

@@ -1,6 +1,8 @@
 <div class="preferences-form">
   @if (loading()) {
     <p class="preferences-loading">Loading preferences…</p>
+  } @else if (error()) {
+    <lib-error-state [message]="error()!" (retry)="retry()" />
   } @else {
     <div class="preferences-table" role="table" aria-label="Notification preferences">
       <div class="preferences-row preferences-header" role="row">

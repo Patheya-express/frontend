@@ -52,7 +52,6 @@ export * from './lib/animations/reduced-motion.util';
 export * from './lib/animations/page-transition.animation';
 export * from './lib/animations/modal.animation';
 export * from './lib/animations/bottom-sheet.animation';
-export * from './lib/animations/fab.animation';
 export * from './lib/animations/list.animation';
 
 // Services (overlay/notification stacks + mobile navigation coordination — platform detection
@@ -120,5 +119,4 @@ export * from './lib/layouts/mobile/scrollable-page/scrollable-page.component';
 export * from './lib/layouts/mobile/section/section.component';
 export * from './lib/layouts/mobile/bottom-action-bar/bottom-action-bar.component';
 export * from './lib/layouts/mobile/top-app-bar/top-app-bar.component';
-export * from './lib/layouts/mobile/floating-button/floating-button.component';
 export * from './lib/layouts/mobile/bottom-tabs/bottom-tabs.component';

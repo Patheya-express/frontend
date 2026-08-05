@@ -1,4 +1,4 @@
-import { Directive, input, output } from '@angular/core';
+import { Directive, OnDestroy, input, output } from '@angular/core';
 
 const DEFAULT_THRESHOLD_MS = 500;
 const MOVE_TOLERANCE_PX = 10;
@@ -19,12 +19,16 @@ const MOVE_TOLERANCE_PX = 10;
     '(pointermove)': 'onPointerMove($event)',
   },
 })
-export class LongPressDirective {
+export class LongPressDirective implements OnDestroy {
   readonly mobileLongPressThreshold = input(DEFAULT_THRESHOLD_MS);
   readonly longPress = output<void>();
 
   private timer?: ReturnType<typeof setTimeout>;
   private origin?: { x: number; y: number };
+
+  ngOnDestroy(): void {
+    this.cancel();
+  }
 
   onPointerDown(event: PointerEvent): void {
     this.origin = { x: event.clientX, y: event.clientY };

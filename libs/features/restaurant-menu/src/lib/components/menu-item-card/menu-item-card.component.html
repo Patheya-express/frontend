@@ -24,7 +24,7 @@
         <span class="menu-item-badge">Unavailable</span>
       }
       @if (hasVariants()) {
-        <span class="menu-item-hint">{{ item.variants.length }} options</span>
+        <span class="menu-item-hint">{{ item.variants.length }} option{{ item.variants.length === 1 ? '' : 's' }}</span>
       }
       @if (hasAddons()) {
         <span class="menu-item-hint">Customizable</span>
@@ -55,7 +55,7 @@
 
   <div class="menu-item-image" aria-hidden="true">
     @if (imageUrl(); as url) {
-      <img [src]="url" [alt]="item.name" />
+      <img [src]="url" [alt]="item.name" loading="lazy" />
     } @else {
       <svg viewBox="0 0 24 24" fill="none">
         <path

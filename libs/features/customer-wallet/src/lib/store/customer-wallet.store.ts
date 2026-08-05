@@ -14,6 +14,7 @@ export class CustomerWalletStore {
 
   private readonly _balance = signal(0);
   private readonly _balanceLoading = signal(false);
+  private readonly _balanceError = signal<string | null>(null);
 
   private readonly _transactions = signal<WalletTransactionResponseDto[]>([]);
   private readonly _total = signal(0);
@@ -27,6 +28,7 @@ export class CustomerWalletStore {
   private readonly _totalRewarded = signal(0);
   private readonly _totalEarned = signal(0);
   private readonly _referralLoading = signal(false);
+  private readonly _referralError = signal<string | null>(null);
 
   private readonly _applying = signal(false);
   private readonly _applyError = signal<string | null>(null);
@@ -35,6 +37,7 @@ export class CustomerWalletStore {
 
   readonly balance = this._balance.asReadonly();
   readonly balanceLoading = this._balanceLoading.asReadonly();
+  readonly balanceError = this._balanceError.asReadonly();
 
   readonly transactions = this._transactions.asReadonly();
   readonly total = this._total.asReadonly();
@@ -48,6 +51,7 @@ export class CustomerWalletStore {
   readonly totalRewarded = this._totalRewarded.asReadonly();
   readonly totalEarned = this._totalEarned.asReadonly();
   readonly referralLoading = this._referralLoading.asReadonly();
+  readonly referralError = this._referralError.asReadonly();
 
   readonly applying = this._applying.asReadonly();
   readonly applyError = this._applyError.asReadonly();
@@ -91,9 +95,14 @@ export class CustomerWalletStore {
 
   async loadBalance(): Promise<void> {
     this._balanceLoading.set(true);
+    this._balanceError.set(null);
 
     try {
       this._balance.set(await this.walletService.getBalance());
+    } catch {
+      // Was previously uncaught — an unhandled promise rejection that silently left the balance
+      // at its prior value (0 on first load), indistinguishable from "you have ₹0".
+      this._balanceError.set('Unable to load your wallet balance.');
     } finally {
       this._balanceLoading.set(false);
     }
@@ -119,6 +128,7 @@ export class CustomerWalletStore {
 
   async loadReferralSummary(): Promise<void> {
     this._referralLoading.set(true);
+    this._referralError.set(null);
 
     try {
       const summary = await this.walletService.getReferralSummary();
@@ -127,6 +137,10 @@ export class CustomerWalletStore {
       this._totalReferred.set(summary.totalReferred);
       this._totalRewarded.set(summary.totalRewarded);
       this._totalEarned.set(summary.totalEarned);
+    } catch {
+      // Was previously uncaught. A blank referral code and all-zero stats were indistinguishable
+      // from "you haven't referred anyone" — the real cause (failed request) had no visible signal.
+      this._referralError.set('Unable to load your referral details.');
     } finally {
       this._referralLoading.set(false);
     }
@@ -157,6 +171,7 @@ export class CustomerWalletStore {
   reset(): void {
     this._balance.set(0);
     this._balanceLoading.set(false);
+    this._balanceError.set(null);
     this._transactions.set([]);
     this._total.set(0);
     this._page.set(1);
@@ -168,6 +183,7 @@ export class CustomerWalletStore {
     this._totalRewarded.set(0);
     this._totalEarned.set(0);
     this._referralLoading.set(false);
+    this._referralError.set(null);
     this._applying.set(false);
     this._applyError.set(null);
     this.joinedUserRoom = false;

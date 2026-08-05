@@ -2,6 +2,7 @@
   class="status-chip"
   [class.status-chip--interactive]="interactive"
   [class.status-chip--selected]="selectable && selected"
+  [class.status-chip--neo-glass]="variant === 'neo-glass'"
   [attr.data-tone]="tone"
   [attr.role]="selectable ? 'button' : null"
   [attr.tabindex]="selectable ? '0' : null"

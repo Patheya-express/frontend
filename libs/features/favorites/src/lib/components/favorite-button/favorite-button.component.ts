@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, Input, inject } from '@angular/core';
+import { HapticsService } from '@patheya-express-frontend/core';
 import { FavoritesFacade } from '../../facades/favorites.facade';
 
 export type FavoriteTargetType = 'restaurant' | 'menu-item';
@@ -12,6 +13,7 @@ export type FavoriteTargetType = 'restaurant' | 'menu-item';
 })
 export class FavoriteButtonComponent {
   private readonly facade = inject(FavoritesFacade);
+  private readonly haptics = inject(HapticsService);
 
   @Input({ required: true }) id!: string;
   @Input({ required: true }) type!: FavoriteTargetType;
@@ -27,6 +29,7 @@ export class FavoriteButtonComponent {
   protected async onToggle(event: Event): Promise<void> {
     event.preventDefault();
     event.stopPropagation();
+    void this.haptics.tap();
 
     if (this.type === 'restaurant') {
       await this.facade.toggleRestaurantFavorite(this.id);

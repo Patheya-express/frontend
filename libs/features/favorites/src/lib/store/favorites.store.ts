@@ -27,6 +27,9 @@ export class FavoritesStore {
   private readonly _menuItemsLoading = signal(false);
   private readonly _menuItemsError = signal<string | null>(null);
 
+  private readonly pendingRestaurantToggles = new Set<string>();
+  private readonly pendingMenuItemToggles = new Set<string>();
+
   readonly favoritedRestaurantIds = this._favoritedRestaurantIds.asReadonly();
   readonly favoritedMenuItemIds = this._favoritedMenuItemIds.asReadonly();
 
@@ -97,9 +100,18 @@ export class FavoritesStore {
     });
   }
 
-  /** Optimistic toggle: flips immediately, reverts if the request fails. */
+  /**
+   * Optimistic toggle: flips immediately, reverts if the request fails. Ignores a call for an id
+   * that's already mid-toggle — without this, a rapid double-tap fires two opposite-direction
+   * requests concurrently, which can race server-side and leave the shown state wrong.
+   */
   async toggleRestaurantFavorite(restaurantId: string): Promise<void> {
+    if (this.pendingRestaurantToggles.has(restaurantId)) {
+      return;
+    }
+
     const wasFavorited = this.isRestaurantFavorited(restaurantId);
+    this.pendingRestaurantToggles.add(restaurantId);
     this.setRestaurantFavorited(restaurantId, !wasFavorited);
 
     try {
@@ -110,11 +122,18 @@ export class FavoritesStore {
       }
     } catch {
       this.setRestaurantFavorited(restaurantId, wasFavorited);
+    } finally {
+      this.pendingRestaurantToggles.delete(restaurantId);
     }
   }
 
   async toggleMenuItemFavorite(menuItemId: string): Promise<void> {
+    if (this.pendingMenuItemToggles.has(menuItemId)) {
+      return;
+    }
+
     const wasFavorited = this.isMenuItemFavorited(menuItemId);
+    this.pendingMenuItemToggles.add(menuItemId);
     this.setMenuItemFavorited(menuItemId, !wasFavorited);
 
     try {
@@ -125,6 +144,8 @@ export class FavoritesStore {
       }
     } catch {
       this.setMenuItemFavorited(menuItemId, wasFavorited);
+    } finally {
+      this.pendingMenuItemToggles.delete(menuItemId);
     }
   }
 

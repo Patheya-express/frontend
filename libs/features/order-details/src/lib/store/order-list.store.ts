@@ -32,6 +32,8 @@ export class OrderListStore {
 
   private readonly _reorderingOrderId = signal<string | null>(null);
 
+  private loadOrdersRequestId = 0;
+
   readonly orders = this._orders.asReadonly();
   readonly loading = this._loading.asReadonly();
   readonly error = this._error.asReadonly();
@@ -48,7 +50,13 @@ export class OrderListStore {
     () => this._search().length > 0 || this._status() !== '' || this._dateFrom() !== '' || this._dateTo() !== '',
   );
 
+  /**
+   * Filter setters (search/status/date/page) each call this independently, so rapid changes can
+   * have two requests in flight at once — a request id guards against an older one's response
+   * overwriting a newer one's if it happens to resolve last.
+   */
   async loadOrders(): Promise<void> {
+    const requestId = ++this.loadOrdersRequestId;
     this._loading.set(true);
     this._error.set(null);
 
@@ -62,14 +70,24 @@ export class OrderListStore {
         dateTo: this._dateTo() || undefined,
       });
 
+      if (requestId !== this.loadOrdersRequestId) {
+        return;
+      }
+
       this._orders.set(result.items);
       this._total.set(result.total);
       this._totalPages.set(Math.max(1, result.totalPages));
     } catch {
+      if (requestId !== this.loadOrdersRequestId) {
+        return;
+      }
+
       this._error.set('Unable to load your orders. Please try again.');
       this._orders.set([]);
     } finally {
-      this._loading.set(false);
+      if (requestId === this.loadOrdersRequestId) {
+        this._loading.set(false);
+      }
     }
   }
 

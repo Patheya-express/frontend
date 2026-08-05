@@ -1,15 +1,8 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { CouponResponseDto, PricingResultResponseDto } from '@patheya-express-frontend/api-sdk';
 import { LogoutCleanupRegistry } from '@patheya-express-frontend/auth';
+import { extractHttpErrorMessage } from '@patheya-express-frontend/core';
 import { CouponsService } from '../services/coupons.service';
-
-function extractMessage(error: unknown, fallback: string): string {
-  if (error instanceof HttpErrorResponse && typeof error.error?.message === 'string') {
-    return error.error.message;
-  }
-  return fallback;
-}
 
 /**
  * Equality for the `appliedCoupon` signal. Every successful validate() call returns a
@@ -110,7 +103,7 @@ export class CouponStore {
     } catch (err) {
       this._appliedCoupon.set(null);
       this._pricing.set(null);
-      this._validationError.set(extractMessage(err, 'This coupon could not be applied.'));
+      this._validationError.set(extractHttpErrorMessage(err, 'This coupon could not be applied.'));
       return false;
     } finally {
       this._loading.set(false);

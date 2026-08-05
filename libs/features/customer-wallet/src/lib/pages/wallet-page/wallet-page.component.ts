@@ -24,6 +24,10 @@ export class WalletPageComponent implements OnInit {
     void this.facade.loadTransactions(this.facade.page());
   }
 
+  protected retryBalance(): void {
+    void this.facade.loadBalance();
+  }
+
   protected onPageChange(page: number): void {
     void this.facade.loadTransactions(page);
   }

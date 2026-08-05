@@ -49,6 +49,12 @@
       border-color: var(--color-primary);
     }
   }
+
+  // Single-line inputs only — matches the token `login-form`/`register-form` already use for
+  // theirs; a multi-line textarea shouldn't be floored to the same height.
+  input {
+    min-height: var(--touch-target-comfortable, 48px);
+  }
 }
 
 .field-row {

@@ -32,5 +32,11 @@
       <input type="checkbox" [checked]="useWallet()" (change)="onUseWalletToggle($any($event.target).checked)" />
       Use wallet balance (&#8377;{{ walletFacade.balance().toFixed(2) }} available)
     </label>
+
+    @if (walletFacade.applyError()) {
+      <p class="payment-wallet-error" role="alert">
+        {{ walletFacade.applyError() }} You'll be charged the full amount online instead.
+      </p>
+    }
   }
 </section>

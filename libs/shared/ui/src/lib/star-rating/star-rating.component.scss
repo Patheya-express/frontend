@@ -39,10 +39,19 @@
 }
 
 .star-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: none;
   background: none;
   padding: 0;
   cursor: pointer;
+  // Floors the tappable box to the shared touch-target minimum regardless of the visible star's
+  // own size (14/18/26px per size-sm/base/lg) — adjacent stars sitting close/touching is normal,
+  // expected UX for a rating input (unlike two *different* actions like Edit/Delete, which must
+  // stay clearly separated), so the row's `gap: 2px` is intentionally left as-is.
+  min-width: var(--touch-target-min, 44px);
+  min-height: var(--touch-target-min, 44px);
 
   svg {
     fill: none;

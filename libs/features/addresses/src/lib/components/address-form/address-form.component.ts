@@ -111,6 +111,10 @@ export class AddressFormComponent {
   }
 
   protected async submit(): Promise<void> {
+    if (this.saving()) {
+      return;
+    }
+
     this.formError.set(null);
 
     if (!this.addressLine1().trim() || !this.city().trim() || !this.state().trim() || !this.postalCode().trim()) {

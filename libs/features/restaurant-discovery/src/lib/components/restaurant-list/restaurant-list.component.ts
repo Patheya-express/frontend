@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, OnInit, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import type { RecentSearchDto, SearchSuggestionDto, TrendingSearchDto } from '@patheya-express-frontend/api-sdk';
 import {
   EmptyStateComponent,
   ErrorStateComponent,
+  NetworkStatusService,
   PaginationComponent,
   SearchInputComponent,
   SkeletonComponent,
@@ -37,11 +38,19 @@ export class RestaurantListComponent implements OnInit {
   private readonly authFacade = inject(AuthFacade);
   private readonly favoritesFacade = inject(FavoritesFacade);
   private readonly searchSuggestionsService = inject(SearchSuggestionsService);
+  private readonly networkStatus = inject(NetworkStatusService);
+
+  /** Matches the pattern already used on customer-home-page/restaurant-details-page, previously
+   *  missing here — a failed fetch while offline showed the same generic message as a real
+   *  server error. */
+  protected readonly errorTitle = computed(() => (this.networkStatus.isOffline() ? "You're offline" : 'Something went wrong'));
 
   protected readonly suggestions = signal<SearchSuggestionDto[]>([]);
   protected readonly recentSearches = signal<RecentSearchDto[]>([]);
   protected readonly trendingSearches = signal<TrendingSearchDto[]>([]);
   protected readonly showSuggestions = signal(false);
+
+  private suggestionsRequestId = 0;
 
   constructor() {
     // One bulk favorite-status request per page of results — never one request per card.
@@ -57,9 +66,36 @@ export class RestaurantListComponent implements OnInit {
   async ngOnInit(): Promise<void> {
     await this.facade.initialize();
 
-    const cuisine = this.route.snapshot.queryParamMap.get('cuisine');
+    // Reads every filter/sort query param the app actually links here with (customer-home's
+    // search submit, and its Trending/Open Now/Fast Delivery/Top Rated "see all" links) — not
+    // just `cuisine`. Previously only `cuisine` was read, so arriving from any of those other
+    // entry points silently landed on the full unfiltered list.
+    const params = this.route.snapshot.queryParamMap;
+    const partialFilters: Partial<RestaurantFilters> = {};
+
+    const cuisine = params.get('cuisine');
     if (cuisine) {
-      this.facade.setCuisineFilter(cuisine);
+      partialFilters.cuisine = cuisine;
+    }
+    const search = params.get('search');
+    if (search) {
+      partialFilters.search = search;
+    }
+    const openNow = params.get('openNow');
+    if (openNow) {
+      partialFilters.openNow = openNow === 'true';
+    }
+    const sortBy = params.get('sortBy') as RestaurantFilters['sortBy'] | null;
+    if (sortBy) {
+      partialFilters.sortBy = sortBy;
+    }
+    const sortOrder = params.get('sortOrder') as RestaurantFilters['sortOrder'] | null;
+    if (sortOrder) {
+      partialFilters.sortOrder = sortOrder;
+    }
+
+    if (Object.keys(partialFilters).length > 0) {
+      this.facade.setFilters(partialFilters);
     }
 
     void this.searchSuggestionsService.getTrending().then((trending) => this.trendingSearches.set(trending));
@@ -82,7 +118,13 @@ export class RestaurantListComponent implements OnInit {
       return;
     }
 
+    // Keystrokes can resolve out of order under variable network latency — only apply the
+    // response for the most recently issued request.
+    const requestId = ++this.suggestionsRequestId;
     void this.searchSuggestionsService.getSuggestions(value).then((results) => {
+      if (requestId !== this.suggestionsRequestId) {
+        return;
+      }
       this.suggestions.set(results);
       this.showSuggestions.set(true);
     });

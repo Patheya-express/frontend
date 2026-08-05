@@ -8,6 +8,11 @@
     <span class="wallet-balance-label">Available balance</span>
     @if (facade.balanceLoading()) {
       <span class="wallet-balance-value">&hellip;</span>
+    } @else if (facade.balanceError()) {
+      <span class="wallet-balance-error-row">
+        <span class="wallet-balance-error">{{ facade.balanceError() }}</span>
+        <button type="button" class="wallet-balance-retry" (click)="retryBalance()">Retry</button>
+      </span>
     } @else {
       <span class="wallet-balance-value">&#8377;{{ facade.balance().toFixed(2) }}</span>
     }

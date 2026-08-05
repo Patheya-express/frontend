@@ -27,7 +27,7 @@
     </div>
 
     @if (items().length > 0) {
-      <footer class="drawer-footer">
+      <footer class="drawer-footer" [class.drawer-footer--native]="isNative">
         <lib-cart-summary />
         <div class="drawer-actions">
           <button type="button" class="drawer-clear" (click)="clearCart()">Clear cart</button>

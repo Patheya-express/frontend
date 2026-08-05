@@ -21,6 +21,7 @@ export function customerHomeControllerGetHome(http: HttpClient, rootUrl: string,
     rb.query('lat', params.lat, {});
   }
 
+  console.log('[DEBUG-HOME-20] Before HttpClient.request()', rootUrl + customerHomeControllerGetHome.PATH);
   return http.request(
     rb.build({ responseType: 'json', accept: 'application/json', context })
   ).pipe(

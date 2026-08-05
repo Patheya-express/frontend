@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import type { MenuItemResponseDto } from '@patheya-express-frontend/api-sdk';
 import { CartFacade } from '@patheya-express-frontend/cart';
+import { HapticsService } from '@patheya-express-frontend/core';
 
 @Component({
   selector: 'lib-menu-item-customization-sheet',
@@ -25,6 +26,7 @@ export class MenuItemCustomizationSheetComponent implements OnInit {
   @Output() closed = new EventEmitter<void>();
 
   private readonly cartFacade = inject(CartFacade);
+  private readonly haptics = inject(HapticsService);
 
   protected readonly selectedVariantId = signal<string | undefined>(undefined);
   protected readonly selectedOptionIds = signal<Set<string>>(new Set());
@@ -104,10 +106,12 @@ export class MenuItemCustomizationSheetComponent implements OnInit {
   }
 
   protected increaseQuantity(): void {
+    void this.haptics.selectionChanged();
     this.quantity.update((q) => q + 1);
   }
 
   protected decreaseQuantity(): void {
+    void this.haptics.selectionChanged();
     this.quantity.update((q) => Math.max(1, q - 1));
   }
 
@@ -121,6 +125,7 @@ export class MenuItemCustomizationSheetComponent implements OnInit {
     }
 
     this.adding.set(true);
+    void this.haptics.action();
 
     await this.cartFacade.addItem({
       menuItemId: this.item.id,

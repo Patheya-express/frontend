@@ -6,9 +6,9 @@
       [initialEmail]="rememberedEmail"
       (submitted)="onSubmit($event)"
     />
-    <a class="forgot-password-link" routerLink="/auth/forgot-password">Forgot password?</a>
+    <a class="forgot-password-link" routerLink="/auth/forgot-password" [queryParams]="redirectToQueryParams">Forgot password?</a>
     @if (registerCta) {
-      <span auth-card-footer>Don't have an account? <a [routerLink]="registerCta.path">{{ registerCta.label }}</a></span>
+      <span auth-card-footer>Don't have an account? <a [routerLink]="registerCta.path" [queryParams]="redirectToQueryParams">{{ registerCta.label }}</a></span>
     }
   </lib-auth-card>
 </lib-auth-layout>

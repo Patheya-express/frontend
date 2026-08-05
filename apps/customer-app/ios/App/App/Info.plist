@@ -22,8 +22,42 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<!-- Deep links: patheyaexpress://<path>, e.g. patheyaexpress://restaurants/<id>. Handled by
+	     the appUrlOpen listener in mobile.providers.ts, which routes the URL through the existing
+	     Angular Router — no separate native screens. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>patheyaexpress</string>
+			</array>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+		</dict>
+	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- WKWebView's navigator.geolocation (customer-home's "nearby restaurants", used via the
+	     plain web Geolocation API, not a native Capacitor plugin) silently fails without this —
+	     no crash, but the permission prompt never appears and the call always errors out. -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Patheya Express uses your location to show nearby restaurants and estimate delivery times.</string>
+	<!-- lib-file-upload (profile photo, review photos, support ticket attachments) uses a plain
+	     &lt;input type="file"&gt; with no `capture` attribute — iOS's resulting picker sheet still
+	     needs these to offer "Take Photo" / read from the library without silently failing. -->
+	<key>NSCameraUsageDescription</key>
+	<string>Patheya Express uses your camera to let you take a photo for uploads like your profile picture or a review.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Patheya Express uses your photo library to let you choose a photo for uploads like your profile picture or a review.</string>
+	<!-- Required for @capacitor/push-notifications to deliver silent/background pushes. The
+	     "Push Notifications" capability itself (which generates the aps-environment entitlement)
+	     still has to be added in Xcode — see docs/mobile/CAPACITOR.md for that manual step, since
+	     it can't be done from this Windows checkout. -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

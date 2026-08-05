@@ -1,3 +1,8 @@
+// Wallet balance card is squarely in the Neo-Glass zone. This page is customer-app-exclusive
+// (customer-wallet has no other consumer) so the mixin is applied directly rather than gated
+// behind a variant input — there is no second visual treatment this page needs to opt out to.
+@use '../../../../../../shared/ui/src/lib/neo-glass/neo-glass.mixins' as neo;
+
 .wallet-page {
   display: flex;
   flex-direction: column;
@@ -31,14 +36,67 @@
   }
 }
 
+// Not a literal `@include neo.neo-glass-floating` — that mixin's translucent glass-over-content
+// background and full pill radius suit a floating bar sitting over page content, not a standalone
+// gradient card. Same family (soft neo shadow + glass sheen), tuned for this shape: the mixin's
+// `--neo-elevation-floating` shadow and `--gradient-premium` fill, `--radius-xl` for the large
+// rounded corners the Neo-Glass system reserves for its biggest surfaces, and a glass "sheen"
+// highlight standing in for backdrop-filter (there's no content behind this card worth blurring).
 .wallet-balance-card {
+  @include neo.neo-raised;
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
   padding: var(--space-5);
-  border-radius: var(--radius-lg);
-  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-strong));
+  // Override neo-raised's neutral background/radius/shadow tier with the showpiece treatment;
+  // keep its transition so hover/press timing still matches the rest of the Neo-Glass system.
+  border-radius: var(--radius-xl);
+  background: var(--gradient-premium);
+  box-shadow: var(--neo-elevation-floating);
   color: var(--color-text-on-primary);
+  overflow: hidden;
+  isolation: isolate;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: radial-gradient(120% 90% at 15% -10%, rgba(255, 255, 255, 0.35), transparent 55%);
+    pointer-events: none;
+  }
+}
+
+// Was previously an unhandled promise rejection — a failed balance fetch silently showed ₹0.00,
+// indistinguishable from a genuinely empty wallet. Styled to stay legible on the gradient card
+// (plain --color-error would have poor contrast here) rather than the standard error-text color.
+.wallet-balance-error-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.wallet-balance-error {
+  font-size: var(--font-size-sm);
+  opacity: 0.92;
+}
+
+.wallet-balance-retry {
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.16);
+  color: inherit;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  border-radius: var(--radius-full);
+  padding: var(--space-1) var(--space-3);
+  min-height: var(--touch-target-min, 44px);
+  cursor: pointer;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.26);
+  }
 }
 
 .wallet-balance-label {

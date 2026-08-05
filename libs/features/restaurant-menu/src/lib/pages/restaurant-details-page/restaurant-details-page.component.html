@@ -1,49 +1,57 @@
 @if (loading()) {
-  <div class="page-padding">
+  <div class="page-padding restaurant-loading-panel">
     <lib-skeleton [count]="4" />
   </div>
 } @else if (error()) {
-  <lib-error-state [title]="errorTitle()" [message]="error()!" (retry)="retry()" />
+  <div class="page-padding restaurant-state-panel">
+    <lib-error-state [title]="errorTitle()" [message]="error()!" (retry)="retry()" />
+  </div>
 } @else if (isEmpty() && !search()) {
-  <lib-empty-state [title]="emptyStateTitle()" [message]="emptyStateMessage()" (refresh)="retry()" />
+  <div class="page-padding restaurant-state-panel">
+    <lib-empty-state [title]="emptyStateTitle()" [message]="emptyStateMessage()" (refresh)="retry()" />
+  </div>
 } @else if (restaurant(); as restaurantValue) {
+  <section class="restaurant-hero">
+    @if (coverImageUrl(restaurantValue.bannerUrl, restaurantValue.logoUrl); as coverUrl) {
+      <img class="restaurant-hero-image" [src]="coverUrl" [alt]="restaurantValue.name" />
+    } @else {
+      <div class="restaurant-hero-placeholder" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path
+            d="M7 3v6M5 5h4M12 3l-1.5 7c-.3 1.4.8 2.5 2 2.5s2.3-1.1 2-2.5L13 3M12 12.5V21M17 3v18M17 3c1.9 0 3.5 2 3.5 5.5S18.9 14 17 14"
+            stroke="currentColor"
+            stroke-width="1.2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        <span>No photo yet</span>
+      </div>
+    }
+    <div class="restaurant-hero-scrim" aria-hidden="true"></div>
+  </section>
+
   <div class="restaurant-sticky-stack">
     <header class="restaurant-header" [class.collapsed]="headerCollapsed()">
-      <div class="restaurant-header-image">
-        @if (coverImageUrl(restaurantValue.bannerUrl, restaurantValue.logoUrl); as coverUrl) {
-          <img [src]="coverUrl" [alt]="restaurantValue.name" />
-        } @else {
-          <div class="restaurant-header-placeholder" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path
-                d="M7 3v6M5 5h4M12 3l-1.5 7c-.3 1.4.8 2.5 2 2.5s2.3-1.1 2-2.5L13 3M12 12.5V21M17 3v18M17 3c1.9 0 3.5 2 3.5 5.5S18.9 14 17 14"
-                stroke="currentColor"
-                stroke-width="1.2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-            </svg>
-          </div>
-        }
-      </div>
-
       <div class="restaurant-header-info">
         <div class="restaurant-header-title">
           <h1>{{ restaurantValue.name }}</h1>
           @if (isOpenNow() !== undefined) {
             <span class="open-status-chip" [class.closed]="!isOpenNow()">{{ isOpenNow() ? 'Open now' : 'Closed now' }}</span>
           }
-          @if (isAuthenticated()) {
-            <lib-favorite-button [id]="restaurantValue.id" type="restaurant" [label]="restaurantValue.name" />
-          }
-          <lib-icon-button ariaLabel="Share restaurant" (buttonClick)="onShareTapped()">
-            <svg viewBox="0 0 24 24" fill="none" width="18" height="18" aria-hidden="true">
-              <circle cx="6" cy="12" r="2.2" stroke="currentColor" stroke-width="1.5" />
-              <circle cx="17" cy="6" r="2.2" stroke="currentColor" stroke-width="1.5" />
-              <circle cx="17" cy="18" r="2.2" stroke="currentColor" stroke-width="1.5" />
-              <path d="M7.9 11l7.2-3.8M7.9 13l7.2 3.8" stroke="currentColor" stroke-width="1.5" />
-            </svg>
-          </lib-icon-button>
+          <div class="restaurant-header-actions">
+            @if (isAuthenticated()) {
+              <lib-favorite-button [id]="restaurantValue.id" type="restaurant" [label]="restaurantValue.name" />
+            }
+            <lib-icon-button ariaLabel="Share restaurant" (buttonClick)="onShareTapped()">
+              <svg viewBox="0 0 24 24" fill="none" width="18" height="18" aria-hidden="true">
+                <circle cx="6" cy="12" r="2.2" stroke="currentColor" stroke-width="1.5" />
+                <circle cx="17" cy="6" r="2.2" stroke="currentColor" stroke-width="1.5" />
+                <circle cx="17" cy="18" r="2.2" stroke="currentColor" stroke-width="1.5" />
+                <path d="M7.9 11l7.2-3.8M7.9 13l7.2 3.8" stroke="currentColor" stroke-width="1.5" />
+              </svg>
+            </lib-icon-button>
+          </div>
         </div>
         <div class="restaurant-header-rating">
           <lib-star-rating [rating]="restaurantValue.avgRating" size="sm" />
@@ -91,7 +99,7 @@
   }
 
   <div class="page-padding">
-    <lib-search-input placeholder="Search this menu" [value]="search()" (valueChange)="onSearch($event)" />
+    <lib-search-input variant="neo-glass" placeholder="Search this menu" [value]="search()" (valueChange)="onSearch($event)" />
 
     <div class="menu-category-list" [class.menu-loading]="menuLoading()" [attr.aria-busy]="menuLoading()">
       @if (isEmpty() && search()) {

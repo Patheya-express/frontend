@@ -1,5 +1,31 @@
-import { Routes } from '@angular/router';
+import { EnvironmentInjector, inject, runInInjectionContext } from '@angular/core';
+import { Routes, type CanActivateChildFn, type UrlTree } from '@angular/router';
 import { authGuard, guestGuard } from '@patheya-express-frontend/auth';
+
+type AuthUiModule = typeof import('@patheya-express-frontend/auth-ui');
+
+/**
+ * auth-ui is lazy-loaded (see the loadComponent routes below), so splashGuard can't be statically
+ * imported here without defeating that code-splitting — a static top-level import would pull its
+ * whole module into the main bundle instead. `inject()` only works synchronously, so the
+ * EnvironmentInjector is captured before the dynamic import and reapplied (via
+ * `runInInjectionContext`) once the module — and therefore the actual guard function — has
+ * loaded; calling `m.splashGuard(...)` directly inside the dynamic import's `.then()` (the
+ * previous implementation) ran it after Angular's own `runInInjectionContext` wrapper around this
+ * function had already returned and torn down its injection context, causing
+ * `inject(AppBootstrapStateService)` inside splashGuard to throw NG0203. Exact mirror of
+ * restaurant-app's/delivery-app's `lazyOnboardingGuard()`.
+ */
+function lazySplashGuard(pick: (m: AuthUiModule) => CanActivateChildFn): CanActivateChildFn {
+  return async (childRoute, state): Promise<boolean | UrlTree> => {
+    const injector = inject(EnvironmentInjector);
+    const m = await import('@patheya-express-frontend/auth-ui');
+    const result = await runInInjectionContext(injector, () => pick(m)(childRoute, state));
+    return result as boolean | UrlTree;
+  };
+}
+
+const splashGuard = lazySplashGuard((m) => m.splashGuard);
 
 export const routes: Routes = [
   {
@@ -19,15 +45,11 @@ export const routes: Routes = [
   },
   {
     // Every existing route, unchanged, gated behind the one-time-per-session splash redirect
-    // (see `splashGuard`) — `path: ''` + `canActivateChild` wraps them without altering any
-    // individual route's own path, `canActivate`, or `data`. Dynamically imported rather than a
-    // static top-level import: `auth-ui` is lazy-loaded everywhere else in this file, and a
-    // static import here would pull its whole module into the main bundle instead.
+    // (see `splashGuard` above, and `lazySplashGuard`'s doc comment for why it's wrapped) —
+    // `path: ''` + `canActivateChild` wraps them without altering any individual route's own
+    // path, `canActivate`, or `data`.
     path: '',
-    canActivateChild: [
-      (childRoute, state) =>
-        import('@patheya-express-frontend/auth-ui').then((m) => m.splashGuard(childRoute, state)),
-    ],
+    canActivateChild: [splashGuard],
     children: [
       {
         path: 'auth/login',

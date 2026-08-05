@@ -88,6 +88,11 @@ export class GoogleMapsAddressProvider implements AddressProvider {
         fullscreenControl: options.fullscreenControl ?? true,
         zoomControl: options.zoomControl ?? true,
         streetViewControl: false,
+        // Without this, a single-finger drag on a touchscreen pans the map instead of scrolling
+        // the page it's embedded in (e.g. the address form) — a classic mobile scroll-trap.
+        // 'cooperative' requires two fingers to pan/zoom the map itself, one finger scrolls the
+        // page normally; a small on-map hint briefly explains this the first time it's touched.
+        gestureHandling: 'cooperative',
       });
 
       this.placesService = new placesLibrary.PlacesService(this.map);

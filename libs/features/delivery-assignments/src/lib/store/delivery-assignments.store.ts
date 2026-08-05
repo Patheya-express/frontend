@@ -1,6 +1,7 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type { DeliveryAssignmentResponseDto, OrderResponseDto } from '@patheya-express-frontend/api-sdk';
+import { LogoutCleanupRegistry } from '@patheya-express-frontend/auth';
+import { extractHttpErrorMessage } from '@patheya-express-frontend/core';
 import { DeliveryAssignmentsService } from '../services/delivery-assignments.service';
 
 export interface AssignmentGroups {
@@ -27,13 +28,6 @@ export interface OtpDialogState {
 const TERMINAL_ORDER_STATUSES: ReadonlyArray<OrderResponseDto['status']> = ['DELIVERED', 'CANCELLED'];
 
 const POLL_INTERVAL_MS = 15_000;
-
-function extractMessage(error: unknown, fallback: string): string {
-  if (error instanceof HttpErrorResponse && typeof error.error?.message === 'string') {
-    return error.error.message;
-  }
-  return fallback;
-}
 
 function buildGroups(assignments: DeliveryAssignmentResponseDto[]): AssignmentGroups {
   const groups: AssignmentGroups = { active: [], available: [], completed: [] };
@@ -73,6 +67,12 @@ export class DeliveryAssignmentsStore {
   readonly otpDialog = this._otpDialog.asReadonly();
 
   readonly groups = computed<AssignmentGroups>(() => buildGroups(this._assignments()));
+
+  constructor() {
+    // Without this, a delivery partner who logs out while this page is mounted keeps polling
+    // `getAssignments()` against an invalid session until the component happens to be destroyed.
+    inject(LogoutCleanupRegistry).register(() => this.stopPolling());
+  }
 
   async loadAssignments(): Promise<void> {
     this._loading.set(true);
@@ -179,7 +179,7 @@ export class DeliveryAssignmentsStore {
       this._otpDialog.set({
         ...dialog,
         generating: false,
-        error: extractMessage(error, 'Unable to send a new code. Please try again.'),
+        error: extractHttpErrorMessage(error, 'Unable to send a new code. Please try again.'),
       });
     }
   }
@@ -209,7 +209,7 @@ export class DeliveryAssignmentsStore {
       this._otpDialog.set({
         ...current,
         verifying: false,
-        error: extractMessage(error, 'Unable to verify this code. Please try again.'),
+        error: extractHttpErrorMessage(error, 'Unable to verify this code. Please try again.'),
       });
     }
   }

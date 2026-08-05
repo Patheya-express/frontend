@@ -7,6 +7,7 @@ export class CustomerWalletFacade {
 
   readonly balance = this.store.balance;
   readonly balanceLoading = this.store.balanceLoading;
+  readonly balanceError = this.store.balanceError;
 
   readonly transactions = this.store.transactions;
   readonly total = this.store.total;
@@ -20,6 +21,7 @@ export class CustomerWalletFacade {
   readonly totalRewarded = this.store.totalRewarded;
   readonly totalEarned = this.store.totalEarned;
   readonly referralLoading = this.store.referralLoading;
+  readonly referralError = this.store.referralError;
 
   readonly applying = this.store.applying;
   readonly applyError = this.store.applyError;

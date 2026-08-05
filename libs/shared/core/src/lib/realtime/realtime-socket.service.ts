@@ -21,6 +21,12 @@ export class RealtimeSocketService {
   private readonly authFacade = inject(AuthFacade);
 
   private socket: Socket | null = null;
+  /** Rooms successfully joined via `joinRoom()` — replayed on every `connect` event (including
+   *  socket.io's own auto-reconnect after a network blip), since the server has no memory of a
+   *  new connection's prior room membership. Without this, a reconnect silently stops delivering
+   *  room-scoped events (e.g. order status/location) while `connected` still reads `true`, so
+   *  consumers relying on it to decide "is realtime working" have no signal anything is wrong. */
+  private readonly joinedRooms = new Set<string>();
 
   readonly connected = signal(false);
 
@@ -40,7 +46,12 @@ export class RealtimeSocketService {
       transports: ['websocket'],
     });
 
-    socket.on('connect', () => this.connected.set(true));
+    socket.on('connect', () => {
+      this.connected.set(true);
+      for (const room of this.joinedRooms) {
+        socket.emit('join-room', room);
+      }
+    });
     socket.on('disconnect', () => this.connected.set(false));
     socket.on('connect_error', () => this.connected.set(false));
 
@@ -55,6 +66,9 @@ export class RealtimeSocketService {
 
     return new Promise((resolve) => {
       socket.emit('join-room', room, (result: JoinRoomResult) => {
+        if (result?.success === true) {
+          this.joinedRooms.add(room);
+        }
         resolve(result?.success === true);
       });
     });
@@ -73,5 +87,6 @@ export class RealtimeSocketService {
     this.socket?.disconnect();
     this.socket = null;
     this.connected.set(false);
+    this.joinedRooms.clear();
   }
 }

@@ -4,6 +4,8 @@
   justify-content: center;
   width: 36px;
   height: 36px;
+  min-width: var(--touch-target-min, 44px);
+  min-height: var(--touch-target-min, 44px);
   border: none;
   border-radius: 50%;
   background: transparent;
@@ -29,6 +31,13 @@
 .favorite-button-sm {
   width: 28px;
   height: 28px;
+  // A more modest floor than the base class's 44px — "sm" is deliberately used in dense inline
+  // contexts (a menu item's meta row alongside price/badges, a card's small corner overlay) where
+  // the full touch-target minimum would visually overwhelm the row. 36px (this variant's own
+  // previous *visual* size before this fix) is a meaningful improvement over 28px without
+  // breaking those layouts.
+  min-width: 36px;
+  min-height: 36px;
 
   svg {
     width: 16px;

@@ -1,3 +1,5 @@
+@use '../neo-glass/neo-glass.mixins' as neo;
+
 .search-input {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -18,3 +20,21 @@
     cursor: not-allowed;
   }
 }
+
+// Neo-Glass opt-in — a modifier class on the same element, not a second component. See
+// `neo-glass.mixins.scss` for the scope this is intended for (search bars, specifically).
+.search-input.search-input--neo-glass {
+  @include neo.neo-raised;
+  border: none;
+  padding: var(--space-3) var(--space-4);
+  min-width: 0;
+  width: 100%;
+  transition:
+    box-shadow var(--motion-duration-base) var(--motion-easing-standard),
+    transform var(--motion-duration-fast) var(--motion-easing-soft);
+
+  &:focus {
+    box-shadow: var(--neo-elevation-pressed);
+  }
+}
+

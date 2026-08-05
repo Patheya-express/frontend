@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pre-Android 12 (API < 31) fallback for data_extraction_rules.xml — same exclusions, older
+     syntax. Android applies whichever of the two files matches the device's API level. -->
+<full-backup-content>
+    <exclude domain="sharedpref" path="cap_sec.xml" />
+    <exclude domain="root" path="app_webview/" />
+</full-backup-content>

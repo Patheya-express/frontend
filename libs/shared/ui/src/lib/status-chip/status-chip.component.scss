@@ -1,3 +1,5 @@
+@use '../neo-glass/neo-glass.mixins' as neo;
+
 .status-chip {
   display: inline-flex;
   align-items: center;
@@ -37,6 +39,28 @@
     background: var(--color-primary-soft);
     color: var(--color-primary-hover);
     outline: 1px solid var(--color-primary);
+  }
+}
+
+// Neo-Glass opt-in — a modifier class on the same element, not a second component. Placed last
+// so it wins the cascade over the `[data-tone]`/`&--selected` rules above at equal specificity;
+// tone is dropped in favor of the soft-surface look, which is the point of this variant.
+.status-chip.status-chip--neo-glass {
+  @include neo.neo-raised;
+  padding: var(--space-2) var(--space-4);
+  min-height: var(--touch-target-min, 44px);
+  color: var(--color-text-muted);
+  font-weight: var(--font-weight-medium);
+
+  &.status-chip--interactive {
+    cursor: pointer;
+  }
+
+  &.status-chip--selected {
+    box-shadow: var(--neo-elevation-pressed);
+    color: var(--color-primary-strong, var(--color-primary));
+    font-weight: var(--font-weight-bold);
+    outline: none;
   }
 }
 

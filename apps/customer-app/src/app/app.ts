@@ -12,7 +12,13 @@ import {
   type OverlayRef,
 } from '@patheya-express-frontend/ui';
 import { AuthFacade } from '@patheya-express-frontend/auth';
-import { MediaUrlService } from '@patheya-express-frontend/core';
+import {
+  HapticsService,
+  MediaUrlService,
+  MobilePlatformService,
+  PushNotificationsService,
+} from '@patheya-express-frontend/core';
+import { NotificationsService } from '@patheya-express-frontend/api-sdk';
 import { CustomerProfileFacade } from '@patheya-express-frontend/customer-profile';
 import { CustomerNotificationsFacade } from '@patheya-express-frontend/customer-notifications';
 import { AddressPickerComponent, AddressesFacade } from '@patheya-express-frontend/addresses';
@@ -50,7 +56,12 @@ export class App {
   private readonly dialogService = inject(DialogService);
   private readonly bottomSheetService = inject(BottomSheetService);
   private readonly addressesFacade = inject(AddressesFacade);
+  private readonly haptics = inject(HapticsService);
+  private readonly mobilePlatformService = inject(MobilePlatformService);
+  private readonly pushNotificationsService = inject(PushNotificationsService);
+  private readonly notificationsService = inject(NotificationsService);
 
+  protected readonly isNative = this.mobilePlatformService.isNative();
   protected readonly isAuthenticated = this.authFacade.isAuthenticated;
   protected readonly cartItemCount = this.cartFacade.totalItems;
   protected readonly notificationCount = this.customerNotificationsFacade.unreadCount;
@@ -90,6 +101,61 @@ export class App {
       this.addressSheetRef.close();
       this.addressSheetRef = undefined;
     });
+
+    // An expired refresh token (AuthStore.refreshSession() failing on a 401 retry) previously
+    // cleared the session silently — isAuthenticated() flipped false, but nothing navigated the
+    // user away, so someone on e.g. /checkout or /account kept looking at a page that would fail
+    // unauthenticated on their next tap. sessionExpired() is deliberately never set by an
+    // explicit onLogout() (see AuthStore's own comment on the signal), so this never fires there.
+    effect(() => {
+      if (this.authFacade.sessionExpired()) {
+        const redirectTo = this.router.url;
+        this.authFacade.acknowledgeSessionExpiry();
+        void this.router.navigate(['/auth/login'], { queryParams: { redirectTo } });
+      }
+    });
+
+    // Push notifications: request permission + register once signed in on native; a signed-out
+    // guest is never prompted. Re-running on every isAuthenticated() flip to true is safe —
+    // PushNotificationsService.initialize() no-ops after its first successful call.
+    effect(() => {
+      if (this.isNative && this.isAuthenticated()) {
+        void this.pushNotificationsService.initialize();
+      }
+    });
+
+    // Sends the device token to the backend as soon as registration completes, and again if it
+    // ever changes (Capacitor's 'registration' event can fire more than once per install).
+    effect(() => {
+      const token = this.pushNotificationsService.token();
+      const platform = this.mobilePlatformService.platform();
+
+      if (!token || platform === 'web' || !this.isAuthenticated()) {
+        return;
+      }
+
+      void this.notificationsService.notificationsControllerRegisterPushToken({ body: { platform, token } });
+    });
+
+    // Tapping a push (from background or a killed-app cold launch) routes straight to that
+    // notification and marks it read. Payload contract (`data.notificationId`) is documented for
+    // the backend team in the Sprint 5 report; a missing id falls back to the notification list.
+    effect(() => {
+      const tapped = this.pushNotificationsService.tapped();
+      if (!tapped) {
+        return;
+      }
+
+      this.pushNotificationsService.acknowledgeTap();
+
+      const notificationId = (tapped.data as { notificationId?: string } | null)?.notificationId;
+      if (notificationId) {
+        void this.customerNotificationsFacade.markAsRead(notificationId);
+        void this.router.navigate(['/notifications', notificationId]);
+      } else {
+        void this.router.navigate(['/notifications']);
+      }
+    });
   }
 
   protected async onLogout(): Promise<void> {
@@ -123,6 +189,10 @@ export class App {
 
   protected onNotificationsToggled(): void {
     void this.router.navigate(['/notifications']);
+  }
+
+  protected onBottomTabSelected(): void {
+    void this.haptics.tap();
   }
 
   /**

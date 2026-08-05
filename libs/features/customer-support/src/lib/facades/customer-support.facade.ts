@@ -26,6 +26,7 @@ export class CustomerSupportFacade {
 
   readonly faqs = this.store.faqs;
   readonly faqsLoading = this.store.faqsLoading;
+  readonly faqsError = this.store.faqsError;
 
   loadTickets(page?: number): Promise<void> {
     return this.store.loadTickets(page);

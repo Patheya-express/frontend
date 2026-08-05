@@ -28,6 +28,12 @@ export class ResetPasswordPageComponent {
   protected readonly error = this.facade.error;
   protected readonly submitted = signal(false);
 
+  /** Rarely present in practice (this page is normally reached via an emailed link, which has no
+   *  knowledge of any in-app navigation state) but forwarded defensively on every "Log in" link
+   *  below for the same reason as the other auth pages — see LoginPageComponent. */
+  private readonly redirectTo = this.route.snapshot.queryParamMap.get('redirectTo');
+  protected readonly redirectToQueryParams = this.redirectTo ? { redirectTo: this.redirectTo } : {};
+
   protected async onSubmit(value: ResetPasswordFormValue): Promise<void> {
     if (!this.token) {
       return;

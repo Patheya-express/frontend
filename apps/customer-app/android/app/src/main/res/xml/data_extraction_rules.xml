@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android 12+ (API 31+) backup/device-transfer rules. AndroidManifest.xml's allowBackup="true"
+  with no rules file previously meant Android's default full-backup behavior applied — everything
+  the app owns, including WebView-managed storage, eligible for Google Drive backup or device-to-
+  device transfer. Auth tokens now live in Keychain/Keystore-backed secure storage on native (see
+  AuthStorageService) rather than WebView localStorage, but this still excludes both defensively:
+  the secure-storage plugin's own SharedPreferences file (its values are encrypted, but the file
+  itself has no reason to leave the device) and the WebView data directory (session/cache state
+  that shouldn't be restored onto a different device).
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="cap_sec.xml" />
+        <exclude domain="root" path="app_webview/" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="cap_sec.xml" />
+        <exclude domain="root" path="app_webview/" />
+    </device-transfer>
+</data-extraction-rules>

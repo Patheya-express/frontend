@@ -64,16 +64,24 @@
 
 .address-actions {
   display: flex;
-  gap: var(--space-3);
+  // Was `gap: var(--space-3)` with `padding: 0` buttons (a hitbox equal to the raw text height,
+  // ~14-17px, on Edit/Delete — one of which is destructive). Growing each button's own padding
+  // is the fix; the gap is reduced to compensate so the row's overall width/rhythm looks the same
+  // as before — the visible separation between adjacent labels now comes from their padding
+  // instead of the gap, not from both stacking on top of each other.
+  gap: 0;
   margin-top: var(--space-3);
 
   button {
+    display: inline-flex;
+    align-items: center;
     border: none;
     background: none;
-    padding: 0;
     font-size: var(--font-size-xs);
     color: var(--color-primary);
     cursor: pointer;
+    padding: var(--space-2) var(--space-2);
+    min-height: var(--touch-target-min, 44px);
 
     &:hover {
       text-decoration: underline;

@@ -63,6 +63,7 @@
 
 .referral-copy-btn {
   padding: var(--space-2) var(--space-4);
+  min-height: var(--touch-target-min, 44px);
   border-radius: var(--radius-md);
   border: none;
   background: var(--color-primary);

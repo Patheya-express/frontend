@@ -62,6 +62,10 @@ export class RestaurantFacade {
     this.store.setSort(sortBy, sortOrder);
   }
 
+  setFilters(partial: Partial<RestaurantFilters>): void {
+    this.store.setFilters(partial);
+  }
+
   clearFilters(): void {
     this.store.clearFilters();
   }

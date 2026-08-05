@@ -65,8 +65,16 @@ h2 {
 }
 
 .drawer-footer {
-  padding: var(--space-2) var(--space-5) var(--space-5);
+  // Base bottom padding always includes the OS-level safe area (a fixed, full-height panel like
+  // this one doesn't inherit `.app-shell-content`'s padding, so it needs its own).
+  padding: var(--space-2) var(--space-5) calc(var(--space-5) + var(--safe-area-bottom));
   border-top: 1px solid var(--color-border);
+
+  // Native Android/iOS shell only — also clears AppShellComponent's fixed bottom tab bar, whose
+  // own height sits on top of the safe area above.
+  &.drawer-footer--native {
+    padding-bottom: calc(var(--touch-target-large) + var(--safe-area-bottom) + var(--space-4));
+  }
 }
 
 .drawer-actions {

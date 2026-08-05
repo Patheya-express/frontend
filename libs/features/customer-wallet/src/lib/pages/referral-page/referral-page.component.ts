@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { ErrorStateComponent } from '@patheya-express-frontend/ui';
 import { CustomerWalletFacade } from '../../facades/customer-wallet.facade';
 
 @Component({
   selector: 'lib-referral-page',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, ErrorStateComponent],
   templateUrl: './referral-page.component.html',
   styleUrl: './referral-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -15,6 +16,10 @@ export class ReferralPageComponent implements OnInit {
   protected readonly copied = signal(false);
 
   ngOnInit(): void {
+    void this.facade.loadReferralSummary();
+  }
+
+  protected retry(): void {
     void this.facade.loadReferralSummary();
   }
 

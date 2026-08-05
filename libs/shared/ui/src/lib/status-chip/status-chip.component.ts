@@ -22,6 +22,10 @@ export class StatusChipComponent {
   @Input() selectable = false;
   @Input() selected = false;
   @Input() removable = false;
+  /** Visual treatment — 'flat' (default, unchanged) keeps every existing call site as-is;
+   *  'neo-glass' opts into the soft-neumorphic pill from the Neo-Glass design system (raised at
+   *  rest, pressed/carved-in when selected). A modifier class, not a second component. */
+  @Input() variant: 'flat' | 'neo-glass' = 'flat';
 
   @Output() chipClick = new EventEmitter<void>();
   @Output() removed = new EventEmitter<void>();

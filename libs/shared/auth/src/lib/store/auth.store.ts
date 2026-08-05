@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import type {
   AuthUserDto,
@@ -11,6 +12,25 @@ import { AuthService } from '../services/auth.service';
 import { AuthStorageService } from '../storage/auth-storage.service';
 import { LogoutCleanupRegistry } from '../services/logout-cleanup-registry.service';
 
+/**
+ * Same convention as `coupon.store.ts`'s `extractMessage` — prefers the backend's own error
+ * message when the API returned one, rather than always showing one hardcoded string regardless
+ * of cause. `status === 0` (no response received at all — offline, DNS failure, server
+ * unreachable) is called out specifically since that case has no response body to read a message
+ * from, and was previously indistinguishable from "wrong password"/"email already registered".
+ */
+function extractAuthErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof HttpErrorResponse) {
+    if (error.status === 0) {
+      return "Can't reach the server. Check your connection and try again.";
+    }
+    if (typeof error.error?.message === 'string') {
+      return error.error.message;
+    }
+  }
+  return fallback;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthStore {
   private readonly authService = inject(AuthService);
@@ -21,11 +41,17 @@ export class AuthStore {
   private readonly _accessToken = signal<string | null>(null);
   private readonly _loading = signal(false);
   private readonly _error = signal<string | null>(null);
+  /** True only when the session ended involuntarily (refresh token expired/invalid) — never set
+   *  by an explicit `logout()` call, so the app-level effect that reacts to this (navigating to
+   *  login with a `redirectTo` back to wherever the user was) never fires on a deliberate log out,
+   *  where landing on a neutral post-logout screen is the right call instead. */
+  private readonly _sessionExpired = signal(false);
 
   readonly user = this._user.asReadonly();
   readonly loading = this._loading.asReadonly();
   readonly error = this._error.asReadonly();
   readonly isAuthenticated = computed(() => !!this._accessToken());
+  readonly sessionExpired = this._sessionExpired.asReadonly();
 
   constructor() {
     // Same-browser tabs share localStorage: when a different tab logs out, it clears the auth
@@ -36,6 +62,13 @@ export class AuthStore {
     if (typeof window !== 'undefined') {
       window.addEventListener('storage', () => this.handleStorageEvent());
     }
+  }
+
+  /** Native only — no-op on web. Must be awaited before `initialize()` so the secure-storage-
+   *  backed in-memory cache `initialize()` reads from is actually populated. See
+   *  `AuthStorageService`'s doc comment for why this two-step shape exists. */
+  hydrateNativeSession(): Promise<void> {
+    return this.authStorage.hydrate();
   }
 
   /** Hydrates session state from persisted storage. Call once at app bootstrap. */
@@ -64,6 +97,10 @@ export class AuthStore {
   }
 
   private async runRegistration(register: () => Promise<RegisterResponseDto>): Promise<boolean> {
+    if (this._loading()) {
+      return false;
+    }
+
     this._loading.set(true);
     this._error.set(null);
 
@@ -71,8 +108,10 @@ export class AuthStore {
       const response = await register();
       this.applySession(response.accessToken, response.refreshToken, response.user);
       return true;
-    } catch {
-      this._error.set('Unable to create your account. The email may already be registered.');
+    } catch (err) {
+      this._error.set(
+        extractAuthErrorMessage(err, 'Unable to create your account. The email may already be registered.'),
+      );
       return false;
     } finally {
       this._loading.set(false);
@@ -80,6 +119,10 @@ export class AuthStore {
   }
 
   async login(dto: LoginDto): Promise<boolean> {
+    if (this._loading()) {
+      return false;
+    }
+
     this._loading.set(true);
     this._error.set(null);
 
@@ -87,8 +130,8 @@ export class AuthStore {
       const response = await this.authService.login(dto);
       this.applySession(response.accessToken, response.refreshToken, response.user);
       return true;
-    } catch {
-      this._error.set('Invalid email or password.');
+    } catch (err) {
+      this._error.set(extractAuthErrorMessage(err, 'Invalid email or password.'));
       return false;
     } finally {
       this._loading.set(false);
@@ -167,9 +210,16 @@ export class AuthStore {
 
       return true;
     } catch {
+      this._sessionExpired.set(true);
       await this.logout();
       return false;
     }
+  }
+
+  /** Called once the app-level effect watching `sessionExpired` has navigated the user to login
+   *  — resets the flag so it doesn't linger true and re-fire once they authenticate again. */
+  acknowledgeSessionExpiry(): void {
+    this._sessionExpired.set(false);
   }
 
   /** Always resolves true on a successful request — the backend returns the same generic
@@ -182,8 +232,8 @@ export class AuthStore {
     try {
       await this.authService.forgotPassword(dto);
       return true;
-    } catch {
-      this._error.set('Something went wrong. Please try again.');
+    } catch (err) {
+      this._error.set(extractAuthErrorMessage(err, 'Something went wrong. Please try again.'));
       return false;
     } finally {
       this._loading.set(false);
@@ -197,8 +247,8 @@ export class AuthStore {
     try {
       await this.authService.resetPassword(dto);
       return true;
-    } catch {
-      this._error.set('This reset link is invalid or has expired.');
+    } catch (err) {
+      this._error.set(extractAuthErrorMessage(err, 'This reset link is invalid or has expired.'));
       return false;
     } finally {
       this._loading.set(false);

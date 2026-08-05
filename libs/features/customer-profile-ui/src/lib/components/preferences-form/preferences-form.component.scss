@@ -41,8 +41,14 @@
 }
 
 .preferences-checkbox {
+  // This is a <label> wrapping the <input> (see the template) — clicks anywhere on the label
+  // already forward to the checkbox, so padding here grows the real tap target without changing
+  // the checkbox's own 18x18 visible size the way resizing the input itself would.
   display: flex;
+  align-items: center;
   justify-content: center;
+  min-height: var(--touch-target-min, 44px);
+  cursor: pointer;
 
   input {
     width: 18px;

@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import type { NotificationResponseDto } from '@patheya-express-frontend/api-sdk';
@@ -17,6 +18,7 @@ export class NotificationDetailPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly notificationsService = inject(CustomerNotificationsService);
   private readonly facade = inject(CustomerNotificationsFacade);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly notification = signal<NotificationResponseDto | null>(null);
   protected readonly loading = signal(false);
@@ -25,7 +27,7 @@ export class NotificationDetailPageComponent implements OnInit {
   private notificationId = '';
 
   ngOnInit(): void {
-    this.route.paramMap.subscribe((params) => {
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const id = params.get('id');
       if (id) {
         this.notificationId = id;

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { PrimaryButtonComponent } from '@patheya-express-frontend/ui';
+import { HapticsService } from '@patheya-express-frontend/core';
 import { CheckoutFacade } from '../../facades/checkout.facade';
 
 @Component({
@@ -14,6 +15,7 @@ import { CheckoutFacade } from '../../facades/checkout.facade';
 export class PlaceOrderSectionComponent {
   private readonly checkoutFacade = inject(CheckoutFacade);
   private readonly router = inject(Router);
+  private readonly haptics = inject(HapticsService);
 
   protected readonly placingOrder = this.checkoutFacade.placingOrder;
   protected readonly validationErrors = this.checkoutFacade.validationErrors;
@@ -23,7 +25,10 @@ export class PlaceOrderSectionComponent {
     const order = await this.checkoutFacade.placeOrder();
 
     if (order) {
+      void this.haptics.success();
       await this.router.navigateByUrl(`/orders/${order.id}`);
+    } else {
+      void this.haptics.error();
     }
   }
 }

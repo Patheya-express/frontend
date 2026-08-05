@@ -1,5 +1,6 @@
 import { Injectable, effect, inject, signal } from '@angular/core';
 import type { OrderLocationResponseDto, OrderResponseDto } from '@patheya-express-frontend/api-sdk';
+import { LogoutCleanupRegistry } from '@patheya-express-frontend/auth';
 import { RealtimeSocketService } from '@patheya-express-frontend/core';
 import { OrderDetailsService } from '../services/order-details.service';
 
@@ -53,6 +54,11 @@ export class OrderDetailsStore {
         this.startPollingInterval();
       }
     });
+
+    // Without this, a logout while an order-tracking page is still mounted leaves `orderId` set,
+    // and the effect above reacts to the logout-triggered socket disconnect by *starting* polling
+    // (not stopping it) — silently polling a stale order with no active session, forever.
+    inject(LogoutCleanupRegistry).register(() => this.stopTracking());
   }
 
   async loadOrder(orderId: string): Promise<void> {

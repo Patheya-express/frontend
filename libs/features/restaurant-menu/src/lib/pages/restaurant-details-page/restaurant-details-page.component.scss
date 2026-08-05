@@ -1,3 +1,10 @@
+// Neo-Glass — used directly here (not gated behind a variant) for the quantity-control stepper,
+// which is page-local markup deep inside `MenuItemCardComponent` reached via `::ng-deep`, same as
+// the rest of this file's deep selectors. The search input and category tabs opt in through their
+// own component `variant="neo-glass"` input instead (search-input.component.scss /
+// status-chip.component.scss) — see menu-category-tabs.component.html and this page's template.
+@use '../../../../../../shared/ui/src/lib/neo-glass/neo-glass.mixins' as neo;
+
 :host {
   display: block;
   scroll-behavior: smooth;
@@ -13,77 +20,174 @@
   }
 }
 
-.restaurant-sticky-stack {
-  position: sticky;
-  // Sits directly beneath the app shell's own sticky header (~61px tall).
-  top: 61px;
-  z-index: 5;
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
-  max-width: var(--content-max-width);
-  margin: 0 auto;
-}
-
-.restaurant-header {
-  display: flex;
-  gap: var(--space-4);
-  align-items: center;
-  padding: var(--space-4) var(--space-5);
-  transition: padding var(--transition-fast);
-
-  @media (max-width: 640px) {
-    padding: var(--space-3);
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  // Compact form once the page has scrolled past HEADER_COLLAPSE_THRESHOLD — keeps the name,
-  // rating and actions visible while dropping the image/description/hours to reclaim vertical
-  // space, on both desktop and mobile.
-  &.collapsed {
-    padding: var(--space-2) var(--space-5);
-
-    .restaurant-header-image {
-      width: 40px;
-      height: 40px;
-    }
-
-    @media (max-width: 640px) {
-      padding: var(--space-2) var(--space-3);
-      flex-direction: row;
-      align-items: center;
-    }
-  }
-}
-
-.restaurant-header-image {
-  flex-shrink: 0;
-  width: 96px;
-  height: 96px;
-  border-radius: var(--radius-lg);
+// --- Hero -----------------------------------------------------------------------------------
+// Full-bleed, non-sticky — scrolls away naturally while `.restaurant-sticky-stack` (below)
+// overlaps its bottom edge and then takes over as the pinned, compact chrome. This is the one
+// structural move in this pass: the restaurant photo previously lived as a small 96px thumbnail
+// inline with the title; it now renders once, large, as its own section — `coverImageUrl(...)`
+// and the placeholder SVG are relocated here verbatim, not duplicated.
+.restaurant-hero {
+  position: relative;
+  width: 100%;
+  height: clamp(200px, 34vh, 340px);
   overflow: hidden;
-  background: var(--color-secondary-soft);
-  transition: width var(--transition-fast), height var(--transition-fast);
+  // Warm branded wash instead of a flat neutral fill — matters most when there's no real photo
+  // (see .restaurant-hero-placeholder below), where a flat gray box reads as broken rather than
+  // as a deliberate empty state.
+  background: linear-gradient(
+    160deg,
+    var(--color-secondary-soft) 0%,
+    color-mix(in srgb, var(--color-primary) 8%, var(--color-secondary-soft)) 100%
+  );
+  isolation: isolate;
 
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
+  // No photo: don't spend a third of the viewport on empty space — shrink to a compact band.
+  // `:has()` is progressive enhancement; browsers without it just keep the full cinematic height,
+  // still warm-gradient-filled rather than flat gray, so there's no broken fallback either way.
+  &:has(.restaurant-hero-placeholder) {
+    height: clamp(140px, 20vh, 200px);
   }
 }
 
-.restaurant-header-placeholder {
+.restaurant-hero-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  animation: hero-image-reveal var(--motion-duration-slow) var(--motion-easing-decelerate) both;
+}
+
+@keyframes hero-image-reveal {
+  from {
+    opacity: 0;
+    transform: scale(1.06);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+  }
+}
+
+.restaurant-hero-placeholder {
+  position: relative;
   width: 100%;
   height: 100%;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   color: var(--color-text-subtle);
 
+  &::before {
+    content: '';
+    position: absolute;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--color-primary) 0%, transparent 70%);
+    filter: blur(48px);
+    opacity: 0.22;
+    animation: restaurant-hero-glow-drift 10s var(--motion-easing-standard) infinite;
+  }
+
   svg {
-    width: 36px;
-    height: 36px;
+    position: relative;
+    width: 40px;
+    height: 40px;
+    opacity: 0.6;
+  }
+
+  span {
+    position: relative;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0.02em;
+  }
+}
+
+@keyframes restaurant-hero-glow-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(16px, 10px) scale(1.08);
+  }
+}
+
+.restaurant-hero-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.18) 0%,
+    rgba(0, 0, 0, 0) 32%,
+    rgba(0, 0, 0, 0) 55%,
+    rgba(0, 0, 0, 0.32) 100%
+  );
+  pointer-events: none;
+}
+
+// --- Sticky header + category tabs stack -----------------------------------------------------
+// Floats as a rounded card overlapping the hero's bottom edge (negative margin), then — because
+// it's `position: sticky` — pins flush under the app shell's own header once scrolled that far.
+// `top: 61px` and the tab-row's IntersectionObserver `rootMargin` (in menu-category-tabs.component.ts)
+// both assume this stack's *collapsed* height stays close to its previous value; collapsed padding
+// and font sizing below were kept within that budget deliberately.
+//
+// Background is fully opaque, deliberately NOT the translucent Neo-Glass surface used elsewhere:
+// this element sits on top of the page's own scrolling content (search input, menu items) while
+// pinned, and a translucent + blurred backdrop let that content visibly ghost through underneath
+// it instead of being cleanly hidden — exactly the "search bar showing through the restaurant
+// name" artifact this fixes. `margin-bottom` adds scroll buffer so the height this stack loses the
+// instant `.collapsed` strips the description/address/hours block (an Angular `@if`, not a CSS
+// transition — see `.restaurant-header`'s own comment below) doesn't immediately expose whatever
+// follows mid-reflow.
+.restaurant-sticky-stack {
+  position: sticky;
+  top: 61px;
+  z-index: 5;
+  margin: -40px auto 0;
+  margin-bottom: var(--space-4);
+  max-width: var(--content-max-width);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  box-shadow: var(--shadow-lg);
+  transition: margin-top var(--motion-duration-base) var(--motion-easing-standard);
+
+  @media (max-width: 640px) {
+    margin-top: -24px;
+  }
+}
+
+.restaurant-header {
+  padding: var(--space-5);
+  transition: padding var(--motion-duration-base) var(--motion-easing-standard);
+
+  @media (max-width: 640px) {
+    padding: var(--space-4) var(--space-3);
+  }
+
+  // Compact form once scrolled past HEADER_COLLAPSE_THRESHOLD — the title scales down via
+  // `transform` (never `font-size`, so no reflow/repaint of surrounding text metrics) and the
+  // description/address/hours block disappears via the existing `@if (!headerCollapsed())` in
+  // the template (an instant remove/insert — Angular structural directives, not CSS, own that
+  // transition, so there's nothing to animate there without touching the component's TS).
+  &.collapsed {
+    padding: var(--space-2) var(--space-5);
+
+    @media (max-width: 640px) {
+      padding: var(--space-2) var(--space-3);
+    }
+
+    h1 {
+      transform: scale(0.88);
+      transform-origin: left center;
+    }
   }
 }
 
@@ -98,18 +202,53 @@
   gap: var(--space-2);
 }
 
+.restaurant-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-left: auto;
+}
+
 .open-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-semibold);
   color: var(--color-success, #2e7d32);
-  border: 1px solid var(--color-success, #2e7d32);
+  background: var(--color-success-soft);
   border-radius: var(--radius-full, 999px);
-  padding: 1px var(--space-2);
+  padding: 3px var(--space-3) 3px var(--space-2);
   white-space: nowrap;
+
+  &::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentcolor;
+    animation: status-pulse 2s var(--motion-easing-standard) infinite;
+  }
 
   &.closed {
     color: var(--color-error);
-    border-color: var(--color-error);
+    background: var(--color-error-soft);
+
+    &::before {
+      animation: none;
+    }
+  }
+}
+
+@keyframes status-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.75);
   }
 }
 
@@ -117,14 +256,16 @@ h1 {
   margin: 0;
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
+  letter-spacing: -0.01em;
   color: var(--color-text);
+  transition: transform var(--motion-duration-base) var(--motion-easing-standard);
 }
 
 .restaurant-header-rating {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin: 2px 0 0;
+  margin: var(--space-1) 0 0;
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
 }
@@ -136,9 +277,10 @@ h1 {
 }
 
 .restaurant-header-description {
-  margin: var(--space-1) 0 0;
+  margin: var(--space-2) 0 0;
   font-size: var(--font-size-sm);
   color: var(--color-text-subtle);
+  line-height: var(--line-height-base);
 }
 
 .restaurant-header-address {
@@ -151,25 +293,36 @@ h1 {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-top: var(--space-1);
+  margin-top: var(--space-2);
 }
 
 .cuisine-chip {
   font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
   color: var(--color-text-muted);
-  border: 1px solid var(--color-border);
+  background: var(--color-secondary-soft);
   border-radius: var(--radius-full, 999px);
-  padding: 1px var(--space-2);
+  padding: 3px var(--space-3);
 }
 
 .restaurant-hours {
-  margin-top: var(--space-2);
+  margin-top: var(--space-3);
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
 
   summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     cursor: pointer;
     font-weight: var(--font-weight-medium);
+    color: var(--color-primary);
+
+    &:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+      border-radius: var(--radius-sm);
+    }
   }
 
   ul {
@@ -178,6 +331,30 @@ h1 {
   }
 }
 
+// --- Sticky category tabs (deep: lib-menu-category-tabs -> lib-status-chip) -------------------
+// `:host ::ng-deep` reaches into `MenuCategoryTabsComponent`/`StatusChipComponent`'s own templates
+// without editing those shared library files — scoped by `:host` to this page's instance only.
+:host ::ng-deep .menu-category-tabs {
+  padding: var(--space-1) var(--space-5) var(--space-4);
+  mask-image: linear-gradient(to right, transparent 0, black 20px, black calc(100% - 20px), transparent 100%);
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 20px,
+    black calc(100% - 20px),
+    transparent 100%
+  );
+
+  @media (max-width: 640px) {
+    padding: var(--space-1) var(--space-3) var(--space-3);
+  }
+}
+
+// The tabs themselves carry `variant="neo-glass"` directly (see menu-category-tabs.component.html
+// — it's the sticky category nav, unconditionally in the Neo-Glass zone) so the raised/pressed
+// chip treatment lives in status-chip.component.scss itself; nothing left to override here.
+
+// --- Offers -----------------------------------------------------------------------------------
 .restaurant-offers {
   display: flex;
   gap: var(--space-3);
@@ -185,6 +362,14 @@ h1 {
   padding-top: var(--space-4);
   padding-bottom: var(--space-2);
   min-width: 0;
+  mask-image: linear-gradient(to right, transparent 0, black 16px, black calc(100% - 16px), transparent 100%);
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 16px,
+    black calc(100% - 16px),
+    transparent 100%
+  );
 
   lib-offer-card {
     flex: 0 0 auto;
@@ -192,15 +377,378 @@ h1 {
   }
 }
 
-lib-search-input {
-  display: block;
-  margin-bottom: var(--space-4);
+:host ::ng-deep .restaurant-offers .offer-card {
+  transition:
+    transform var(--motion-duration-base) var(--motion-easing-standard),
+    box-shadow var(--motion-duration-base) var(--motion-easing-standard);
+
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
 }
 
+// --- Menu search ----------------------------------------------------------------------------
+:host ::ng-deep lib-search-input {
+  display: block;
+  margin-bottom: var(--space-5);
+}
+
+// The input itself carries `variant="neo-glass"` directly (see this page's template) — the pill
+// treatment lives in search-input.component.scss now, so there's nothing left to override here.
+
 .menu-category-list {
-  transition: opacity var(--transition-fast);
+  transition:
+    opacity var(--motion-duration-base) var(--motion-easing-standard),
+    filter var(--motion-duration-base) var(--motion-easing-standard);
 
   &.menu-loading {
-    opacity: 0.6;
+    opacity: 0.55;
+    filter: blur(1px);
+  }
+}
+
+// --- Menu categories + cards (deep: lib-menu-category, lib-menu-item-card) --------------------
+:host ::ng-deep .menu-category {
+  padding: var(--space-6) 0;
+  border-bottom: 1px solid var(--color-border);
+  animation: section-reveal var(--motion-duration-slow) var(--motion-easing-decelerate) both;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  h3 {
+    position: relative;
+    margin: 0;
+    padding-left: var(--space-3);
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: -0.01em;
+    color: var(--color-text);
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 50%;
+      width: 4px;
+      height: 1.05em;
+      border-radius: var(--radius-full);
+      background: linear-gradient(180deg, var(--color-primary), var(--color-primary-hover));
+      transform: translateY(-50%);
+    }
+  }
+
+  .menu-category-description {
+    margin: var(--space-1) 0 0 var(--space-3);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+  }
+
+  .menu-category-items {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+  }
+}
+
+@keyframes section-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Bounded stagger across the categories mounted together when the menu loads — capped since a
+// restaurant menu beyond ~10 categories gains nothing perceptible from further delay steps.
+@for $i from 1 through 10 {
+  :host ::ng-deep .menu-category:nth-child(#{$i}) {
+    animation-delay: calc((#{$i} - 1) * var(--motion-stagger-step));
+  }
+}
+
+:host ::ng-deep .menu-item-card {
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+  transition:
+    transform var(--motion-duration-base) var(--motion-easing-standard),
+    box-shadow var(--motion-duration-base) var(--motion-easing-standard),
+    border-color var(--motion-duration-base) var(--motion-easing-standard);
+
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lg);
+      border-color: transparent;
+    }
+  }
+
+  &.unavailable {
+    opacity: 0.55;
+  }
+}
+
+:host ::ng-deep .menu-item-image {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+
+  img {
+    transition: transform var(--motion-duration-slow) var(--motion-easing-standard);
+  }
+}
+
+:host ::ng-deep .menu-item-card:hover .menu-item-image img {
+  transform: scale(1.06);
+}
+
+:host ::ng-deep .diet-indicator {
+  width: 15px;
+  height: 15px;
+  border-radius: 3px;
+}
+
+:host ::ng-deep h4 mark {
+  padding: 0 2px;
+}
+
+:host ::ng-deep .add-btn {
+  border-radius: var(--radius-full);
+  padding: var(--space-2) var(--space-5);
+  min-height: var(--touch-target-min, 44px);
+  font-weight: var(--font-weight-bold);
+  transition:
+    background var(--motion-duration-fast) var(--motion-easing-standard),
+    color var(--motion-duration-fast) var(--motion-easing-standard),
+    transform var(--motion-duration-fast) var(--motion-easing-standard),
+    box-shadow var(--motion-duration-fast) var(--motion-easing-standard);
+
+  &:hover {
+    box-shadow: var(--shadow-sm);
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
+// The stepper replaces the "Add" button via the template's own `@if/@else` — a different DOM
+// node, not a shared element, so this is a "pop in" entrance on the new node rather than a true
+// FLIP morph between the two. `animation` (not `transition`) is used deliberately: it fires
+// automatically the moment this element is inserted, no trigger class needed.
+// Quantity control — squarely in the Neo-Glass zone: a pressed/"carved-in" track holding raised
+// circular +/- buttons, the classic soft-UI stepper shape.
+:host ::ng-deep .menu-item-stepper {
+  @include neo.neo-pressed;
+  padding: 4px;
+  min-height: var(--touch-target-min, 44px);
+  animation: stepper-pop var(--motion-duration-base) var(--motion-easing-decelerate) both;
+  border: none;
+}
+
+@keyframes stepper-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  60% {
+    transform: scale(1.05);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+:host ::ng-deep .stepper-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-background);
+  box-shadow: var(--neo-elevation-raised);
+  transition:
+    box-shadow var(--motion-duration-fast) var(--motion-easing-standard),
+    transform var(--motion-duration-fast) var(--motion-easing-soft);
+
+  &:active {
+    box-shadow: var(--neo-elevation-pressed);
+    transform: scale(0.88);
+  }
+}
+
+:host ::ng-deep .stepper-value {
+  min-width: 20px;
+}
+
+// Favorite hearts (restaurant header + every menu item card) — the fill-pop plays automatically
+// whenever Angular's `[class.favorited]="isFavorited()"` binding newly applies the class, since a
+// CSS `animation` (re)starts the moment its selector starts matching. No JS trigger needed.
+:host ::ng-deep .favorite-button {
+  transition:
+    color var(--motion-duration-fast) var(--motion-easing-standard),
+    transform var(--motion-duration-fast) var(--motion-easing-standard);
+
+  &:active {
+    transform: scale(0.9);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  &.favorited svg {
+    animation: heart-pop var(--motion-duration-base) var(--motion-easing-standard);
+  }
+}
+
+@keyframes heart-pop {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+// --- Reviews ------------------------------------------------------------------------------------
+:host ::ng-deep .reviews-section {
+  padding-top: var(--space-6);
+}
+
+:host ::ng-deep .reviews-summary h2 {
+  position: relative;
+  padding-left: var(--space-3);
+  font-size: var(--font-size-xl);
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 4px;
+    height: 1.05em;
+    border-radius: var(--radius-full);
+    background: linear-gradient(180deg, var(--color-primary), var(--color-primary-hover));
+    transform: translateY(-50%);
+  }
+}
+
+:host ::ng-deep .reviews-summary-value {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+}
+
+:host ::ng-deep .write-review-btn,
+:host ::ng-deep .btn-primary,
+:host ::ng-deep .btn-secondary {
+  border-radius: var(--radius-full);
+  min-height: var(--touch-target-min, 44px);
+  transition:
+    background var(--motion-duration-fast) var(--motion-easing-standard),
+    color var(--motion-duration-fast) var(--motion-easing-standard),
+    transform var(--motion-duration-fast) var(--motion-easing-standard);
+
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+}
+
+:host ::ng-deep .review-list-item {
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  transition: background var(--motion-duration-fast) var(--motion-easing-standard);
+
+  &:hover {
+    background: var(--color-background);
+  }
+}
+
+// --- Loading / error / empty states --------------------------------------------------------------
+.restaurant-loading-panel,
+.restaurant-state-panel {
+  animation: section-reveal var(--motion-duration-slow) var(--motion-easing-decelerate) both;
+}
+
+:host ::ng-deep .restaurant-state-panel .empty-state-illustration,
+:host ::ng-deep .restaurant-state-panel .error-state-illustration {
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: -20%;
+    z-index: -1;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--color-primary-soft) 0%, transparent 72%);
+  }
+}
+
+// --- Footer spacing -------------------------------------------------------------------------
+// The reviews section is the last thing on the page — generous bottom clearance so it never sits
+// flush against the device's home-indicator/gesture-nav area, or a floating cart summary bar
+// (rendered by the app shell, outside this component) when the cart has items.
+:host ::ng-deep lib-restaurant-reviews-section {
+  display: block;
+  padding-bottom: calc(var(--space-8) + var(--safe-area-bottom));
+}
+
+// --- Responsive -----------------------------------------------------------------------------
+@media (min-width: 768px) {
+  .restaurant-hero {
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  }
+}
+
+// --- Accessibility: reduced motion ------------------------------------------------------------
+@media (prefers-reduced-motion: reduce) {
+  .restaurant-hero-image,
+  .restaurant-hero-placeholder::before,
+  .restaurant-loading-panel,
+  .restaurant-state-panel,
+  .open-status-chip::before,
+  :host ::ng-deep .menu-category,
+  :host ::ng-deep .menu-item-stepper,
+  :host ::ng-deep .favorite-button.favorited svg {
+    animation: none !important;
+  }
+
+  h1,
+  :host ::ng-deep .menu-item-card,
+  :host ::ng-deep .menu-item-image img,
+  :host ::ng-deep .offer-card,
+  :host ::ng-deep .status-chip,
+  :host ::ng-deep .add-btn,
+  :host ::ng-deep .stepper-btn,
+  :host ::ng-deep .favorite-button {
+    transition-duration: 1ms !important;
+  }
+
+  :host ::ng-deep .menu-item-card:hover,
+  :host ::ng-deep .offer-card:hover {
+    transform: none !important;
   }
 }

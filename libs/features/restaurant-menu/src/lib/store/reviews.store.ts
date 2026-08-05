@@ -71,6 +71,10 @@ export class ReviewsStore {
   }
 
   async submitReview(rating: number, comment: string | undefined): Promise<boolean> {
+    if (this._submitting()) {
+      return false;
+    }
+
     this._submitting.set(true);
     this._formError.set(null);
 

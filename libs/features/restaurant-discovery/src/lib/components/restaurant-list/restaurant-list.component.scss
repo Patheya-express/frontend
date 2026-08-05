@@ -95,10 +95,13 @@ h1 {
 }
 
 .restaurant-discovery-chip {
+  display: inline-flex;
+  align-items: center;
   background: var(--color-secondary-soft, rgba(0, 0, 0, 0.05));
   border: none;
   border-radius: var(--radius-full, 999px);
   padding: 2px var(--space-3);
+  min-height: var(--touch-target-min, 44px);
   font-size: var(--font-size-xs);
   color: var(--color-text);
   cursor: pointer;
@@ -118,12 +121,16 @@ h1 {
 }
 
 .restaurant-discovery-toggle {
+  // A <label> wrapping the checkbox (see the template) — padding grows the real tap target
+  // without resizing the checkbox itself.
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  min-height: var(--touch-target-min, 44px);
   font-size: var(--font-size-sm);
   color: var(--color-text);
   white-space: nowrap;
+  cursor: pointer;
 }
 
 .restaurant-discovery-city-input {

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, Input, computed, inject, signal } from '@angular/core';
 import type { MenuItemResponseDto } from '@patheya-express-frontend/api-sdk';
 import { CartFacade } from '@patheya-express-frontend/cart';
-import { MediaUrlService } from '@patheya-express-frontend/core';
+import { HapticsService, MediaUrlService } from '@patheya-express-frontend/core';
 import { AuthFacade } from '@patheya-express-frontend/auth';
 import { FavoriteButtonComponent } from '@patheya-express-frontend/favorites';
 import { highlightSegments } from '@patheya-express-frontend/ui';
@@ -24,6 +24,7 @@ export class MenuItemCardComponent {
   private readonly cartFacade = inject(CartFacade);
   private readonly mediaUrlService = inject(MediaUrlService);
   private readonly authFacade = inject(AuthFacade);
+  private readonly haptics = inject(HapticsService);
 
   protected readonly isAuthenticated = this.authFacade.isAuthenticated;
 
@@ -60,6 +61,7 @@ export class MenuItemCardComponent {
       return;
     }
 
+    void this.haptics.action();
     void this.cartFacade.addItem({
       menuItemId: this.item.id,
       restaurantName: this.restaurantName,
@@ -69,6 +71,7 @@ export class MenuItemCardComponent {
   protected increase(): void {
     const item = this.simpleCartItem();
     if (item) {
+      void this.haptics.selectionChanged();
       void this.cartFacade.increaseQuantity(item.id);
     }
   }
@@ -76,6 +79,7 @@ export class MenuItemCardComponent {
   protected decrease(): void {
     const item = this.simpleCartItem();
     if (item) {
+      void this.haptics.selectionChanged();
       void this.cartFacade.decreaseQuantity(item.id);
     }
   }

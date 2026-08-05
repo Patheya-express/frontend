@@ -1,6 +1,12 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { EmptyStateComponent, ErrorStateComponent, PaginationComponent, SkeletonComponent } from '@patheya-express-frontend/ui';
+import {
+  EmptyStateComponent,
+  ErrorStateComponent,
+  NetworkStatusService,
+  PaginationComponent,
+  SkeletonComponent,
+} from '@patheya-express-frontend/ui';
 import { MediaUrlService } from '@patheya-express-frontend/core';
 import { FavoritesFacade } from '../../facades/favorites.facade';
 import { FavoriteButtonComponent } from '../../components/favorite-button/favorite-button.component';
@@ -22,8 +28,14 @@ type FavoritesTab = 'restaurants' | 'dishes';
 export class FavoritesPageComponent implements OnInit {
   protected readonly facade = inject(FavoritesFacade);
   private readonly mediaUrlService = inject(MediaUrlService);
+  private readonly networkStatus = inject(NetworkStatusService);
 
   protected readonly tab = signal<FavoritesTab>('restaurants');
+
+  /** Shared by both tabs' error-state usages — same title logic (offline vs generic) applies
+   *  regardless of which fetch failed. Matches the pattern already used on customer-home-page
+   *  and restaurant-details-page, previously missing here. */
+  protected readonly errorTitle = computed(() => (this.networkStatus.isOffline() ? "You're offline" : 'Something went wrong'));
 
   ngOnInit(): void {
     void this.facade.loadFavoriteRestaurants();

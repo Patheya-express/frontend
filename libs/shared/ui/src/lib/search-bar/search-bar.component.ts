@@ -35,6 +35,7 @@ import { IconButtonComponent } from '../buttons/icon-button.component';
       [placeholder]="placeholder()"
       [value]="value()"
       [disabled]="disabled()"
+      [variant]="variant()"
       (valueChange)="valueChange.emit($event)"
     />
     @if (value()) {
@@ -44,6 +45,9 @@ import { IconButtonComponent } from '../buttons/icon-button.component';
       <button type="button" class="lib-search-bar__cancel" (click)="cancelled.emit()">Cancel</button>
     }
   `,
+  host: {
+    '[class.lib-search-bar--neo-glass]': "variant() === 'neo-glass'",
+  },
   styles: `
     :host {
       display: flex;
@@ -73,6 +77,31 @@ import { IconButtonComponent } from '../buttons/icon-button.component';
       font-weight: var(--font-weight-medium);
       cursor: pointer;
     }
+
+    /* Neo-Glass opt-in — the icon overlays the pill as a true leading icon (absolutely positioned,
+       vertically centered) instead of sitting in normal flex flow next to it, since
+       lib-search-input's own ".search-input--neo-glass" already renders as a self-contained pill.
+       :host needs position: relative to anchor that overlay. The field's own left padding is
+       pushed out to match (icon inset + icon width + a comfortable gap) so the icon and the
+       placeholder text never collide — this is the fix for the previous version, which moved the
+       icon into the pill but never made room for it. */
+    :host(.lib-search-bar--neo-glass) {
+      position: relative;
+    }
+
+    :host(.lib-search-bar--neo-glass) .lib-search-bar__icon {
+      position: absolute;
+      left: var(--space-4);
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    :host(.lib-search-bar--neo-glass) ::ng-deep .lib-search-bar__field .search-input--neo-glass {
+      /* icon inset (--space-4) + icon width (20px) + breathing room (--space-2) */
+      padding-left: calc(var(--space-4) + 20px + var(--space-2));
+    }
   `,
 })
 export class SearchBarComponent {
@@ -81,6 +110,9 @@ export class SearchBarComponent {
   readonly ariaLabel = input<string | undefined>(undefined);
   readonly disabled = input(false);
   readonly showCancel = input(false);
+  /** Visual treatment — 'flat' (default) leaves every existing call site unchanged; 'neo-glass'
+   *  opts into the soft-neumorphic pill, forwarded straight to the inner `lib-search-input`. */
+  readonly variant = input<'flat' | 'neo-glass'>('flat');
 
   readonly valueChange = output<string>();
   readonly cleared = output<void>();

@@ -1,0 +1,109 @@
+// Neo-Glass — Patheya Express's soft-neumorphic + glassmorphism hybrid, `@use`-able by any
+// component stylesheet (same sharing pattern as `../buttons/button.scss`'s `@mixin base`).
+// Tokens live in `theme.scss` (--neo-*, --glass-*, --gradient-*, --radius-xl,
+// --motion-easing-soft) so they're available globally; these mixins are the reusable *shapes*
+// built from those tokens.
+//
+// SCOPE — apply only to: search bars, filter/category chips, floating cart, floating buttons,
+// quantity controls, bottom navigation, settings cards, wallet cards.
+// NEVER apply to: restaurant cards, food imagery, checkout forms, menu lists, or other
+// text-heavy/content-first surfaces — those stay on the existing flat `--shadow-*`/`--elevation-*`
+// system. Soft, low-contrast depth actively hurts legibility and scanability on content surfaces;
+// it earns its keep only on chrome/controls where the surface itself IS the affordance.
+//
+// Deliberately not classic neumorphism: every mixin below pairs its soft shadow with a real
+// border, tint, or gradient cue — affordance and selection state never depend on
+// shadow-perception alone, which is classic neumorphism's well-documented accessibility failure
+// (low-vision users, small/low-contrast displays, and printed/high-contrast-mode overrides all
+// lose shadow-only depth cues).
+
+// Resting soft-UI surface — small controls (a single stepper button, a settings row icon).
+@mixin neo-flat {
+  background: var(--color-background);
+  border-radius: var(--radius-md);
+  box-shadow: var(--neo-elevation-flat);
+}
+
+// Resting soft-UI surface — the default for chips, cards, and the quantity-control track.
+@mixin neo-raised {
+  background: var(--color-background);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--neo-elevation-raised);
+  transition:
+    box-shadow var(--motion-duration-base) var(--motion-easing-standard),
+    transform var(--motion-duration-base) var(--motion-easing-soft);
+}
+
+// Inset/"carved in" state — selected chip, pressed stepper button, active bottom-nav tab.
+@mixin neo-pressed {
+  background: var(--color-background);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--neo-elevation-pressed);
+}
+
+// Full interactive lifecycle for a tappable Neo-Glass surface: raised at rest, lifts on hover,
+// carves inward on press, and always carries a visible focus ring (never relies on the shadow
+// change alone to signal interactivity or state).
+@mixin neo-interactive {
+  @include neo-raised;
+  cursor: pointer;
+
+  &:hover {
+    box-shadow: var(--neo-elevation-floating);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    box-shadow: var(--neo-elevation-pressed);
+    transform: translateY(0) scale(0.98);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition-duration: 1ms;
+  }
+}
+
+// Frosted translucency — sticky/overlay chrome, or layered with neo-elevation-* for the hybrid
+// look. `$strength: strong` for surfaces sitting directly over vibrant food photography (needs
+// more opacity to keep text legible); default `regular` for surfaces over flat backgrounds.
+@mixin glass-surface($strength: regular) {
+  @if $strength == strong {
+    background: var(--glass-surface-strong);
+  } @else {
+    background: var(--glass-surface);
+  }
+
+  backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur-md)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+}
+
+// The signature Patheya Express surface — glass translucency + soft neumorphic depth together,
+// for the highest-affordance floating elements (floating cart, FABs). Always pair with a
+// `--gradient-primary`/`--gradient-premium` fill or icon accent, not neutral background alone —
+// a floating action needs a color cue that survives at a glance, not just a shadow.
+@mixin neo-glass-floating {
+  @include glass-surface(strong);
+  border-radius: var(--radius-full);
+  box-shadow: var(--neo-elevation-floating);
+  transition:
+    box-shadow var(--motion-duration-base) var(--motion-easing-standard),
+    transform var(--motion-duration-base) var(--motion-easing-soft);
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0) scale(0.96);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition-duration: 1ms;
+  }
+}

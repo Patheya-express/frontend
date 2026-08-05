@@ -26,6 +26,17 @@ h2 {
 
   &.discount {
     color: var(--color-success);
+    transition: opacity var(--motion-duration-fast, 180ms) var(--motion-easing-standard, ease);
+  }
+
+  // Was a structural @if — applying/removing a coupon inserted or removed this whole row,
+  // shifting every row below it (including the Place Order button in the sibling section) at the
+  // exact moment a user might be tapping toward it. Always rendering the row and only hiding its
+  // *content* keeps its height permanently reserved, so a coupon result never moves anything else
+  // on the page.
+  &.price-row--reserved {
+    opacity: 0;
+    visibility: hidden;
   }
 
   &.total {

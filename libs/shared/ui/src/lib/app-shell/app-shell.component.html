@@ -1,5 +1,6 @@
-<div class="app-shell">
+<div class="app-shell" [class.app-shell--native]="isNative">
   <lib-header
+    [isNative]="isNative"
     [isAuthenticated]="isAuthenticated"
     [cartItemCount]="cartItemCount"
     [notificationCount]="notificationCount"
@@ -16,5 +17,9 @@
   <main class="app-shell-content">
     <router-outlet />
   </main>
-  <lib-footer />
+  @if (isNative) {
+    <mobile-bottom-tabs [tabs]="bottomTabs" (tabSelected)="bottomTabSelected.emit()" />
+  } @else {
+    <lib-footer />
+  }
 </div>

@@ -129,7 +129,7 @@ libs/shared/ui/src/
     overlays/       ← ModalHost, BottomSheetHost, DialogHost, ToastHost, ConfirmDialogOverlay
     layouts/
       mobile/       ← MobileShell, SafeAreaLayout, PageContainer, ScrollablePage, Section,
-                       BottomActionBar, TopAppBar, FloatingButton, BottomTabs (all mobile-* tags)
+                       BottomActionBar, TopAppBar, BottomTabs (all mobile-* tags)
       desktop/      ← README only — AppShellComponent/HeaderComponent/FooterComponent/
                        PartnerShellComponent (pre-existing, untouched) already fill this role
       tablet/       ← README only — no dedicated components yet; use BreakpointService

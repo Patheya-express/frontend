@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { AutoFocusDirective } from '../directives/auto-focus.directive';
 import { SwipeDirective, type MobileSwipeEvent } from '../directives/swipe.directive';
 
 /**
@@ -16,7 +17,7 @@ import { SwipeDirective, type MobileSwipeEvent } from '../directives/swipe.direc
 @Component({
   selector: 'lib-bottom-sheet',
   standalone: true,
-  imports: [SwipeDirective],
+  imports: [SwipeDirective, AutoFocusDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     role: 'dialog',
@@ -25,7 +26,13 @@ import { SwipeDirective, type MobileSwipeEvent } from '../directives/swipe.direc
     class: 'mobile-bottom-sheet-host mobile-anim-sheet-enter',
   },
   template: `
-    <div class="mobile-bottom-sheet__surface safe-area-bottom" mobileSwipe (swiped)="onSwipe($event)">
+    <div
+      class="mobile-bottom-sheet__surface safe-area-bottom"
+      mobileSwipe
+      (swiped)="onSwipe($event)"
+      tabindex="-1"
+      [mobileAutoFocus]="true"
+    >
       @if (showHandle()) {
         <div class="mobile-bottom-sheet__handle" aria-hidden="true"></div>
       }
