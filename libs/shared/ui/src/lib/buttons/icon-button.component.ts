@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { ButtonBase } from './button-base';
+import { RippleDirective } from '../directives/ripple.directive';
 
 /**
  * Icon-only tap target (app bar actions, list-tile trailing actions). `ariaLabel` is required,
@@ -14,6 +15,7 @@ import { ButtonBase } from './button-base';
 @Component({
   selector: 'lib-icon-button',
   standalone: true,
+  imports: [RippleDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './icon-button.component.html',
   styleUrl: './icon-button.component.scss',

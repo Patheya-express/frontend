@@ -1,7 +1,13 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { TitleCasePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { ErrorStateComponent, MetricCardComponent, SkeletonComponent, StatusChipComponent } from '@patheya-express-frontend/ui';
+import {
+  ErrorStateComponent,
+  ListStaggerDirective,
+  MetricCardComponent,
+  SkeletonComponent,
+  StatusChipComponent,
+} from '@patheya-express-frontend/ui';
 import { DeliveryVerificationFacade } from '@patheya-express-frontend/delivery-verification';
 import { DeliveryComplianceFacade } from '@patheya-express-frontend/delivery-compliance';
 import { DeliveryDashboardFacade } from '../../facades/delivery-dashboard.facade';
@@ -9,7 +15,15 @@ import { DeliveryDashboardFacade } from '../../facades/delivery-dashboard.facade
 @Component({
   selector: 'lib-delivery-dashboard-page',
   standalone: true,
-  imports: [RouterLink, TitleCasePipe, SkeletonComponent, ErrorStateComponent, MetricCardComponent, StatusChipComponent],
+  imports: [
+    RouterLink,
+    TitleCasePipe,
+    SkeletonComponent,
+    ErrorStateComponent,
+    MetricCardComponent,
+    StatusChipComponent,
+    ListStaggerDirective,
+  ],
   templateUrl: './delivery-dashboard-page.component.html',
   styleUrl: './delivery-dashboard-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

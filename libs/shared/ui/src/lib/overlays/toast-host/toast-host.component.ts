@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, Input, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, effect, inject, signal } from '@angular/core';
 import { ToastComponent } from '../../toast/toast.component';
 import { SnackbarComponent } from '../../snackbar/snackbar.component';
 import { ToastService } from '../../services/toast.service';
+import { MOBILE_MOTION_DURATIONS_MS } from '../../tokens/motion.tokens';
 
 /**
  * Renders whichever notification `ToastService` currently has queued — mount once, near the app
@@ -19,11 +20,12 @@ import { ToastService } from '../../services/toast.service';
     '[class.mobile-toast-host--native]': 'isNative',
   },
   template: `
-    @if (toastService.current(); as entry) {
+    @if (displayedEntry(); as entry) {
       @if (entry.variant === 'toast') {
         <lib-toast
           [message]="entry.message"
           [tone]="entry.tone ?? 'neutral'"
+          [leaving]="leaving()"
           (dismissed)="toastService.dismiss(entry.id)"
         />
       } @else {
@@ -31,6 +33,7 @@ import { ToastService } from '../../services/toast.service';
           [message]="entry.message"
           [tone]="entry.tone ?? 'neutral'"
           [action]="entry.action"
+          [leaving]="leaving()"
           (dismissed)="toastService.dismiss(entry.id)"
         />
       }
@@ -69,4 +72,40 @@ export class ToastHostComponent {
   protected readonly toastService = inject(ToastService);
 
   @Input() isNative = false;
+
+  /**
+   * `ToastService.current()` swaps directly to the next entry (or null) the instant one is
+   * dismissed — correct for the queue's own timing, but a plain `@if (toastService.current())`
+   * would cut the slide+fade leave animation off mid-play. `displayedEntry` mirrors `current()`
+   * exactly on the way *in* (so the very next toast never waits on the previous one's leave
+   * animation before appearing) and lags one animation-duration behind on the way to `null` (so
+   * the currently-showing toast gets to finish leaving). `ToastService` itself is untouched — its
+   * queue/timing contract doesn't change, only how this purely-presentational host un-renders.
+   */
+  protected readonly displayedEntry = signal(this.toastService.current());
+  protected readonly leaving = signal(false);
+  private hideTimeout?: ReturnType<typeof setTimeout>;
+
+  constructor() {
+    effect(() => {
+      const next = this.toastService.current();
+
+      if (next) {
+        clearTimeout(this.hideTimeout);
+        this.leaving.set(false);
+        this.displayedEntry.set(next);
+        return;
+      }
+
+      if (!this.displayedEntry()) {
+        return;
+      }
+
+      this.leaving.set(true);
+      this.hideTimeout = setTimeout(() => {
+        this.displayedEntry.set(null);
+        this.leaving.set(false);
+      }, MOBILE_MOTION_DURATIONS_MS.fast);
+    });
+  }
 }

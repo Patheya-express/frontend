@@ -14,7 +14,7 @@
         <button type="button" class="wallet-balance-retry" (click)="retryBalance()">Retry</button>
       </span>
     } @else {
-      <span class="wallet-balance-value">&#8377;{{ facade.balance().toFixed(2) }}</span>
+      <span class="wallet-balance-value" [class.mobile-anim-glow]="balanceGlow()">&#8377;{{ displayBalance().toFixed(2) }}</span>
     }
   </div>
 

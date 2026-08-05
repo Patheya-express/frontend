@@ -600,9 +600,9 @@ h1 {
   min-width: 20px;
 }
 
-// Favorite hearts (restaurant header + every menu item card) — the fill-pop plays automatically
-// whenever Angular's `[class.favorited]="isFavorited()"` binding newly applies the class, since a
-// CSS `animation` (re)starts the moment its selector starts matching. No JS trigger needed.
+// Favorite hearts (restaurant header + every menu item card). The heart-pop animation itself now
+// lives in FavoriteButtonComponent (favorite-button.component.scss), not reimplemented here — this
+// page-level override is just the site-specific active/focus-visible treatment.
 :host ::ng-deep .favorite-button {
   transition:
     color var(--motion-duration-fast) var(--motion-easing-standard),
@@ -615,22 +615,6 @@ h1 {
   &:focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
-  }
-
-  &.favorited svg {
-    animation: heart-pop var(--motion-duration-base) var(--motion-easing-standard);
-  }
-}
-
-@keyframes heart-pop {
-  0% {
-    transform: scale(1);
-  }
-  35% {
-    transform: scale(1.35);
-  }
-  100% {
-    transform: scale(1);
   }
 }
 
@@ -731,8 +715,7 @@ h1 {
   .restaurant-state-panel,
   .open-status-chip::before,
   :host ::ng-deep .menu-category,
-  :host ::ng-deep .menu-item-stepper,
-  :host ::ng-deep .favorite-button.favorited svg {
+  :host ::ng-deep .menu-item-stepper {
     animation: none !important;
   }
 

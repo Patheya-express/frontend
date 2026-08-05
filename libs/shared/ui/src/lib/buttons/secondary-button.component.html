@@ -6,6 +6,7 @@
   [class.mobile-secondary-button--full-width]="fullWidth()"
   [disabled]="disabled() || loading()"
   [attr.aria-busy]="loading() || null"
+  [mobileRipple]="!disabled() && !loading()"
   (click)="handleClick()"
 >
   @if (loading()) {

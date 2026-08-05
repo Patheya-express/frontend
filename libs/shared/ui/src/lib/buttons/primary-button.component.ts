@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { ButtonBase } from './button-base';
+import { RippleDirective } from '../directives/ripple.directive';
 
 /**
  * High-emphasis call-to-action button (brand color fill) — one per screen/section is the usual
@@ -13,6 +14,7 @@ import { ButtonBase } from './button-base';
 @Component({
   selector: 'lib-primary-button',
   standalone: true,
+  imports: [RippleDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './primary-button.component.html',
   styleUrl: './primary-button.component.scss',

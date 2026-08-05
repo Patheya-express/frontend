@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { ButtonBase } from './button-base';
+import { RippleDirective } from '../directives/ripple.directive';
 
 /**
  * Medium-emphasis button (outlined, no fill) — paired with `PrimaryButtonComponent` for the
@@ -11,6 +12,7 @@ import { ButtonBase } from './button-base';
 @Component({
   selector: 'lib-secondary-button',
   standalone: true,
+  imports: [RippleDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './secondary-button.component.html',
   styleUrl: './secondary-button.component.scss',

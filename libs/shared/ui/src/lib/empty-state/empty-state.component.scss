@@ -5,12 +5,20 @@
   gap: var(--space-2);
   padding: var(--space-8) var(--space-4);
   text-align: center;
+  // A gentle reveal for the whole block, not just the illustration — this is usually what a
+  // loading skeleton settles into, so a small fade+rise reads as "here's the answer", not just
+  // "an icon moved".
+  animation: mobile-slide-up var(--motion-duration-slower) var(--motion-easing-decelerate) both;
 }
 
 .empty-state-illustration {
   width: 96px;
   height: 96px;
   margin-bottom: var(--space-2);
+  // Continuous, small-amplitude — whatever illustration a call site projects (the default SVG
+  // here, or a custom one via [libIcon]) gets a bit of ambient life without redesigning any of
+  // them individually.
+  animation: mobile-float 3s var(--motion-easing-standard) infinite;
 
   svg {
     width: 100%;
@@ -46,5 +54,14 @@ p {
 
   &:hover {
     background: var(--color-primary-hover);
+  }
+}
+
+// Both animations above are raw `animation:` declarations, not `.mobile-anim-*` utility classes,
+// so keyframes.scss's `[class*='mobile-anim-']` wildcard doesn't reach them.
+@media (prefers-reduced-motion: reduce) {
+  .empty-state,
+  .empty-state-illustration {
+    animation: none !important;
   }
 }

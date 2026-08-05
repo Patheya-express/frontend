@@ -1,4 +1,5 @@
 .splash {
+  position: relative;
   min-height: 100vh;
   min-height: 100dvh;
   display: flex;
@@ -8,9 +9,29 @@
   gap: var(--space-5);
   background: var(--color-background);
   color: var(--color-primary);
+  overflow: hidden;
+}
+
+// A soft, ambient radial wash behind the brand mark — not a full-bleed gradient fill, which would
+// fight with body text contrast. `mobile-anim-float`'s slow bob keeps it feeling alive without
+// being distracting; `mobile-anim-pulse` layered via opacity keeps the glow itself breathing.
+.splash-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(70vw, 420px);
+  height: min(70vw, 420px);
+  background: var(--gradient-premium);
+  filter: blur(64px);
+  opacity: 0.18;
+  border-radius: var(--radius-full);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  animation: mobile-float 6s var(--motion-easing-standard) infinite;
 }
 
 .splash-brand {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -24,21 +45,56 @@
   width: 56px;
   height: 56px;
   border-radius: var(--radius-lg);
-  background: var(--color-primary);
+  background: var(--gradient-premium);
   color: var(--color-text-on-primary);
   font-weight: var(--font-weight-bold);
   font-size: var(--font-size-2xl);
+  box-shadow: var(--elevation-3);
+  animation: mobile-pop var(--motion-duration-slower) var(--motion-easing-soft) both;
 }
 
 .brand-name {
+  position: relative;
   font-weight: var(--font-weight-bold);
   font-size: var(--font-size-xl);
+  animation: mobile-slide-right var(--motion-duration-slow) var(--motion-easing-decelerate) both;
+}
+
+.splash-quote {
+  position: relative;
+  min-height: 2.5em;
+  max-width: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 var(--space-4);
+}
+
+.splash-quote-text {
+  margin: 0;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-style: italic;
 }
 
 .splash-offline {
+  position: relative;
   margin: 0;
   max-width: 280px;
   text-align: center;
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
+}
+
+// `.splash-glow`/`.brand-mark`/`.brand-name` above are raw `animation:` declarations, not
+// `.mobile-anim-*` utility classes, so keyframes.scss's `[class*='mobile-anim-']` wildcard
+// doesn't reach them. The quote carousel's fade (`.splash-quote-text`) already uses
+// `mobile-anim-fade` in the template, so it's covered automatically and isn't listed here.
+@media (prefers-reduced-motion: reduce) {
+  .splash-glow,
+  .brand-mark,
+  .brand-name {
+    animation: none !important;
+  }
 }

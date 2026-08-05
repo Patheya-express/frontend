@@ -4,6 +4,8 @@ import type { RecentSearchDto, SearchSuggestionDto, TrendingSearchDto } from '@p
 import {
   EmptyStateComponent,
   ErrorStateComponent,
+  ListStaggerDirective,
+  MOBILE_LIST_ITEM_TRANSITION,
   NetworkStatusService,
   PaginationComponent,
   SearchInputComponent,
@@ -26,6 +28,7 @@ import { SearchSuggestionsService } from '../../services/search-suggestions.serv
     ErrorStateComponent,
     SearchInputComponent,
     PaginationComponent,
+    ListStaggerDirective,
   ],
   templateUrl: './restaurant-list.component.html',
   styleUrl: './restaurant-list.component.scss',
@@ -44,6 +47,11 @@ export class RestaurantListComponent implements OnInit {
    *  missing here — a failed fetch while offline showed the same generic message as a real
    *  server error. */
   protected readonly errorTitle = computed(() => (this.networkStatus.isOffline() ? "You're offline" : 'Something went wrong'));
+
+  /** Staggered entrance for the results grid — see ListStaggerDirective/keyframes.scss. Read once
+   *  into a plain property rather than referencing the imported constant directly in the template,
+   *  matching how every other cross-cutting token is consumed in this codebase. */
+  protected readonly listItemEnterClass = MOBILE_LIST_ITEM_TRANSITION.enter;
 
   protected readonly suggestions = signal<SearchSuggestionDto[]>([]);
   protected readonly recentSearches = signal<RecentSearchDto[]>([]);

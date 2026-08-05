@@ -53,6 +53,7 @@ export * from './lib/animations/page-transition.animation';
 export * from './lib/animations/modal.animation';
 export * from './lib/animations/bottom-sheet.animation';
 export * from './lib/animations/list.animation';
+export * from './lib/animations/toast.animation';
 
 // Services (overlay/notification stacks + mobile navigation coordination — platform detection
 // services (MobilePlatformService/NetworkStatusService/BreakpointService) live in

@@ -1,7 +1,7 @@
 <a class="restaurant-card" [routerLink]="['/restaurants', restaurant.id]">
   <div class="restaurant-card-image">
     @if (logoUrl) {
-      <img [src]="logoUrl" [alt]="restaurant.name" loading="lazy" />
+      <img mobileLazyImage [src]="logoUrl" [alt]="restaurant.name" />
     } @else {
       <div class="restaurant-card-placeholder" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none">

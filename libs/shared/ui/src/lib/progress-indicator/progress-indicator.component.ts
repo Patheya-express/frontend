@@ -60,6 +60,15 @@ import { ChangeDetectionStrategy, Component, computed, input } from '@angular/co
         transform: translateX(250%);
       }
     }
+
+    /* The indeterminate bar is essential loading feedback, not decorative — under reduced
+       motion it swaps the large positional slide for a gentle opacity pulse rather than going
+       fully static, so "still loading" stays visible without the vestibular-triggering motion. */
+    @media (prefers-reduced-motion: reduce) {
+      .mobile-progress-fill--indeterminate {
+        animation: mobile-pulse 2s ease-in-out infinite;
+      }
+    }
   `,
 })
 export class ProgressIndicatorComponent {

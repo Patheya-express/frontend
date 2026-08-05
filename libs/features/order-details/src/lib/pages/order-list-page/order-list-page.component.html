@@ -42,8 +42,8 @@
     />
   } @else {
     <div class="order-list">
-      @for (order of orders(); track order.id) {
-        <article class="order-list-item">
+      @for (order of orders(); track order.id; let i = $index) {
+        <article class="order-list-item" [mobileListStagger]="i" [class]="listItemEnterClass">
           <a [routerLink]="['/orders', order.id]" class="order-list-item-link">
             <div class="order-list-item-main">
               <span class="order-list-item-number">{{ order.orderNumber }}</span>

@@ -284,29 +284,9 @@ h3 {
   }
 }
 
-// The heart-pop plays automatically the moment FavoriteButtonComponent's own
-// `[class.favorited]="isFavorited()"` binding applies the class — a CSS `animation` (re)starts
-// whenever its selector starts matching, no JS trigger needed. `.restaurant-card-favorite` (this
-// component's own template puts it on the `lib-favorite-button` host) and `.favorited` (set by
-// FavoriteButtonComponent on its own inner `<button>`) live on two different elements, hence the
-// descendant combinator rather than one compound selector. `::ng-deep` reaches through
-// FavoriteButtonComponent's encapsulated template without editing that shared file; `:host` keeps
-// it scoped to cards rendered by this component, not every favorite button app-wide.
-:host ::ng-deep .restaurant-card-favorite .favorite-button.favorited svg {
-  animation: restaurant-card-heart-pop var(--motion-duration-base, 260ms) var(--motion-easing-standard, ease);
-}
-
-@keyframes restaurant-card-heart-pop {
-  0% {
-    transform: scale(1);
-  }
-  35% {
-    transform: scale(1.35);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
+// Favorite heart-pop now lives in FavoriteButtonComponent itself (favorite-button.component.scss)
+// — centralized there instead of reimplemented here via `::ng-deep`, since every consumer gets it
+// automatically that way. See that file's comment for the reasoning.
 
 // --- Responsive ---------------------------------------------------------------------------------
 // Same card, every breakpoint — only the internal rhythm tightens slightly on narrow phones so the
@@ -327,10 +307,6 @@ h3 {
   .restaurant-card-image img,
   .restaurant-card-favorite {
     transition-duration: 1ms !important;
-  }
-
-  :host ::ng-deep .restaurant-card-favorite .favorite-button.favorited svg {
-    animation: none !important;
   }
 
   @media (hover: hover) and (pointer: fine) {

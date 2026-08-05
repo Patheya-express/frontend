@@ -684,25 +684,8 @@ lib-carousel.customer-home-reveal {
   }
 }
 
-// Favorite hearts on every restaurant card — the fill-pop plays automatically whenever
-// FavoriteButtonComponent's `[class.favorited]="isFavorited()"` binding newly applies the class,
-// since a CSS `animation` (re)starts the moment its selector starts matching. No JS trigger, no
-// new signal.
-:host ::ng-deep .favorite-button.favorited svg {
-  animation: home-heart-pop var(--motion-duration-base) var(--motion-easing-standard);
-}
-
-@keyframes home-heart-pop {
-  0% {
-    transform: scale(1);
-  }
-  35% {
-    transform: scale(1.35);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
+// Favorite heart-pop now lives in FavoriteButtonComponent itself (favorite-button.component.scss)
+// — centralized there instead of reimplemented here via `::ng-deep`.
 
 // --- Scroll / entrance animations -----------------------------------------------------------------
 @keyframes home-reveal {
@@ -872,8 +855,7 @@ lib-carousel.customer-home-reveal {
   .customer-home-reveal,
   .customer-home-loading,
   .customer-home-state-panel,
-  .customer-home-more-grid > *,
-  :host ::ng-deep .favorite-button.favorited svg {
+  .customer-home-more-grid > * {
     animation: none !important;
   }
 

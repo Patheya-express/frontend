@@ -1,8 +1,9 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { FooterComponent } from '../footer/footer.component';
 import { HeaderComponent } from '../header/header.component';
 import { BottomTabsComponent, MobileBottomTabItem } from '../layouts/mobile/bottom-tabs/bottom-tabs.component';
+import { MOBILE_PAGE_TRANSITION } from '../animations/page-transition.animation';
 
 /**
  * Reuses the same top-level routes `app.routes.ts` already defines — no new screens, no
@@ -52,4 +53,26 @@ export class AppShellComponent {
   @Input() isNative = false;
 
   protected readonly bottomTabs = CUSTOMER_BOTTOM_TABS;
+
+  @ViewChild('pageContent') private readonly pageContent?: ElementRef<HTMLElement>;
+
+  /**
+   * `MOBILE_PAGE_TRANSITION` (see keyframes.scss) already existed but was never wired to actual
+   * navigation — `<router-outlet>`'s `(activate)` fires every time a new routed component is
+   * instantiated (including the first one), so this is the one hook point that covers both cold
+   * load and every subsequent navigation without a Router.events subscription. A CSS `animation`
+   * (unlike a `transition`) normally only plays once per class application, so remove-then-re-add
+   * with a forced reflow between them is what actually retriggers it on every route change, not
+   * just the first. Reduced-motion users aren't special-cased here — keyframes.scss's own
+   * `@media (prefers-reduced-motion: reduce)` block already collapses this to an imperceptible 1ms.
+   */
+  protected onRouteActivate(): void {
+    const el = this.pageContent?.nativeElement;
+    if (!el) {
+      return;
+    }
+    el.classList.remove(MOBILE_PAGE_TRANSITION.enter);
+    void el.offsetWidth;
+    el.classList.add(MOBILE_PAGE_TRANSITION.enter);
+  }
 }

@@ -31,7 +31,7 @@
           @if (location(); as loc) {
             <div class="order-tracking-eta">
               @if (loc.etaMinutes !== undefined && loc.etaMinutes !== null) {
-                <span class="order-tracking-eta-value">Arriving in ~{{ loc.etaMinutes }} min</span>
+                <span class="order-tracking-eta-value" [class.mobile-anim-fade]="etaFlash()">Arriving in ~{{ loc.etaMinutes }} min</span>
               }
               @if (loc.distanceKm !== undefined && loc.distanceKm !== null) {
                 <span class="order-tracking-eta-distance">{{ loc.distanceKm.toFixed(1) }} km away</span>

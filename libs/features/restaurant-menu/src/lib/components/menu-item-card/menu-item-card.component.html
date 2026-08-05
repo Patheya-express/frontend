@@ -35,7 +35,7 @@
     </div>
 
     @if (item.isAvailable) {
-      <div class="menu-item-cart-action">
+      <div class="menu-item-cart-action" [class.mobile-anim-bounce-small]="cartBump()">
         @if (hasCustomizations()) {
           <button type="button" class="add-btn" (click)="add()">
             {{ totalQuantityInCart() > 0 ? 'Add another (' + totalQuantityInCart() + ' in cart)' : 'Customize & Add' }}
@@ -55,7 +55,7 @@
 
   <div class="menu-item-image" aria-hidden="true">
     @if (imageUrl(); as url) {
-      <img [src]="url" [alt]="item.name" loading="lazy" />
+      <img mobileLazyImage [src]="url" [alt]="item.name" />
     } @else {
       <svg viewBox="0 0 24 24" fill="none">
         <path

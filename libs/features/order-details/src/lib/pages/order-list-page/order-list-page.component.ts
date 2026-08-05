@@ -6,6 +6,8 @@ import {
   DialogService,
   EmptyStateComponent,
   ErrorStateComponent,
+  ListStaggerDirective,
+  MOBILE_LIST_ITEM_TRANSITION,
   PaginationComponent,
   SearchInputComponent,
   SkeletonComponent,
@@ -30,7 +32,16 @@ const STATUS_OPTIONS: ReadonlyArray<{ value: OrderStatusFilter; label: string }>
 @Component({
   selector: 'lib-order-list-page',
   standalone: true,
-  imports: [RouterLink, DatePipe, SkeletonComponent, EmptyStateComponent, ErrorStateComponent, SearchInputComponent, PaginationComponent],
+  imports: [
+    RouterLink,
+    DatePipe,
+    SkeletonComponent,
+    EmptyStateComponent,
+    ErrorStateComponent,
+    SearchInputComponent,
+    PaginationComponent,
+    ListStaggerDirective,
+  ],
   templateUrl: './order-list-page.component.html',
   styleUrl: './order-list-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -41,6 +52,8 @@ export class OrderListPageComponent implements OnInit {
   private readonly cartFacade = inject(CartFacade);
   private readonly dialogService = inject(DialogService);
   private readonly toastService = inject(ToastService);
+
+  protected readonly listItemEnterClass = MOBILE_LIST_ITEM_TRANSITION.enter;
 
   protected readonly orders = this.facade.orders;
   protected readonly loading = this.facade.loading;

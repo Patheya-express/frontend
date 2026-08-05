@@ -25,6 +25,36 @@
 
   &.favorited {
     color: #e0245e;
+
+    // Was previously reimplemented identically (down to the exact keyframe percentages) in three
+    // separate consumers via `:host ::ng-deep` — restaurant-card, restaurant-details-page, and
+    // customer-home-page — since this component itself had no animation of its own to inherit.
+    // Centralizing it here means every current AND future consumer gets it for free, and there's
+    // exactly one copy to tune. Plain `animation` (not `::ng-deep`) is enough since this rule now
+    // lives inside the component whose own template the `svg` belongs to — no encapsulation to
+    // pierce. Auto-plays whenever `.favorited` is freshly added (unfavorite → favorite), not on
+    // every re-render, since that's when the class selector match itself changes.
+    svg {
+      animation: favorite-heart-pop var(--motion-duration-base, 260ms) var(--motion-easing-standard, ease);
+    }
+  }
+}
+
+@keyframes favorite-heart-pop {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .favorite-button.favorited svg {
+    animation: none !important;
   }
 }
 

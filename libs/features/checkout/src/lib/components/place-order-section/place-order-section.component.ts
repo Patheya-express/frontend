@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { PrimaryButtonComponent } from '@patheya-express-frontend/ui';
+import { PrimaryButtonComponent, ToastService } from '@patheya-express-frontend/ui';
 import { HapticsService } from '@patheya-express-frontend/core';
 import { CheckoutFacade } from '../../facades/checkout.facade';
 
@@ -16,6 +16,7 @@ export class PlaceOrderSectionComponent {
   private readonly checkoutFacade = inject(CheckoutFacade);
   private readonly router = inject(Router);
   private readonly haptics = inject(HapticsService);
+  private readonly toastService = inject(ToastService);
 
   protected readonly placingOrder = this.checkoutFacade.placingOrder;
   protected readonly validationErrors = this.checkoutFacade.validationErrors;
@@ -26,6 +27,9 @@ export class PlaceOrderSectionComponent {
 
     if (order) {
       void this.haptics.success();
+      // ToastHostComponent lives in the app shell, above the router-outlet, so this survives the
+      // navigation below and plays its slide+fade entrance on the order details page.
+      this.toastService.showToast({ message: 'Order placed ✓', tone: 'success' });
       await this.router.navigateByUrl(`/orders/${order.id}`);
     } else {
       void this.haptics.error();

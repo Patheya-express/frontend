@@ -4,13 +4,13 @@ import { CartFacade } from '@patheya-express-frontend/cart';
 import { HapticsService, MediaUrlService } from '@patheya-express-frontend/core';
 import { AuthFacade } from '@patheya-express-frontend/auth';
 import { FavoriteButtonComponent } from '@patheya-express-frontend/favorites';
-import { highlightSegments } from '@patheya-express-frontend/ui';
+import { highlightSegments, LazyImageDirective, MOBILE_MOTION_DURATIONS_MS } from '@patheya-express-frontend/ui';
 import { MenuItemCustomizationSheetComponent } from '../menu-item-customization-sheet/menu-item-customization-sheet.component';
 
 @Component({
   selector: 'lib-menu-item-card',
   standalone: true,
-  imports: [MenuItemCustomizationSheetComponent, FavoriteButtonComponent],
+  imports: [MenuItemCustomizationSheetComponent, FavoriteButtonComponent, LazyImageDirective],
   templateUrl: './menu-item-card.component.html',
   styleUrl: './menu-item-card.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -29,6 +29,23 @@ export class MenuItemCardComponent {
   protected readonly isAuthenticated = this.authFacade.isAuthenticated;
 
   protected readonly showSheet = signal(false);
+
+  /** Brief scale-pop on the cart action area for tactile confirmation — pulses on every add/
+   *  increase/decrease, not just the first add, since a stepper tap deserves the same "that
+   *  registered" feedback as the initial Add tap. Reset via setTimeout rather than
+   *  `animationend` — a rapid double-tap re-triggers cleanly either way, and this avoids needing
+   *  a DOM event listener for a purely decorative signal. */
+  protected readonly cartBump = signal(false);
+  private cartBumpTimeout?: ReturnType<typeof setTimeout>;
+
+  private triggerCartBump(): void {
+    clearTimeout(this.cartBumpTimeout);
+    this.cartBump.set(false);
+    // Two RAFs (not zero) so Angular has actually flushed the class removal to the DOM before
+    // re-adding it — a single microtask/RAF can still land in the same paint as the removal.
+    requestAnimationFrame(() => requestAnimationFrame(() => this.cartBump.set(true)));
+    this.cartBumpTimeout = setTimeout(() => this.cartBump.set(false), MOBILE_MOTION_DURATIONS_MS.base);
+  }
 
   protected readonly imageUrl = computed(() => this.mediaUrlService.resolve(this.item.imageUrl));
 
@@ -62,6 +79,7 @@ export class MenuItemCardComponent {
     }
 
     void this.haptics.action();
+    this.triggerCartBump();
     void this.cartFacade.addItem({
       menuItemId: this.item.id,
       restaurantName: this.restaurantName,
@@ -72,6 +90,7 @@ export class MenuItemCardComponent {
     const item = this.simpleCartItem();
     if (item) {
       void this.haptics.selectionChanged();
+      this.triggerCartBump();
       void this.cartFacade.increaseQuantity(item.id);
     }
   }
@@ -80,6 +99,7 @@ export class MenuItemCardComponent {
     const item = this.simpleCartItem();
     if (item) {
       void this.haptics.selectionChanged();
+      this.triggerCartBump();
       void this.cartFacade.decreaseQuantity(item.id);
     }
   }

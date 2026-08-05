@@ -2,6 +2,10 @@
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  // Contains the page-transition's translateX (see partner-shell.component.ts's onRouteActivate)
+  // — doesn't affect .partner-header-nav's own intentional overflow-x: auto below, which scrolls
+  // within its own box regardless of an ancestor's overflow-x here.
+  overflow-x: hidden;
 }
 
 .partner-header {

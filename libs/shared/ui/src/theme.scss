@@ -135,6 +135,10 @@
   --motion-duration-fast: 180ms;
   --motion-duration-base: 260ms;
   --motion-duration-slow: 360ms;
+  // For bigger, less-frequent reveals (count-up, dashboard entrance) where base/slow read as
+  // rushed — never used for anything a user directly triggers and waits on (page/modal/sheet
+  // transitions stay on base/fast so they never feel sluggish).
+  --motion-duration-slower: 500ms;
   --motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
   --motion-easing-decelerate: cubic-bezier(0, 0, 0, 1);
   --motion-easing-accelerate: cubic-bezier(0.3, 0, 1, 1);

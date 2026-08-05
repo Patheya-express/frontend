@@ -1,6 +1,15 @@
-@if (open) {
-  <div class="confirm-dialog-backdrop">
-    <div class="confirm-dialog" role="alertdialog" aria-modal="true" [attr.aria-label]="title">
+@if (visible()) {
+  <div
+    class="confirm-dialog-backdrop"
+    [class]="open() ? transition.backdropEnter : transition.backdropLeave"
+  >
+    <div
+      class="confirm-dialog"
+      role="alertdialog"
+      aria-modal="true"
+      [attr.aria-label]="title"
+      [class]="open() ? transition.enter : transition.leave"
+    >
       <h2 class="confirm-dialog-title">{{ title }}</h2>
       @if (message) {
         <p class="confirm-dialog-message">{{ message }}</p>

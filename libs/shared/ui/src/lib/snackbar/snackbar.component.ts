@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import type { NotificationAction } from '../types/overlay.types';
 import type { MobileTone } from '../types/common.types';
+import { MOBILE_TOAST_TRANSITION } from '../animations/toast.animation';
 
 /**
  * Transient message that can carry one action button ("Undo", "Retry"). Rendered by
@@ -14,7 +15,7 @@ import type { MobileTone } from '../types/common.types';
   host: {
     role: 'status',
     'aria-live': 'polite',
-    '[class]': '"mobile-snackbar mobile-snackbar--" + tone()',
+    '[class]': '"mobile-snackbar mobile-snackbar--" + tone() + " " + (leaving() ? transition.leave : transition.enter)',
   },
   template: `
     <span class="mobile-snackbar__message">{{ message() }}</span>
@@ -65,9 +66,13 @@ import type { MobileTone } from '../types/common.types';
   `,
 })
 export class SnackbarComponent {
+  protected readonly transition = MOBILE_TOAST_TRANSITION;
+
   readonly message = input.required<string>();
   readonly tone = input<MobileTone>('neutral');
   readonly action = input<NotificationAction | undefined>(undefined);
+  /** Set by ToastHostComponent while this snackbar is playing its leave animation. */
+  readonly leaving = input(false);
   readonly dismissed = output<void>();
 
   onAction(action: NotificationAction): void {

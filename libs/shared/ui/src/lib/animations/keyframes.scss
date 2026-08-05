@@ -97,6 +97,32 @@
   }
 }
 
+// Toast/snackbar — bottom-anchored, slides up from below + fades on enter, reverses on leave.
+// A dedicated pair (not a single reversed animation) for the same reason sheet/modal above are
+// pairs: toggling `animation-direction` on an already-finished `both`-fill animation doesn't
+// replay it, so leave needs its own keyframe to actually retrigger when the leave class is applied.
+@keyframes mobile-toast-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mobile-toast-leave {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
 // FAB — small pop-in/out so it doesn't just abruptly appear/disappear when a page mounts/scrolls.
 @keyframes mobile-fab-enter {
   from {
@@ -164,6 +190,155 @@
   }
 }
 
+// --- Generic content-reveal tokens ---------------------------------------------------------
+// Distinct from the component-specific enter/leave keyframes above (page/modal/sheet/fab already
+// have their own tuned enter/leave pairs) — these are for arbitrary content that just needs "fade
+// in" / "slide in from X" / "scale in", e.g. a dialog, a dashboard card, a success confirmation.
+
+@keyframes mobile-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mobile-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mobile-slide-left {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes mobile-slide-right {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes mobile-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+// Pop — a small spring-like overshoot for something that just succeeded or was added (favorite,
+// add-to-cart, a checkmark). Uses --motion-easing-soft (the one genuinely spring-like easing this
+// system has) rather than a new easing token.
+@keyframes mobile-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.28);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+// Bounce-small — the same idea as pop, smaller amplitude, for frequent/low-ceremony feedback
+// (a quantity stepper incrementing) where a full pop would feel like too much.
+@keyframes mobile-bounce-small {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+// Pulse — a slow opacity/scale breathing loop for "this is live" indicators (a map marker, an
+// online status dot). Iteration count is infinite by design; reduced-motion still caps it to a
+// single 1ms pass via the shared override at the bottom of this file.
+@keyframes mobile-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.15);
+  }
+}
+
+// Float — a gentle, slow vertical bob for ambient/decorative elements (an empty-state icon, a
+// splash-screen mark). Small amplitude on purpose — this runs continuously, so it must read as
+// "alive," not "distracting."
+@keyframes mobile-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+// Glow — a brief box-shadow pulse for a value that just changed in the user's favor (wallet
+// balance credited, payment confirmed). One-shot, not looping.
+@keyframes mobile-glow {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 45%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 12px color-mix(in srgb, var(--color-primary) 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 0%, transparent);
+  }
+}
+
+// Shake — deliberately gentle (small amplitude, few cycles) per this system's own rule: error
+// feedback should never feel aggressive. transform-only, so it's exempt from the "don't animate
+// layout properties" constraint the way a naive `margin-left` shake would violate.
+@keyframes mobile-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-4px);
+  }
+  40%,
+  80% {
+    transform: translateX(4px);
+  }
+}
+
 // --- Applyable utility classes -------------------------------------------------------------
 // Each pairs a keyframe with the duration/easing tokens and `animation-fill-mode: both` (so the
 // element holds its start/end state rather than snapping back before/after the animation runs).
@@ -200,6 +375,14 @@
   animation: mobile-sheet-leave var(--motion-duration-base) var(--motion-easing-accelerate) both;
 }
 
+.mobile-anim-toast-enter {
+  animation: mobile-toast-enter var(--motion-duration-fast) var(--motion-easing-decelerate) both;
+}
+
+.mobile-anim-toast-leave {
+  animation: mobile-toast-leave var(--motion-duration-fast) var(--motion-easing-accelerate) both;
+}
+
 .mobile-anim-fab-enter {
   animation: mobile-fab-enter var(--motion-duration-fast) var(--motion-easing-decelerate) both;
 }
@@ -231,6 +414,57 @@
 
 .mobile-lazy-image--loaded {
   opacity: 1;
+}
+
+// Generic content-reveal utility classes (see the keyframes' own doc comments above for when to
+// reach for one of these vs. a component-specific enter/leave pair).
+
+.mobile-anim-fade {
+  animation: mobile-fade-in var(--motion-duration-base) var(--motion-easing-standard) both;
+}
+
+.mobile-anim-slide-up {
+  animation: mobile-slide-up var(--motion-duration-base) var(--motion-easing-decelerate) both;
+}
+
+.mobile-anim-slide-down {
+  animation: mobile-slide-down var(--motion-duration-base) var(--motion-easing-decelerate) both;
+}
+
+.mobile-anim-slide-left {
+  animation: mobile-slide-left var(--motion-duration-base) var(--motion-easing-decelerate) both;
+}
+
+.mobile-anim-slide-right {
+  animation: mobile-slide-right var(--motion-duration-base) var(--motion-easing-decelerate) both;
+}
+
+.mobile-anim-scale-in {
+  animation: mobile-scale-in var(--motion-duration-fast) var(--motion-easing-decelerate) both;
+}
+
+.mobile-anim-pop {
+  animation: mobile-pop var(--motion-duration-base) var(--motion-easing-soft) both;
+}
+
+.mobile-anim-bounce-small {
+  animation: mobile-bounce-small var(--motion-duration-fast) var(--motion-easing-soft) both;
+}
+
+.mobile-anim-pulse {
+  animation: mobile-pulse 2s var(--motion-easing-standard) infinite;
+}
+
+.mobile-anim-float {
+  animation: mobile-float 3s var(--motion-easing-standard) infinite;
+}
+
+.mobile-anim-glow {
+  animation: mobile-glow var(--motion-duration-slower) var(--motion-easing-standard) both;
+}
+
+.mobile-anim-shake {
+  animation: mobile-shake var(--motion-duration-slow) var(--motion-easing-standard) both;
 }
 
 // Accessibility — every animation above collapses to an instant, no-motion state for users who

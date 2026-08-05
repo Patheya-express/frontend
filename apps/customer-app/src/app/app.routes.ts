@@ -30,7 +30,15 @@ const splashGuard = lazySplashGuard((m) => m.splashGuard);
 export const routes: Routes = [
   {
     path: 'splash',
-    data: { brandName: 'Patheya Express' },
+    data: {
+      brandName: 'Patheya Express',
+      quotes: [
+        'Every meal tells a story.',
+        'Delivering happiness, one order at a time.',
+        'Fresh food, fast delivery.',
+        'Great food deserves great delivery.',
+      ],
+    },
     loadComponent: () =>
       import('@patheya-express-frontend/auth-ui').then((m) => m.SplashPageComponent),
   },

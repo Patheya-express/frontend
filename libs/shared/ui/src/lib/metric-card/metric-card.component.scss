@@ -7,6 +7,11 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
+  animation: mobile-slide-up var(--motion-duration-base) var(--motion-easing-decelerate) both;
+  // Reads the same `--stagger-index` custom property ListStaggerDirective sets (see
+  // keyframes.scss's `.mobile-anim-list-item-enter` for the identical pattern) — defaults to 0
+  // (no delay) for any consumer that doesn't apply the directive, so this is purely additive.
+  animation-delay: calc(var(--stagger-index, 0) * var(--motion-stagger-step));
 }
 
 .metric-card-label {
@@ -19,4 +24,13 @@
   font-size: var(--font-size-2xl);
   font-weight: var(--font-weight-bold);
   color: var(--color-text);
+}
+
+// `.metric-card`'s entrance animation is a raw `animation:` declaration, not a `.mobile-anim-*`
+// utility class, so keyframes.scss's `[class*='mobile-anim-']` wildcard doesn't reach it — needs
+// its own override, same as favorite-button's heart-pop.
+@media (prefers-reduced-motion: reduce) {
+  .metric-card {
+    animation: none !important;
+  }
 }

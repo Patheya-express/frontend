@@ -1,6 +1,12 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { EmptyStateComponent, ErrorStateComponent, MetricCardComponent, SkeletonComponent } from '@patheya-express-frontend/ui';
+import {
+  EmptyStateComponent,
+  ErrorStateComponent,
+  ListStaggerDirective,
+  MetricCardComponent,
+  SkeletonComponent,
+} from '@patheya-express-frontend/ui';
 import { AdminDashboardFacade } from '../../facades/admin-dashboard.facade';
 
 const HEALTH_LABELS: Record<string, string> = {
@@ -12,7 +18,7 @@ const HEALTH_LABELS: Record<string, string> = {
 @Component({
   selector: 'lib-admin-dashboard-page',
   standalone: true,
-  imports: [RouterLink, SkeletonComponent, ErrorStateComponent, EmptyStateComponent, MetricCardComponent],
+  imports: [RouterLink, SkeletonComponent, ErrorStateComponent, EmptyStateComponent, MetricCardComponent, ListStaggerDirective],
   templateUrl: './admin-dashboard-page.component.html',
   styleUrl: './admin-dashboard-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

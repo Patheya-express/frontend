@@ -1,8 +1,20 @@
 <div class="splash safe-area-inset">
+  <div class="splash-glow" aria-hidden="true"></div>
+
   <div class="splash-brand">
     <span class="brand-mark">P</span>
     <span class="brand-name">{{ brandName }}</span>
   </div>
+
+  @if (quotes.length > 0) {
+    <div class="splash-quote" role="status">
+      @for (quote of quotes; track $index) {
+        @if ($index === currentQuoteIndex()) {
+          <p class="splash-quote-text mobile-anim-fade">{{ quote }}</p>
+        }
+      }
+    </div>
+  }
 
   <lib-progress-indicator variant="circular" ariaLabel="Loading" />
 

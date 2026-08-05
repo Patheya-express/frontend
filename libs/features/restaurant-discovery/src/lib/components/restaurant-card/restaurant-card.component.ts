@@ -4,11 +4,12 @@ import type { RestaurantSummaryDto } from '@patheya-express-frontend/api-sdk';
 import { MediaUrlService } from '@patheya-express-frontend/core';
 import { AuthFacade } from '@patheya-express-frontend/auth';
 import { FavoriteButtonComponent } from '@patheya-express-frontend/favorites';
+import { LazyImageDirective } from '@patheya-express-frontend/ui';
 
 @Component({
   selector: 'lib-restaurant-card',
   standalone: true,
-  imports: [RouterLink, FavoriteButtonComponent],
+  imports: [RouterLink, FavoriteButtonComponent, LazyImageDirective],
   templateUrl: './restaurant-card.component.html',
   styleUrl: './restaurant-card.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

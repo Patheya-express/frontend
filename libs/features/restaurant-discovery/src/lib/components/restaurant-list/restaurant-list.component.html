@@ -141,8 +141,8 @@
     />
   } @else {
     <div class="restaurant-grid">
-      @for (restaurant of facade.restaurants(); track restaurant.id) {
-        <lib-restaurant-card [restaurant]="restaurant" />
+      @for (restaurant of facade.restaurants(); track restaurant.id; let i = $index) {
+        <lib-restaurant-card [restaurant]="restaurant" [mobileListStagger]="i" [class]="listItemEnterClass" />
       }
     </div>
 

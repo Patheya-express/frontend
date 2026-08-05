@@ -10,7 +10,38 @@
 // Leaflet's divIcon markers are created outside Angular's template compiler, so they never
 // receive the component's scoping attribute — ::ng-deep is required to reach them at all.
 ::ng-deep .map-marker {
+  position: relative;
   font-size: 22px;
   line-height: 1;
   transform: translate(-50%, -50%);
+}
+
+// Pulsing ring behind the driver's marker only — it's the one piece of the map that's actually
+// live/moving, so it's the one worth drawing the eye to. The static destination pin stays calm.
+::ng-deep .map-marker-driver::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  z-index: -1;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--color-primary) 35%, transparent);
+  animation: live-tracking-marker-pulse 1.8s var(--motion-easing-standard) infinite;
+}
+
+@keyframes live-tracking-marker-pulse {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::ng-deep .map-marker-driver::before {
+    animation: none !important;
+    display: none;
+  }
 }

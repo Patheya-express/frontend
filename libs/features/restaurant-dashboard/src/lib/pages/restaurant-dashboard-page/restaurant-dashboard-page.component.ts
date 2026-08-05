@@ -1,12 +1,25 @@
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { ErrorStateComponent, MetricCardComponent, SkeletonComponent, StatusChipComponent } from '@patheya-express-frontend/ui';
+import {
+  ErrorStateComponent,
+  ListStaggerDirective,
+  MetricCardComponent,
+  SkeletonComponent,
+  StatusChipComponent,
+} from '@patheya-express-frontend/ui';
 import { RestaurantDashboardFacade } from '../../facades/restaurant-dashboard.facade';
 
 @Component({
   selector: 'lib-restaurant-dashboard-page',
   standalone: true,
-  imports: [RouterLink, SkeletonComponent, ErrorStateComponent, MetricCardComponent, StatusChipComponent],
+  imports: [
+    RouterLink,
+    SkeletonComponent,
+    ErrorStateComponent,
+    MetricCardComponent,
+    StatusChipComponent,
+    ListStaggerDirective,
+  ],
   templateUrl: './restaurant-dashboard-page.component.html',
   styleUrl: './restaurant-dashboard-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

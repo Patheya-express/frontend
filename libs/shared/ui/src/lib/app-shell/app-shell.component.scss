@@ -9,6 +9,9 @@
   grid-template-columns: minmax(0, 1fr);
   min-height: 100vh;
   background: var(--color-background);
+  // Contains the page-transition's translateX (see app-shell.component.ts's onRouteActivate) so
+  // it can never briefly introduce a horizontal scrollbar mid-animation.
+  overflow-x: hidden;
 }
 
 .app-shell-content {

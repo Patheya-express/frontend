@@ -1,7 +1,12 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnDestroy, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { ErrorStateComponent, OrderStatusBadgeComponent, SkeletonComponent } from '@patheya-express-frontend/ui';
+import {
+  ErrorStateComponent,
+  MOBILE_MOTION_DURATIONS_MS,
+  OrderStatusBadgeComponent,
+  SkeletonComponent,
+} from '@patheya-express-frontend/ui';
 import type { MapPoint } from '@patheya-express-frontend/core';
 import { CouponFacade } from '@patheya-express-frontend/coupons';
 import { OrderDetailsFacade } from '../../facades/order-details.facade';
@@ -67,6 +72,22 @@ export class OrderDetailsPageComponent implements OnInit, OnDestroy {
 
   private orderId = '';
 
+  /** Brief fade when the live ETA minutes changes (realtime driver-location updates), so the
+   *  number visibly refreshes instead of silently jumping mid-read. */
+  protected readonly etaFlash = signal(false);
+  private previousEtaMinutes: number | null = null;
+  private etaFlashTimeout?: ReturnType<typeof setTimeout>;
+
+  constructor() {
+    effect(() => {
+      const eta = this.location()?.etaMinutes ?? null;
+      if (eta !== null && this.previousEtaMinutes !== null && eta !== this.previousEtaMinutes) {
+        this.triggerEtaFlash();
+      }
+      this.previousEtaMinutes = eta;
+    });
+  }
+
   ngOnInit(): void {
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const id = params.get('orderId');
@@ -79,6 +100,14 @@ export class OrderDetailsPageComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.facade.dispose();
+    clearTimeout(this.etaFlashTimeout);
+  }
+
+  private triggerEtaFlash(): void {
+    clearTimeout(this.etaFlashTimeout);
+    this.etaFlash.set(false);
+    requestAnimationFrame(() => requestAnimationFrame(() => this.etaFlash.set(true)));
+    this.etaFlashTimeout = setTimeout(() => this.etaFlash.set(false), MOBILE_MOTION_DURATIONS_MS.base);
   }
 
   protected retry(): void {

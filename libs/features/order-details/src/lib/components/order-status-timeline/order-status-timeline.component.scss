@@ -8,12 +8,39 @@
 }
 
 .order-status-timeline-step {
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: var(--space-3);
+
+  // Connects this step's marker down to the next one. Absolutely positioned overlay (no flow
+  // participation) so an imprecise reach into a taller/shorter neighbor never affects layout —
+  // only how far the decorative line visually extends. Grows via a real `transition`, not a
+  // one-shot keyframe, so it plays correctly in both directions and needs no JS to retrigger.
+  &:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    top: 15px; // marker's 3px margin-top + 12px diameter
+    left: 5px; // (12px marker - 2px line) / 2
+    width: 2px;
+    height: calc(100% - 15px + var(--space-4));
+    background: var(--color-border);
+    transform-origin: top;
+    transform: scaleY(0);
+    transition:
+      transform var(--motion-duration-slow) var(--motion-easing-standard),
+      background-color var(--motion-duration-base) var(--motion-easing-standard);
+    pointer-events: none;
+  }
+
+  &.is-completed:not(:last-child)::after {
+    transform: scaleY(1);
+    background: var(--color-success);
+  }
 }
 
 .order-status-timeline-marker {
+  position: relative;
   flex-shrink: 0;
   width: 12px;
   height: 12px;
@@ -21,6 +48,36 @@
   border-radius: 50%;
   border: 2px solid var(--color-border);
   background: var(--color-surface);
+}
+
+// Live pulse ring on the in-progress step — not a `mobile-anim-*` utility class since it needs a
+// bespoke `::before` ring rather than a transform on the marker itself, so it gets its own local
+// reduced-motion override below (same convention as favorite-button's heart-pop).
+.order-status-timeline-step.is-current .order-status-timeline-marker::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid var(--color-primary);
+  animation: order-status-timeline-pulse 1.6s var(--motion-easing-standard) infinite;
+}
+
+@keyframes order-status-timeline-pulse {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .order-status-timeline-step.is-current .order-status-timeline-marker::before {
+    animation: none !important;
+    display: none;
+  }
 }
 
 .order-status-timeline-body {

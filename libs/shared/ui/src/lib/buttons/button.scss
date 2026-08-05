@@ -20,6 +20,15 @@
     opacity var(--transition-fast),
     transform var(--transition-fast);
 
+  // `pointer: fine` guard (same convention as restaurant-card.component.scss) — without it, a
+  // touch tap would leave the button visibly "stuck" lifted until the next unrelated tap
+  // elsewhere clears the phantom :hover state, since touchscreens have no real hover.
+  @media (hover: hover) and (pointer: fine) {
+    &:hover:not(:disabled) {
+      transform: translateY(-1px);
+    }
+  }
+
   &:active:not(:disabled) {
     transform: scale(0.97);
   }

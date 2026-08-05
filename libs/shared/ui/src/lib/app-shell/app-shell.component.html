@@ -14,8 +14,8 @@
     (locationPickerClicked)="locationPickerClicked.emit()"
     (searchSubmitted)="searchSubmitted.emit($event)"
   />
-  <main class="app-shell-content">
-    <router-outlet />
+  <main class="app-shell-content" #pageContent>
+    <router-outlet (activate)="onRouteActivate()" />
   </main>
   @if (isNative) {
     <mobile-bottom-tabs [tabs]="bottomTabs" (tabSelected)="bottomTabSelected.emit()" />
