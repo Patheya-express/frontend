@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 
 export type MobilePlatform = 'android' | 'ios' | 'web';
@@ -31,6 +32,22 @@ export class MobilePlatformService {
   /** True inside the Capacitor Android/iOS shell; false in a browser tab, mobile or desktop. */
   isNative(): boolean {
     return Capacitor.isNativePlatform();
+  }
+
+  /**
+   * Presence Heartbeat Hardening — registers `callback` to fire whenever the native app returns
+   * to the foreground. Keeps `@capacitor/app` confined to this service (the existing convention:
+   * `mobile.providers.ts`'s `backButton`/`appUrlOpen` listeners are the only other place this
+   * plugin is touched anywhere in the workspace) rather than a feature lib importing the plugin
+   * directly. A no-op on web — Capacitor's web shim for `App.addListener('resume', ...)` never
+   * actually fires there, so callers don't need their own `isNative()` guard before calling this.
+   */
+  onResume(callback: () => void): void {
+    if (!this.isNative()) {
+      return;
+    }
+
+    void App.addListener('resume', callback);
   }
 
   private resolvePlatform(): MobilePlatform {

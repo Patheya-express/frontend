@@ -67,4 +67,14 @@ export class DeliveryDashboardService {
     this.currentPartner.invalidate();
     return unwrap(partnerResponse);
   }
+
+  /**
+   * Presence Heartbeat Hardening — the heartbeat's repeated action. Deliberately only refreshes
+   * the Redis presence TTL, unlike goOnline() above: `deliveryControllerGoAvailable()` (the
+   * durable DB status flip) only needs to happen once, on the initial toggle, not every interval
+   * tick.
+   */
+  pingOnline(): Promise<void> {
+    return this.presenceService.presenceControllerMarkOnline().then(() => undefined);
+  }
 }
