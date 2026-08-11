@@ -13,6 +13,15 @@
     <section class="assignments-section">
       <h2>Current Delivery</h2>
       @if (groups().active.length > 0) {
+        @if (locationStatus() === 'permission-denied') {
+          <p class="assignments-location-notice">
+            Location access is off — turn it on so the customer can see your live position.
+          </p>
+        } @else if (locationStatus() === 'unavailable') {
+          <p class="assignments-location-notice">
+            Can't get a GPS fix right now — your live position won't update until signal returns.
+          </p>
+        }
         <div class="assignments-list">
           @for (assignment of groups().active; track assignment.id) {
             <lib-assignment-card [assignment]="assignment" />

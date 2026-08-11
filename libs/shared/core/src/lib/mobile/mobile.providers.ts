@@ -25,6 +25,23 @@ function toRouterPath(url: string): string | undefined {
 }
 
 /**
+ * Runs an optional platform convenience (resize mode, status bar styling, hiding a splash screen
+ * `capacitor.config.ts` already auto-hides) — never lets it block bootstrap. A given Capacitor
+ * plugin method can be a native no-op/unimplemented stub on a given platform/version (e.g.
+ * `@capacitor/keyboard@8.0.5`'s Android `setResizeMode` rejects unconditionally) without that
+ * being a real application error; since this runs inside `provideAppInitializer`, an unhandled
+ * rejection here would otherwise reject `bootstrapApplication()` itself and leave `<app-root>`
+ * permanently empty. Mirrors `HapticsService`'s "intentionally swallowed" best-effort pattern.
+ */
+async function bestEffort(fn: () => Promise<void>): Promise<void> {
+  try {
+    await fn();
+  } catch {
+    // Intentionally swallowed — see doc comment above.
+  }
+}
+
+/**
  * Enterprise mobile bootstrap for the Capacitor shell — the standalone-provider equivalent of a
  * "MobileModule" (this codebase is fully standalone/signals-based with no NgModules, so a real
  * NgModule would be an architectural regression; this mirrors the existing `provideRouter` /
@@ -45,11 +62,11 @@ export function provideMobilePlatform(): EnvironmentProviders {
       const router = inject(Router);
       const closeTopOverlay = inject(BACK_BUTTON_OVERLAY_HANDLER);
 
-      await Keyboard.setResizeMode({ mode: KeyboardResize.Body });
-      await StatusBar.setStyle({ style: Style.Light });
+      await bestEffort(() => Keyboard.setResizeMode({ mode: KeyboardResize.Body }));
+      await bestEffort(() => StatusBar.setStyle({ style: Style.Light }));
 
       if (mobilePlatform.isAndroid()) {
-        await StatusBar.setBackgroundColor({ color: '#ffffff' });
+        await bestEffort(() => StatusBar.setBackgroundColor({ color: '#ffffff' }));
       }
 
       // Hardware back button (Android): if a modal/bottom-sheet/dialog is open on top of the
@@ -81,7 +98,7 @@ export function provideMobilePlatform(): EnvironmentProviders {
 
       // Defensive: `capacitor.config.ts` already sets `launchAutoHide: true`, but plugin config
       // can be overridden per-build, so hide explicitly too — `hide()` is a no-op if already hidden.
-      await SplashScreen.hide();
+      await bestEffort(() => SplashScreen.hide());
     }),
   ]);
 }

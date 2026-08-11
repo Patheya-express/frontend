@@ -1,7 +1,8 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal } from '@angular/core';
 import type { DeliveryAssignmentResponseDto, OrderResponseDto } from '@patheya-express-frontend/api-sdk';
 import { LogoutCleanupRegistry } from '@patheya-express-frontend/auth';
 import { extractHttpErrorMessage } from '@patheya-express-frontend/core';
+import { CourierLocationService } from '../services/courier-location.service';
 import { DeliveryAssignmentsService } from '../services/delivery-assignments.service';
 
 export interface AssignmentGroups {
@@ -50,6 +51,7 @@ function buildGroups(assignments: DeliveryAssignmentResponseDto[]): AssignmentGr
 @Injectable({ providedIn: 'root' })
 export class DeliveryAssignmentsStore {
   private readonly assignmentsService = inject(DeliveryAssignmentsService);
+  private readonly courierLocationService = inject(CourierLocationService);
 
   private readonly _assignments = signal<DeliveryAssignmentResponseDto[]>([]);
   private readonly _loading = signal(false);
@@ -68,10 +70,34 @@ export class DeliveryAssignmentsStore {
 
   readonly groups = computed<AssignmentGroups>(() => buildGroups(this._assignments()));
 
+  /** The one order (if any) the customer app is currently able to show a live map for — see
+   *  `OrderDetailsStore`/`live-tracking-map.component.ts`, which only render it once the order is
+   *  `OUT_FOR_DELIVERY`. Sending GPS before that point would never reach a UI that displays it. */
+  private readonly trackableOrderId = computed<string | null>(() => {
+    const trackable = this.groups().active.find((assignment) => assignment.order?.status === 'OUT_FOR_DELIVERY');
+    return trackable?.order?.id ?? null;
+  });
+
+  /** Whether this partner's device is currently able to send live location — surfaced so the page
+   *  can tell them to enable location instead of the customer silently never seeing a moving pin. */
+  readonly locationStatus = this.courierLocationService.status;
+
   constructor() {
     // Without this, a delivery partner who logs out while this page is mounted keeps polling
     // `getAssignments()` against an invalid session until the component happens to be destroyed.
     inject(LogoutCleanupRegistry).register(() => this.stopPolling());
+
+    // Starts/stops sending live GPS as the active assignment enters/leaves OUT_FOR_DELIVERY —
+    // AUDIT-016. `CourierLocationService.start` is itself a no-op if already tracking this exact
+    // order, so this firing on every 15s assignment-poll tick doesn't restart the watch each time.
+    effect(() => {
+      const orderId = this.trackableOrderId();
+      if (orderId) {
+        void this.courierLocationService.start(orderId);
+      } else {
+        void this.courierLocationService.stop();
+      }
+    });
   }
 
   async loadAssignments(): Promise<void> {

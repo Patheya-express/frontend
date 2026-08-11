@@ -11,6 +11,7 @@ export class DeliveryAssignmentsFacade {
   readonly processingId = this.store.processingId;
   readonly actionError = this.store.actionError;
   readonly otpDialog = this.store.otpDialog;
+  readonly locationStatus = this.store.locationStatus;
 
   /** Starts the assignment list loading and begins background polling. Call once on page init. */
   initialize(): void {

@@ -19,6 +19,7 @@ export class DeliveryAssignmentsPageComponent implements OnInit, OnDestroy {
   protected readonly loading = this.facade.loading;
   protected readonly error = this.facade.error;
   protected readonly actionError = this.facade.actionError;
+  protected readonly locationStatus = this.facade.locationStatus;
 
   ngOnInit(): void {
     this.facade.initialize();
