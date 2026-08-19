@@ -1,0 +1,20 @@
+<canvas
+  #canvas
+  class="playcanvas-scene__canvas"
+  [attr.aria-hidden]="ariaLabel ? null : 'true'"
+  [attr.role]="ariaLabel ? 'img' : null"
+  [attr.aria-label]="ariaLabel ?? null"
+></canvas>
+
+@if (status().state === 'idle' || status().state === 'initializing') {
+  <lib-skeleton class="playcanvas-scene__overlay" variant="block" shape="rect" height="100%" />
+}
+
+@if (status().state === 'error') {
+  <lib-error-state
+    class="playcanvas-scene__overlay"
+    title="3D experience unavailable"
+    [message]="status().message ?? 'This device or browser could not start the 3D experience.'"
+    [showDefaultIllustration]="false"
+  />
+}

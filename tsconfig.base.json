@@ -36,6 +36,12 @@
       "@patheya-express-frontend/map-picker": [
         "./libs/shared/map-picker/src/index.ts"
       ],
+      "@patheya-express-frontend/playcanvas-runtime": [
+        "./libs/shared/playcanvas-runtime/src/index.ts"
+      ],
+      "@patheya-express-frontend/playcanvas-ui": [
+        "./libs/shared/playcanvas-ui/src/index.ts"
+      ],
       "@patheya-express-frontend/restaurant-discovery": [
         "./libs/features/restaurant-discovery/src/index.ts"
       ],

@@ -28,6 +28,9 @@
         ],
         "styles": [
           "apps/customer-app/src/styles.scss"
+        ],
+        "externalDependencies": [
+          "node:worker_threads"
         ]
       },
       "configurations": {

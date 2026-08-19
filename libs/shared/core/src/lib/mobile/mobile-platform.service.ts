@@ -50,6 +50,21 @@ export class MobilePlatformService {
     void App.addListener('resume', callback);
   }
 
+  /**
+   * Symmetric counterpart to {@link onResume} — registers `callback` to fire whenever the native
+   * app moves to the background. Added for the PlayCanvas foundation's render-loop pause/resume
+   * lifecycle (a live GPU context should stop ticking the moment the app backgrounds, not just
+   * when it later resumes), following the same no-op-on-web, no `isNative()` guard needed
+   * contract as `onResume`.
+   */
+  onPause(callback: () => void): void {
+    if (!this.isNative()) {
+      return;
+    }
+
+    void App.addListener('pause', callback);
+  }
+
   private resolvePlatform(): MobilePlatform {
     const platform = Capacitor.getPlatform();
     return platform === 'android' || platform === 'ios' ? platform : 'web';

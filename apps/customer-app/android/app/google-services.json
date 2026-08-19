@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "870438762334",
+    "project_id": "patheyaexpress",
+    "storage_bucket": "patheyaexpress.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:870438762334:android:e3a6bfe2055e84ff8141cf",
+        "android_client_info": {
+          "package_name": "com.patheyaexpress.customer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCiXqXmO-hkbxC-OtuP6Z7JKncm_bago7s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

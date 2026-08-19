@@ -29,6 +29,18 @@ const splashGuard = lazySplashGuard((m) => m.splashGuard);
 
 export const routes: Routes = [
   {
+    // Internal engineering-only technical validation surface for the PlayCanvas rendering
+    // foundation (see PlaycanvasPocPageComponent's own doc comment) — deliberately outside the
+    // `canActivateChild: [splashGuard]` children below, so it's reachable directly by URL for
+    // manual/Android validation without going through the customer splash/auth flow. Not linked
+    // from any navigation; not a customer-facing feature.
+    path: 'internal/playcanvas-poc',
+    loadComponent: () =>
+      import('./pages/playcanvas-poc/playcanvas-poc-page.component').then(
+        (m) => m.PlaycanvasPocPageComponent,
+      ),
+  },
+  {
     path: 'splash',
     data: {
       brandName: 'Patheya Express',

@@ -1,0 +1,18 @@
+<div class="playcanvas-poc-page">
+  <header class="playcanvas-poc-page__header">
+    <h1>PlayCanvas foundation — technical validation</h1>
+    <p>
+      This is an internal engineering surface, not a customer-facing feature. It exists only to
+      prove the PlayCanvas rendering foundation — creation, resize, visibility, backgrounding, and
+      disposal — works inside this application and inside the Capacitor Android shell.
+    </p>
+  </header>
+
+  <div class="playcanvas-poc-page__stage">
+    <lib-playcanvas-scene
+      [config]="demoConfig"
+      ariaLabel="Rotating box — technical demonstration of the PlayCanvas rendering foundation"
+      (statusChange)="onStatusChange($event)"
+    />
+  </div>
+</div>
