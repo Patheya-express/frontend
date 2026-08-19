@@ -1,5 +1,6 @@
 import type * as pcNamespace from 'playcanvas';
-import type { ExperienceConfig } from './types';
+import type { GlbLoadResult } from './assets/glb-loader';
+import type { ExperienceAssetReference, ExperienceConfig } from './types';
 
 /**
  * What an experience implementation receives to build its content — deliberately narrower than
@@ -8,18 +9,31 @@ import type { ExperienceConfig } from './types';
  * subtree, and the runtime can always guarantee full cleanup via `Application.destroy()` even if a
  * given experience's own `dispose()` misses something. Device/`Application`-level control (start,
  * pause, resize, destroy) intentionally stays out of this context — see {@link Experience}'s own
- * doc comment for why; `onUpdate` is the one narrow exception, for content that genuinely needs a
- * per-frame hook (e.g. an animation), without handing over the whole `Application` object just to
- * reach `app.on('update', ...)`.
+ * doc comment for why; `onUpdate`/`loadModel` are the narrow exceptions, for content that genuinely
+ * needs a per-frame hook or GLB loading, without handing over the whole `Application`/
+ * `AssetRegistry` object just to reach `app.on('update', ...)`/`app.assets.loadFromUrl(...)`.
  */
 export interface ExperienceContext {
   readonly pc: typeof pcNamespace;
   readonly root: pcNamespace.Entity;
+  /**
+   * The canvas `PlaycanvasRuntime` renders into. Exposed (Phase 2.4 brief §4/§5) so an experience
+   * that needs pointer/wheel input (e.g. an orbit camera) can attach its own listeners directly to
+   * it and remove them in its own `dispose()` — never a `window`-level listener, and never a
+   * second canvas. Read-only: an experience may listen on this element but must never resize,
+   * replace, or reparent it — that stays `PlaycanvasRuntime`'s/the Angular adapter's job.
+   */
+  readonly canvas: HTMLCanvasElement;
   readonly config: ExperienceConfig;
   /** Registers a per-frame callback while the runtime's render loop is ticking. No unsubscribe is
    *  provided — every registered callback's lifetime is tied to the `Application` itself, torn
    *  down automatically when `PlaycanvasRuntime.destroy()` calls `Application.destroy()`. */
   onUpdate(callback: (deltaTimeSeconds: number) => void): void;
+  /** Loads a `'model'`-typed asset reference as a GLB container via this runtime instance's own
+   *  `GlbLoader` (see `assets/glb-loader.ts`) — never a custom parser, never a second engine.
+   *  Rejects cleanly (never an unhandled rejection) on an invalid reference, a PlayCanvas load
+   *  error, or disposal before the load settles. */
+  loadModel(reference: ExperienceAssetReference): Promise<GlbLoadResult>;
 }
 
 /**

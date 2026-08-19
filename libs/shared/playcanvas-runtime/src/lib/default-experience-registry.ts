@@ -1,4 +1,5 @@
 import { ExperienceRegistry } from './experience-registry';
+import { createRealisticShowcaseExperience, REALISTIC_SHOWCASE_EXPERIENCE_TYPE } from './experiences/realistic-showcase.experience';
 import { createTechnicalDemoExperience, TECHNICAL_DEMO_EXPERIENCE_TYPE } from './experiences/technical-demo.experience';
 
 /**
@@ -14,5 +15,6 @@ import { createTechnicalDemoExperience, TECHNICAL_DEMO_EXPERIENCE_TYPE } from '.
 export function createDefaultExperienceRegistry(): ExperienceRegistry {
   const registry = new ExperienceRegistry();
   registry.register(TECHNICAL_DEMO_EXPERIENCE_TYPE, createTechnicalDemoExperience);
+  registry.register(REALISTIC_SHOWCASE_EXPERIENCE_TYPE, createRealisticShowcaseExperience);
   return registry;
 }

@@ -1,4 +1,5 @@
 import type * as pcNamespace from 'playcanvas';
+import { GlbLoader } from './assets/glb-loader';
 import { createDefaultExperienceRegistry } from './default-experience-registry';
 import type { Experience } from './experience';
 import type { ExperienceRegistry } from './experience-registry';
@@ -19,9 +20,9 @@ export interface PlaycanvasRuntimeOptions {
 /**
  * Framework-independent owner of one PlayCanvas `Application` instance and everything tied to its
  * GPU resources. Has no Angular import anywhere in this file or its dependencies (`experience.ts`,
- * `experience-registry.ts`, `types.ts`) — the `pc` module is loaded via `import('playcanvas')`
- * inside `create()`, never at this file's top level, so nothing reachable from this library
- * statically pulls PlayCanvas into a consumer's bundle (Phase 1 brief §22/§23).
+ * `experience-registry.ts`, `types.ts`, `assets/glb-loader.ts`) — the `pc` module is loaded via
+ * `import('playcanvas')` inside `create()`, never at this file's top level, so nothing reachable
+ * from this library statically pulls PlayCanvas into a consumer's bundle (Phase 1 brief §22/§23).
  *
  * One instance = one live experience surface (architecture validation §19/§29, Phase 1 brief §31)
  * — never a shared singleton. The Angular adapter owns exactly one of these per
@@ -35,6 +36,7 @@ export class PlaycanvasRuntime {
   private app: pcNamespace.AppBase | null = null;
   private deviceLostHandle: pcNamespace.EventHandle | null = null;
   private deviceRestoredHandle: pcNamespace.EventHandle | null = null;
+  private glbLoader: GlbLoader | null = null;
   private experience: Experience | null = null;
   private readonly experienceRegistry: ExperienceRegistry;
   private status: RuntimeStatus = { state: 'idle' };
@@ -98,12 +100,17 @@ export class PlaycanvasRuntime {
       const experienceRoot = new pc.Entity('experience-root');
       app.root.addChild(experienceRoot);
 
+      const glbLoader = new GlbLoader(app.assets);
+      this.glbLoader = glbLoader;
+
       const factory = this.experienceRegistry.resolve(config.experienceType);
       this.experience = factory({
         pc,
         root: experienceRoot,
+        canvas,
         config,
         onUpdate: (callback) => app.on('update', callback),
+        loadModel: (reference) => glbLoader.load(reference),
       });
 
       this.setStatus({ state: 'paused' });
@@ -190,6 +197,12 @@ export class PlaycanvasRuntime {
 
     this.experience?.dispose();
     this.experience = null;
+
+    // Marks any loadModel() call still in flight to discard its result once PlayCanvas's callback
+    // eventually fires, rather than resolving it after this instance has already torn down — see
+    // GlbLoader.dispose()'s own doc comment.
+    this.glbLoader?.dispose();
+    this.glbLoader = null;
 
     this.deviceLostHandle?.off();
     this.deviceRestoredHandle?.off();

@@ -3,16 +3,35 @@
     <h1>PlayCanvas foundation — technical validation</h1>
     <p>
       This is an internal engineering surface, not a customer-facing feature. It exists only to
-      prove the PlayCanvas rendering foundation — creation, resize, visibility, backgrounding, and
-      disposal — works inside this application and inside the Capacitor Android shell.
+      prove the PlayCanvas rendering foundation — creation, resize, visibility, backgrounding,
+      disposal, loading a local sample GLB model (Phase 2.2), and (as of Phase 2.3) a
+      textured/material-bearing GLB — works inside this application and inside the Capacitor
+      Android shell.
     </p>
   </header>
 
   <div class="playcanvas-poc-page__stage">
     <lib-playcanvas-scene
       [config]="demoConfig"
-      ariaLabel="Rotating box — technical demonstration of the PlayCanvas rendering foundation"
+      ariaLabel="Rotating box, an untextured sample GLB model, and a textured sample GLB model — technical demonstration of the PlayCanvas rendering foundation"
       (statusChange)="onStatusChange($event)"
+    />
+  </div>
+
+  <header class="playcanvas-poc-page__header">
+    <h1>Realistic GLB + interactive camera — Phase 2.4 validation</h1>
+    <p>
+      A realistic, license-clean, PBR flight helmet model (CC0-1.0, Khronos glTF-Sample-Assets)
+      loaded through the same pipeline as the models above, with an interactive orbit camera —
+      drag to rotate, scroll/pinch to zoom.
+    </p>
+  </header>
+
+  <div class="playcanvas-poc-page__stage">
+    <lib-playcanvas-scene
+      [config]="realisticShowcaseConfig"
+      ariaLabel="An interactive 3D flight helmet model — drag to rotate, scroll or pinch to zoom"
+      (statusChange)="onRealisticShowcaseStatusChange($event)"
     />
   </div>
 </div>

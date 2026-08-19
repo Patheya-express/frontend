@@ -11,3 +11,8 @@ export * from './lib/experience';
 export * from './lib/experience-registry';
 export { createDefaultExperienceRegistry } from './lib/default-experience-registry';
 export { TECHNICAL_DEMO_EXPERIENCE_TYPE } from './lib/experiences/technical-demo.experience';
+export { REALISTIC_SHOWCASE_EXPERIENCE_TYPE } from './lib/experiences/realistic-showcase.experience';
+// `GlbLoader` itself stays internal — always reached through `ExperienceContext.loadModel`, never
+// constructed directly by anything outside this library. Its result type is public since a future
+// experience factory's own `.then((result) => ...)` handler needs to name it.
+export type { GlbLoadResult } from './lib/assets/glb-loader';

@@ -13,6 +13,7 @@ let package = Package(
     dependencies: [
         .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", exact: "8.4.2"),
         .package(name: "CapacitorApp", path: "..\..\..\..\..\node_modules\.pnpm\@capacitor+app@8.1.1_@capacitor+core@8.4.2\node_modules\@capacitor\app"),
+        .package(name: "CapacitorGeolocation", path: "..\..\..\..\..\node_modules\.pnpm\@capacitor+geolocation@8.2.1_@capacitor+core@8.4.2\node_modules\@capacitor\geolocation"),
         .package(name: "CapacitorHaptics", path: "..\..\..\..\..\node_modules\.pnpm\@capacitor+haptics@8.0.2_@capacitor+core@8.4.2\node_modules\@capacitor\haptics"),
         .package(name: "CapacitorKeyboard", path: "..\..\..\..\..\node_modules\.pnpm\@capacitor+keyboard@8.0.5_@capacitor+core@8.4.2\node_modules\@capacitor\keyboard"),
         .package(name: "CapacitorPushNotifications", path: "..\..\..\..\..\node_modules\.pnpm\@capacitor+push-notifications@8.1.2_@capacitor+core@8.4.2\node_modules\@capacitor\push-notifications"),
@@ -27,6 +28,7 @@ let package = Package(
                 .product(name: "Capacitor", package: "capacitor-swift-pm"),
                 .product(name: "Cordova", package: "capacitor-swift-pm"),
                 .product(name: "CapacitorApp", package: "CapacitorApp"),
+                .product(name: "CapacitorGeolocation", package: "CapacitorGeolocation"),
                 .product(name: "CapacitorHaptics", package: "CapacitorHaptics"),
                 .product(name: "CapacitorKeyboard", package: "CapacitorKeyboard"),
                 .product(name: "CapacitorPushNotifications", package: "CapacitorPushNotifications"),

@@ -69,9 +69,52 @@ tween) without ever being able to trigger them.
 
 `ExperienceConfig.assets?: readonly ExperienceAssetReference[]` — a plain `{ id, type, url }` per
 asset (`type` is `'model' | 'texture' | 'environment' | 'animation' | 'audio' | 'thumbnail'`).
-Phase 2.1 defines only this shape. There is no loader, no cache, no retry, no progress reporting,
-no backend upload path, and no CDN infrastructure — an experience factory that needs assets would
-today have to load them itself; a shared loading/caching abstraction is explicitly Phase 2.2.
+
+## GLB loading (Phase 2.2)
+
+`ExperienceContext.loadModel(reference)` loads a `'model'`-typed reference as a GLB container
+through PlayCanvas's own `AssetRegistry.loadFromUrl(url, 'container', callback)` — no custom
+GLTF/GLB parser, no second rendering engine. Implemented by `assets/glb-loader.ts`'s `GlbLoader`,
+one instance per `PlaycanvasRuntime`, created alongside the `Application` and disposed alongside
+it — it does not own the `Application` itself. `GlbLoader` stays internal (never exported); every
+experience reaches it only through `loadModel`, mirroring `onUpdate`'s existing precedent for "the
+narrow substitute for a full PlayCanvas object."
+
+```
+ExperienceAssetReference  (type: 'model', url: '...')
+        ▼
+GlbLoader.load()           ← AssetRegistry.loadFromUrl(url, 'container', callback), wrapped as a
+        │                     Promise; rejects cleanly on invalid reference / load error / disposal
+        ▼
+GlbLoadResult               ← { asset, instantiate() }
+        ▼
+result.instantiate()        ← ContainerResource.instantiateRenderEntity() — a fresh Entity per call
+        ▼
+Experience attaches it under its own `root`, tracks it, destroys it in dispose()
+```
+
+Every other asset type in `ExperienceAssetType` (`texture`/`environment`/`animation`/`audio`/
+`thumbnail`) remains shape-only — no loader exists for any of them yet. There is still no cache,
+retry, progress reporting, backend upload path, or CDN infrastructure; the technical-demo
+experience's sample asset (`apps/customer-app/public/assets/models/sample-triangle.glb`, ~470
+bytes, a hand-built single-triangle GLB — not a real production asset) is served exactly like any
+other Angular static asset, resolved via a plain URL a caller already has in hand.
+
+## Interactive camera + a second experience type (Phase 2.4)
+
+`ExperienceContext` gained one more field: `canvas: HTMLCanvasElement` — the same element
+`PlaycanvasRuntime` renders into, exposed read-only so an experience needing pointer/wheel input
+(an orbit camera) can attach its own listeners directly to it and remove them in its own
+`dispose()`, never a `window`-level listener. `REALISTIC_SHOWCASE_EXPERIENCE_TYPE`
+(`'realistic-showcase'`, `experiences/realistic-showcase.experience.ts`) is the second registered
+experience: one realistic PBR model loaded through the existing `loadModel` path, an orbit camera
+framed around the model's own computed world-space bounding box (`Entity.findComponents('render')`
+→ `MeshInstance.aabb`, merged) rather than a hardcoded position, and Patheya's black/red/green
+colors applied to the background and a small interaction-state indicator — never to the model's
+own PBR materials or light color, which stay neutral so the realistic asset renders correctly (see
+the experience file's own doc comments for the full reasoning, including why it does NOT use
+PlayCanvas's own `OrbitController`/`InputSource` classes — they're tagged `@alpha` in the installed
+2.21.4 build).
 
 ## Registry
 
@@ -96,9 +139,13 @@ though no business experience actually exists yet.
 
 ## What is intentionally NOT included yet
 
-- No product/restaurant/grocery/delivery experience implementation — Phase 2.1 is infrastructure
-  only (brief §11).
-- No asset loader/cache/retry (§2/§7 above) — shape only.
+- No product/restaurant/grocery/delivery experience implementation — infrastructure only.
+- No cache, retry, progress reporting, or streaming for GLB loads (Phase 2.2 brief §12) — `load()`
+  is a single attempt, resolve or reject, nothing more.
+- No loader for any asset type except `'model'` — `texture`/`environment`/`animation`/`audio`/
+  `thumbnail` remain shape-only, same as Phase 2.1.
+- No asset upload, asset management UI, CDN, Cloudinary/S3 integration, or asset database (Phase
+  2.2 brief §12) — the one sample GLB is a static local file, nothing more.
 - No adaptive/FPS-driven quality engine, no GPU benchmarking — `QualityTier` is preserved unchanged
   from Phase 1 and still only coarsely affects device antialiasing.
 - No ECS, physics, WebXR, editor integration, or scripting DSL — explicitly out of scope (brief §5).
@@ -122,10 +169,10 @@ relationship, needed zero `eslint.config.mjs` changes and is the more conservati
 
 - **Lazy-loading**: `playcanvas-runtime`/`playcanvas-ui` are only ever reached from a route or
   component behind a dynamic `import()` — never a static import from `app.config.ts`, `main.ts`,
-  or any eagerly-loaded file. Verified: the production `customer-app` build isolates all of
-  PlayCanvas into its own lazy chunk (confirmed via bundle inspection — zero PlayCanvas symbols in
-  any initial chunk), including after Phase 2.1's additions — the registry/experience layer adds no
-  new `playcanvas` import site.
+  or any eagerly-loaded file. Verified repeatedly (Phase 2.1 and again for Phase 2.2's `GlbLoader`):
+  the production `customer-app` build isolates all of PlayCanvas into its own lazy chunk, zero
+  PlayCanvas symbols in any initial chunk — neither the registry/experience layer nor the GLB
+  loader adds a new `playcanvas` import site beyond the one already inside `create()`.
 - **Domain boundary**: `playcanvas-runtime` must never import `OrderService`/`CartService`/
   `RestaurantService`/any `libs/features/*` — structurally enforced by its own `type:core` tag
   (`onlyDependOnLibsWithTags` excludes `type:feature`). The only thing that crosses from Angular
@@ -138,7 +185,8 @@ relationship, needed zero `eslint.config.mjs` changes and is the more conservati
   `PlaycanvasSceneComponent`, never as a singleton/`providedIn: 'root'`. A future grid of many
   simultaneous experiences must keep this — one live instance for whatever's focused, static
   posters for the rest (see the validation report's mobile-performance section for why).
-- **Disposal**: `ngOnDestroy` always calls `runtime.destroy()`, which calls the active experience's
-  `dispose()` and then PlayCanvas's own `Application.destroy()` — releasing every entity, asset,
-  and the WebGL context with it. No `Application`, and no experience's own resources, may outlive
-  the component that created it.
+- **Disposal**: `ngOnDestroy` always calls `runtime.destroy()`, which disposes the active
+  experience, disposes the `GlbLoader` (discarding any load still in flight instead of resolving it
+  late — see `GlbLoader.dispose()`), and then calls PlayCanvas's own `Application.destroy()` —
+  releasing every entity, asset, and the WebGL context with it. No `Application`, no `GlbLoader`
+  load, and no experience's own resources, may outlive the component that created it.
