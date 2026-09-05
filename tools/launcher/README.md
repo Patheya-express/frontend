@@ -98,6 +98,31 @@ buffer each concurrently-running stage's output separately, then flush every sta
 together, in stage-declaration order, once the whole parallel group finishes. The stages still run
 genuinely in parallel — only the printing is reordered for readability.
 
+### Relationship to `tools/dev/` (full-stack onboarding)
+
+For a new developer, or daily full-stack startup, see **`tools/dev/DEVELOPMENT.md`** — the
+canonical setup doc — and run `pnpm run setup` (first time) or `pnpm run dev` (daily) instead of
+invoking this launcher directly. That script (`tools/dev/bootstrap.mjs`) owns the machine-level
+parts of startup (Docker Desktop, `docker compose up -d` against the sibling
+`patheya-express-platform` repo's compose file — Postgres/Redis/Kafka/Zookeeper/api-gateway) before
+handing off to this launcher. The two deliberately don't overlap, and — critically — `tools/dev/`
+doesn't re-implement backend health checking or Docker startup: it directly calls this launcher's
+own `detectBackend()`, so there is exactly one implementation of both in the whole repo:
+
+| | `tools/dev/bootstrap.mjs` | This launcher (`tools/launcher/`) |
+|---|---|---|
+| Scope | Full-stack: both repos, one-time setup + daily startup | One frontend app + platform |
+| Docker Desktop / Compose | Starts it (`ensureDockerEngineRunning()`), then calls this launcher's own `detectBackend()` to bring up Compose and wait for health — no separate implementation | Never starts Docker unless *its own* health check finds nothing listening at all (see Backend detection below) — and even then, only `docker compose up -d`, never a second api-gateway process |
+| Backend health check | Reuses this launcher's `checkHealth`/`detectBackend` directly — not reimplemented | Parses the actual `{success, data: {status, database, redis, websocket, ...}}` body |
+| Frontend app | Hands off to `node tools/launcher/cli.mjs <app> web` and exits | Everything after that: environment validation, build, Capacitor sync, device/browser selection, `nx serve`/`cap run` |
+
+This supersedes the external `Patheya-Express-Developer-Bootstrap-v5` folder (a loose,
+non-versioned directory with a duplicated Windows/macOS implementation) — see
+`tools/dev/DEVELOPMENT.md`'s "Bootstrap v5 migration" section for exactly what moved where. Running
+`pnpm customer:web` directly (skipping `tools/dev/` entirely) still works and is the documented
+"frontend-only" workflow: this launcher's own `docker compose up -d` fallback exists for exactly
+that case — someone who already has the backend running, or is starting it another way.
+
 ### Doctor vs. the launcher
 
 `pnpm doctor` reuses the exact same check-building functions as Step 1
@@ -167,15 +192,23 @@ in `lib/registry.mjs`'s `DEVICE_PROFILES` — adding one is a single entry, a la
    check reports Root Cause / Fix / Documentation link — nothing fails silently. Warnings (⚠)
    don't block launch; only errors (✖) do.
 2. **Backend detection** (parallel with Environment) — hits the backend's real health endpoint,
-   `GET /api/v1/health`, which already reports `database`/`redis`/`queues`/`websocket` status (see
-   `HealthResponseDto` in `@patheya-express-frontend/api-sdk`). This is why there's no separate
-   "check Postgres" / "check Redis" step: the backend's own health endpoint is the accurate source
-   for that, not something this repo can determine independently (it has no DB/Redis credentials).
+   `GET /api/v1/health`, which already reports `database`/`redis`/`websocket` (and `queues`, when
+   the running backend build emits it) status (see `HealthResponseDto` in
+   `@patheya-express-frontend/api-sdk`). Every API gateway response, this one included, is wrapped
+   in a `{success, timestamp, data}` envelope by the backend's global `ResponseInterceptor` — the
+   launcher unwraps `data` before reading any field, and only reports a subsystem field the
+   response actually included, never a fabricated one. This is why there's no separate "check
+   Postgres" / "check Redis" step: the backend's own health endpoint is the accurate source for
+   that, not something this repo can determine independently (it has no DB/Redis credentials).
    - `local`: if unreachable and a sibling `patheya-express-platform` checkout exists next to this
-     repo, runs the exact commands `infrastructure/docs/local-development-guide.md` documents
-     (`docker compose ... up -d` then `pnpm --filter api-gateway start:dev`) and polls until
-     healthy or a 60s timeout. If that sibling repo isn't found, prints the guide's manual steps
-     instead of guessing a path. `--no-backend-start` skips auto-start entirely.
+     repo, runs `docker compose ... up -d` (see `infrastructure/docs/local-development-guide.md`)
+     and polls until healthy or a 60s timeout. That one command starts the whole stack, api-gateway
+     included — the launcher deliberately does **not** also spawn `pnpm --filter api-gateway
+     start:dev`, since the sibling repo's `docker-compose.yml` already publishes api-gateway on
+     `:3000` itself; doing both raced the same port and produced `EADDRINUSE`. If that sibling repo
+     isn't found, prints the guide's manual steps instead of guessing a path. `--no-backend-start`
+     skips auto-start entirely — use it if you're intentionally running api-gateway on the host
+     instead of in a container.
    - `qa`/`staging`/`production`: only ever validates connectivity — never starts anything locally.
 3. **Build verification** *(native only — the web dev server builds on the fly, so there's no
    separate artifact to check)* — delegates to `nx build`, which has its own input-hash build
@@ -247,10 +280,16 @@ independently; fixing `ANDROID_HOME` alone doesn't put `adb` on `PATH` and vice 
 Windows/Linux, and neither `xcodebuild` nor `xcrun` exist there. Target `web`/`android` instead, or
 move to a Mac for iOS work.
 
-**"Backend reachable but reporting degraded status"** — The health endpoint answered, but
-`database`/`redis`/`queues`/`websocket` in the response isn't all-healthy. The launcher can't fix
-this — it's an actual backend-side problem. Check the backend's own logs (in the sibling
-`patheya-express-platform` repo).
+**"Backend reachable but reporting degraded status"** — The health endpoint answered with
+`data.status: "degraded"` — one of `database`/`redis`/`queues`/`websocket` in the response isn't
+healthy. The launcher can't fix this — it's an actual backend-side problem. Check the backend's own
+logs (in the sibling `patheya-express-platform` repo).
+
+**"Backend reachable but returned an invalid health response"** — The endpoint answered with a 2xx
+but the body didn't match the expected `{success: true, data: {status, ...}}` envelope (e.g. a
+frontend checkout newer/older than the running backend). The launcher deliberately does not guess
+at a malformed response's meaning or treat it as healthy — check
+`curl <apiBaseUrl>/api/v1/health` directly and confirm both repos are on compatible versions.
 
 **"Local backend not reachable, and the sibling repo was not found"** — The launcher looks for
 `patheya-express-platform` as a sibling directory of this repo (`../patheya-express-platform`

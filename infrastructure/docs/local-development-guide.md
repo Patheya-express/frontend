@@ -1,5 +1,10 @@
 # Local Development Guide
 
+For full-stack setup (this repo plus the backend), use the canonical path in
+[`tools/dev/DEVELOPMENT.md`](../../tools/dev/DEVELOPMENT.md) (`pnpm run setup` / `pnpm run dev`)
+instead of assembling the steps below by hand. This document is the supporting reference that
+tooling drives and links to — not an alternative starting point.
+
 ## Fastest loop: run Angular directly on the host
 
 For day-to-day frontend work, skip Docker entirely:
@@ -24,9 +29,29 @@ are static SPAs, and API calls happen browser-to-backend, not
 container-to-container). From `patheya-express-platform`:
 
 ```bash
-docker compose -f infrastructure/docker/docker-compose.yml up -d   # postgres, redis, kafka, zookeeper
-pnpm --filter api-gateway start:dev                                  # or however that repo documents it — see its own README
+docker compose -f infrastructure/docker/docker-compose.yml up -d   # postgres, redis, kafka, zookeeper, AND api-gateway
 ```
+
+That single command is the normal path — the sibling repo's own
+`docker-compose.yml` builds and runs `api-gateway` itself (published on
+`:3000`) alongside its dependencies; there is no separate `pnpm --filter
+api-gateway start:dev` step to run on top of it, and running one anyway
+races the containerized api-gateway for the same port (`EADDRINUSE`).
+`node tools/launcher/cli.mjs <app> web`'s own backend auto-start
+(`tools/launcher/lib/detect-backend.mjs`) does exactly this one command.
+
+Prefer running api-gateway on the host instead of in a container (faster
+inner loop)? Exclude it from Compose explicitly and run it yourself —
+see that repo's own README for its `start:dev` script:
+
+```bash
+docker compose -f infrastructure/docker/docker-compose.yml up -d postgres redis kafka zookeeper
+pnpm --filter api-gateway start:dev   # from patheya-express-platform
+```
+
+Pass `--no-backend-start` to the launcher in that case, so it doesn't
+also try to bring up the containerized api-gateway underneath your host
+process.
 
 Its `.env.example` already lists `CUSTOMER_APP_URL=http://localhost:4200`
 etc. in its CORS allowlist, matching the ports this repo's

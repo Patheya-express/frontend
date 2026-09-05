@@ -4,6 +4,12 @@ Enterprise frontend monorepo for the Patheya Express platform.
 
 This repository contains the Angular/Nx applications used by customers, restaurant partners, delivery partners, and administrators.
 
+New to this repo, or setting up the full stack (this repo plus the sibling backend)? Start with
+[`tools/dev/DEVELOPMENT.md`](tools/dev/DEVELOPMENT.md) — it's the single canonical onboarding path
+(`pnpm run setup` first time, `pnpm run dev` daily) and covers Docker architecture, ports,
+environment configuration, and troubleshooting. The sections below are frontend-specific reference,
+not a competing setup path.
+
 Applications
 
 Application
@@ -228,9 +234,13 @@ Use the configured targets rather than inventing new scripts.
 
 6. Start Applications
 
+Use the frontend launcher, not raw `nx serve` — it validates your environment, confirms the backend
+is actually healthy first, and only then runs the equivalent of `nx serve` underneath (see
+`tools/launcher/README.md`; full-stack setup is `tools/dev/DEVELOPMENT.md`):
+
 Customer
 
-pnpm exec nx serve customer-app
+pnpm customer:web
 
 Open:
 
@@ -238,7 +248,7 @@ http://localhost:4200
 
 Restaurant
 
-pnpm exec nx serve restaurant-app
+pnpm partner:web
 
 Open:
 
@@ -246,7 +256,7 @@ http://localhost:4201
 
 Admin
 
-pnpm exec nx serve admin-app
+pnpm admin:web
 
 Open:
 
@@ -254,13 +264,17 @@ http://localhost:4202
 
 Delivery
 
-pnpm exec nx serve delivery-app
+pnpm delivery:web
 
 Open:
 
 http://localhost:4203
 
 Only run the applications required for the current task.
+
+`pnpm exec nx serve <app>` still works directly for a quick frontend-only iteration once you know
+the backend is already up (it just skips the launcher's validation/health checks) — prefer the
+`pnpm <app>:web` form above when in doubt.
 
 7. Frontend Architecture
 
@@ -658,6 +672,12 @@ Enable Corepack if required:
 corepack enable
 
 Then restart PowerShell.
+
+On Windows, `corepack enable` can fail with an EPERM error when Node.js is installed under
+`C:\Program Files\nodejs` and your shell isn't elevated — this was a real issue hit while building
+this repo's developer tooling (see `tools/dev/DEVELOPMENT.md`'s Bootstrap v5 migration notes). If
+you hit it, install pnpm directly instead: `npm install -g pnpm@11.5.3` (matching this repo's
+`packageManager` field), rather than running PowerShell as Administrator just to enable Corepack.
 
 nx not found
 

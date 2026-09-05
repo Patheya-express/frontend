@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import spawn from 'cross-spawn';
 import * as log from './log.mjs';
 import { resolveApiBaseUrl, repoRoot } from './registry.mjs';
+import { runCapture } from './exec.mjs';
 
 const HEALTH_PATH = '/api/v1/health';
 const HEALTH_TIMEOUT_MS = 4000;
@@ -16,26 +17,55 @@ const START_POLL_INTERVAL_MS = 2000;
 const SIBLING_BACKEND_REPO = join(repoRoot, '..', 'patheya-express-platform');
 
 /**
- * Hits the real backend health endpoint (GET /api/v1/health) — its response genuinely reports
- * database/redis/queues/websocket status (see libs/shared/api-sdk's HealthResponseDto), so this
+ * Hits the real backend health endpoint (GET /api/v1/health). Every response from the API gateway
+ * — this endpoint included — is wrapped in a `{success, timestamp, data}` envelope by its global
+ * ResponseInterceptor (apps/api-gateway/src/core/interceptors/response.interceptor.ts in the
+ * sibling repo), so the actual HealthResponseDto fields (status/database/redis/queues/websocket —
+ * see libs/shared/api-sdk's HealthResponseDto) live under `data`, not at the top level. This
  * reflects the backend's own view of its subsystems rather than the launcher independently
  * reimplementing Postgres/Redis/BullMQ connectivity checks it has no credentials to perform.
+ *
+ * Only `status`/`database`/`redis`/`websocket` are treated as guaranteed — `queues` (BullMQ) is
+ * read if present but never required or fabricated, since the DTO has changed shape over time
+ * (e.g. it isn't emitted by every backend build) and a launcher check has no business asserting a
+ * contract the backend itself doesn't currently honor.
  */
 export async function checkHealth(apiBaseUrl) {
+  let response;
   try {
-    const response = await fetch(new URL(HEALTH_PATH, apiBaseUrl), { signal: AbortSignal.timeout(HEALTH_TIMEOUT_MS) });
-    if (!response.ok) {
-      return { reachable: true, healthy: false, statusCode: response.status, body: null };
-    }
-    const body = await response.json();
-    return { reachable: true, healthy: body.status === 'ok', statusCode: response.status, body };
+    response = await fetch(new URL(HEALTH_PATH, apiBaseUrl), { signal: AbortSignal.timeout(HEALTH_TIMEOUT_MS) });
   } catch {
-    return { reachable: false, healthy: false, statusCode: null, body: null };
+    return { reachable: false, healthy: false, malformed: false, statusCode: null, data: null };
   }
+
+  if (!response.ok) {
+    return { reachable: true, healthy: false, malformed: false, statusCode: response.status, data: null };
+  }
+
+  let body;
+  try {
+    body = await response.json();
+  } catch {
+    return { reachable: true, healthy: false, malformed: true, statusCode: response.status, data: null };
+  }
+
+  const data = body && typeof body === 'object' && body.success === true && body.data && typeof body.data === 'object' ? body.data : null;
+
+  if (!data || typeof data.status !== 'string') {
+    return { reachable: true, healthy: false, malformed: true, statusCode: response.status, data: null };
+  }
+
+  return { reachable: true, healthy: data.status === 'ok', malformed: false, statusCode: response.status, data };
 }
 
-function reportHealthBody(body) {
+/** Prints only the subsystem fields the response actually included — never invents a field the
+ *  backend didn't send (an older/newer backend build's DTO shape shouldn't produce a fabricated
+ *  "undefined" row). */
+function reportHealthData(data) {
   const subsystem = (label, value, healthyValue) => {
+    if (value === undefined) {
+      return;
+    }
     if (value === healthyValue) {
       log.ok(`${label}: ${value}`);
     } else {
@@ -43,21 +73,74 @@ function reportHealthBody(body) {
     }
   };
 
-  subsystem('Database', body.database, 'connected');
-  subsystem('Redis', body.redis, 'connected');
-  subsystem('BullMQ queues', body.queues, 'connected');
-  if (body.websocket !== 'not_applicable') {
-    subsystem('Socket.IO', body.websocket, 'ready');
+  subsystem('Database', data.database, 'connected');
+  subsystem('Redis', data.redis, 'connected');
+  if (data.queues !== undefined) {
+    subsystem('BullMQ queues', data.queues, 'connected');
   }
+  if (data.websocket !== undefined && data.websocket !== 'not_applicable') {
+    subsystem('Socket.IO', data.websocket, 'ready');
+  }
+}
+
+/** Best-effort, Windows-only: parses `netstat -ano` for the PID listening on `port`, then
+ *  `tasklist` for that PID's process name. Cross-platform process-owner lookup would need a
+ *  different real command per OS (`lsof`/`ss` on Linux, `lsof` on macOS, neither guaranteed
+ *  present) for a diagnostic-only nice-to-have — not worth the added surface here, and explicitly
+ *  documented as a known limitation in DEVELOPMENT.md rather than silently pretending to cover
+ *  every platform. Never throws; returns null on any failure so callers can fall back to a generic
+ *  message. */
+async function findPortOwnerWindows(port) {
+  const netstat = await runCapture('netstat', ['-ano']);
+  if (netstat.code !== 0) {
+    return null;
+  }
+  const line = netstat.stdout.split('\n').find((l) => l.includes(`:${port} `) && /LISTENING/i.test(l));
+  if (!line) {
+    return null;
+  }
+  const pid = line.trim().split(/\s+/).pop();
+  if (!pid || Number.isNaN(Number(pid))) {
+    return null;
+  }
+  const tasklist = await runCapture('tasklist', ['/FI', `PID eq ${pid}`, '/FO', 'CSV', '/NH']);
+  if (tasklist.code !== 0) {
+    return null;
+  }
+  const name = tasklist.stdout.split(',')[0]?.replace(/"/g, '').trim();
+  return name ? `${name} (PID ${pid})` : `PID ${pid}`;
+}
+
+/** Used only when a response was reachable but didn't match the expected health contract — i.e.
+ *  *something* is listening and answering HTTP on this port, just not our API. Scoped to `local`
+ *  (checking a remote environment's port ownership on this machine would be meaningless). */
+export async function describeUnexpectedOccupant(apiBaseUrl) {
+  if (process.platform !== 'win32') {
+    return 'The process currently using this port could not be identified automatically on this platform.';
+  }
+  let port;
+  try {
+    port = new URL(apiBaseUrl).port || '80';
+  } catch {
+    return 'The process currently using this port could not be identified automatically.';
+  }
+  const owner = await findPortOwnerWindows(port).catch(() => null);
+  return owner ? `Port ${port} is occupied by: ${owner}.` : `Port ${port} appears occupied, but the owning process could not be identified automatically.`;
 }
 
 async function startSiblingBackend({ verbose }) {
   log.info('Local backend not reachable — attempting to start it from the sibling repo.');
   log.detail(SIBLING_BACKEND_REPO);
 
-  // Neither of these processes exits on its own (docker compose -d does, start:dev doesn't), so
-  // they're spawned detached/unref'd rather than awaited — this step's job is to kick them off
-  // and then poll the health endpoint, not to hold the launcher open forever babysitting them.
+  // `docker compose up -d` (no service filter) starts the whole stack, api-gateway included —
+  // see the sibling repo's infrastructure/docker/docker-compose.yml, whose `api-gateway` service
+  // has no `profiles:` restriction and publishes :3000 itself. Deliberately NOT also spawning
+  // `pnpm --filter api-gateway start:dev` here: that was this launcher's own past bug — it raced
+  // the containerized api-gateway for the same port and produced EADDRINUSE the moment the
+  // container won the race. If a developer intentionally runs api-gateway on the host instead of
+  // in a container, they exclude it from Compose themselves (`docker compose up postgres redis
+  // kafka zookeeper` — see infrastructure/docs/local-development-guide.md) and pass
+  // --no-backend-start so this launcher doesn't fight that setup.
   const composeUp = spawn('docker', ['compose', '-f', 'infrastructure/docker/docker-compose.yml', 'up', '-d'], {
     cwd: SIBLING_BACKEND_REPO,
     stdio: verbose ? 'inherit' : 'ignore',
@@ -65,14 +148,7 @@ async function startSiblingBackend({ verbose }) {
 
   await new Promise((resolve) => composeUp.on('close', resolve));
 
-  const apiGateway = spawn('pnpm', ['--filter', 'api-gateway', 'start:dev'], {
-    cwd: SIBLING_BACKEND_REPO,
-    stdio: verbose ? 'inherit' : 'ignore',
-    detached: process.platform !== 'win32',
-  });
-  apiGateway.unref();
-
-  log.info('Started `docker compose up -d` and `pnpm --filter api-gateway start:dev` in the background.');
+  log.info('Started `docker compose up -d` (postgres, redis, kafka, zookeeper, api-gateway).');
   log.detail('Waiting for the health endpoint to report healthy…');
 }
 
@@ -100,14 +176,30 @@ export async function detectBackend({ app, environment, envName, verbose, noBack
 
   if (result.reachable && result.healthy) {
     log.ok(`Backend healthy at ${apiBaseUrl}`);
-    reportHealthBody(result.body);
-    return { ok: true, apiBaseUrl, body: result.body };
+    reportHealthData(result.data);
+    return { ok: true, apiBaseUrl, data: result.data };
+  }
+
+  if (result.reachable && result.malformed) {
+    log.warn(`Backend reachable but returned an invalid health response at ${apiBaseUrl}`);
+    // Reachable-but-wrong-contract most often means something *other* than api-gateway is holding
+    // this port (an old native process, another project) rather than an actual backend regression
+    // — surface what's occupying it when we can, only for `local` (identifying a port owner on
+    // this machine is meaningless for a remote environment).
+    const occupantNote = !environment.isRemote ? ` ${await describeUnexpectedOccupant(apiBaseUrl)}` : '';
+    return {
+      ok: false,
+      rootCause: `Backend at ${apiBaseUrl} responded to ${HEALTH_PATH}, but the body didn't match the expected {success, data: {status, ...}} contract.${occupantNote}`,
+      suggestedFix: 'Confirm this frontend checkout and the running backend are on compatible versions — the health response contract may have changed.',
+      nextAction: `Inspect the raw response: curl ${apiBaseUrl}${HEALTH_PATH}`,
+      retryHint: 'Re-run once the backend is serving a recognizable health response.',
+    };
   }
 
   if (result.reachable && !result.healthy) {
     log.warn(`Backend reachable but reporting degraded status at ${apiBaseUrl}`);
-    if (result.body) {
-      reportHealthBody(result.body);
+    if (result.data) {
+      reportHealthData(result.data);
     }
     return {
       ok: false,
@@ -156,8 +248,8 @@ export async function detectBackend({ app, environment, envName, verbose, noBack
     result = await checkHealth(apiBaseUrl);
     if (result.reachable && result.healthy) {
       log.ok(`Backend healthy at ${apiBaseUrl}`);
-      reportHealthBody(result.body);
-      return { ok: true, apiBaseUrl, body: result.body };
+      reportHealthData(result.data);
+      return { ok: true, apiBaseUrl, data: result.data };
     }
   }
 

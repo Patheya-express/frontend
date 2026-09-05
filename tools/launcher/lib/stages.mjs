@@ -33,19 +33,19 @@ export const backendStage = createStage({
       verbose: ctx.verbose,
       noBackendStart: ctx.noBackendStart,
     }),
+  // Only reports subsystem fields the backend's response actually included — never fabricates a
+  // row for a field a given backend build didn't send (see detect-backend.mjs's checkHealth doc
+  // comment on why `queues` in particular isn't guaranteed).
   summary: (result) => {
-    if (!result.body) {
-      return [['Backend', 'Healthy']];
+    const rows = [['Backend', 'Healthy']];
+    const data = result.data;
+    if (!data) {
+      return rows;
     }
-    const rows = [
-      ['Backend', 'Healthy'],
-      ['Database', result.body.database],
-      ['Redis', result.body.redis],
-      ['BullMQ', result.body.queues],
-    ];
-    if (result.body.websocket !== 'not_applicable') {
-      rows.push(['Socket.IO', result.body.websocket]);
-    }
+    if (data.database !== undefined) rows.push(['Database', data.database]);
+    if (data.redis !== undefined) rows.push(['Redis', data.redis]);
+    if (data.queues !== undefined) rows.push(['BullMQ', data.queues]);
+    if (data.websocket !== undefined && data.websocket !== 'not_applicable') rows.push(['Socket.IO', data.websocket]);
     return rows;
   },
   error: (result) => result,
