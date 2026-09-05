@@ -168,7 +168,15 @@ pnpm run setup
    above for the incident this catches). Unlike a migration command failure, this verification
    failing **stops setup** with a clear diagnosis rather than continuing to a frontend launch that
    would just fail registration with `public.users does not exist`.
-7. Starts the Customer App via the frontend launcher.
+7. Runs the backend's development database seed (`pnpm --filter api-gateway run db:seed`) —
+   first-time only, same non-fatal contract as migrations (a failure warns and tells you the
+   manual command rather than blocking setup). Populates development-only baseline data: seeded
+   role accounts, restaurants/menus, delivery partners, orders, coupons, offers, and FAQs — so a
+   fresh clone is immediately usable end-to-end, not just an empty, migrated schema. Deterministic
+   and idempotent (safe to re-run); never real credentials or production data — see
+   `patheya-express-platform/apps/api-gateway/README.md`'s "Database seed" section for the full
+   seeded account list.
+8. Starts the Customer App via the frontend launcher.
 
 Only failures print guidance and stop the flow — nothing fails silently. Verified against an actual
 zero-`node_modules` fresh clone in a scratch directory (not just this repeated on an
@@ -181,7 +189,7 @@ pnpm run dev
 ```
 
 (→ `node tools/dev/bootstrap.mjs customer`, i.e. the same steps minus dependency install, `.env`
-scaffolding, and migrations — those are one-time, not daily.) Every step it does run is idempotent:
+scaffolding, migrations, and the database seed — those are one-time, not daily.) Every step it does run is idempotent:
 `docker compose up -d` on an already-running stack is a fast no-op check, and the health poll
 returns immediately once the backend is already up.
 
@@ -334,6 +342,11 @@ above for why they're allowed to differ and how `pnpm run setup` reports both.
 frontend afterward) — fix the error shown, then run
 `pnpm --filter api-gateway run db:migrate` yourself from `patheya-express-platform`.
 
+**Backend database seed failed** — Also non-fatal by design, same reasoning as a migration
+failure — fix the error shown, then run `pnpm --filter api-gateway run db:seed` yourself from
+`patheya-express-platform`. Safe to re-run: the seed is idempotent, so retrying never duplicates
+data.
+
 **"Migrations reported success, but the Docker PostgreSQL container is missing..."** — This is the
 post-migration database verification (see "Why 15432, not 5432?" above), and unlike a bare
 migration failure, it's fatal by design: it means `DATABASE_URL` in
@@ -357,7 +370,7 @@ Answer it based on your own judgment of the data in that database.
 ## Testing
 
 ```bash
-pnpm run test:dev        # tools/dev/'s own tests (arg parsing, guard rails, database verification)
+pnpm run test:dev        # tools/dev/'s own tests (arg parsing, guard rails, database verification, seed step ordering)
 pnpm run test:launcher   # tools/launcher/'s tests (health parsing, tool checks, ...) — reused, not duplicated
 ```
 

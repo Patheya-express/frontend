@@ -133,6 +133,52 @@ describe('bootstrap.mjs safety properties (source-level)', () => {
   test('database verification only ever reads — never a destructive Prisma or SQL command', () => {
     assert.doesNotMatch(codeOnly, /migrate reset|db push|DROP\s|DELETE\s+FROM|TRUNCATE/i);
   });
+
+  test('db:seed runs after migrations and before database verification, only inside the --setup guard', () => {
+    const setupGuardIndex = codeOnly.indexOf('if (args.setup && backendPresent) {\n      await runBackendMigrations');
+    assert.ok(setupGuardIndex !== -1, 'expected runBackendMigrations (and the seed step right after it) inside an `if (args.setup && backendPresent)` guard');
+
+    const migrateCallIndex = codeOnly.indexOf('await runBackendMigrations(runInherit)');
+    const seedCallIndex = codeOnly.indexOf('await runBackendSeed(runInherit)');
+    const verifyCallIndex = codeOnly.indexOf('await verifyDockerDatabaseSchema(runCapture)');
+
+    assert.ok(migrateCallIndex !== -1 && seedCallIndex !== -1 && verifyCallIndex !== -1);
+    assert.ok(migrateCallIndex < seedCallIndex, 'db:seed must run after backend migrations, not before');
+    assert.ok(seedCallIndex < verifyCallIndex, 'db:seed must run before the post-migration schema verification');
+
+    // Exactly one call site anywhere in the file (the function's own declaration also contains
+    // the substring "runBackendSeed(runInherit)", so this counts `await `-prefixed call sites
+    // specifically) — seeding is never triggered outside --setup, in particular never during
+    // daily `pnpm run dev`.
+    assert.equal(
+      codeOnly.split('await runBackendSeed(runInherit)').length - 1,
+      1,
+      'runBackendSeed must be called exactly once, inside the --setup guard',
+    );
+  });
+
+  test('db:seed reuses the backend\'s existing seed script, not a new seed implementation', () => {
+    assert.match(
+      codeOnly,
+      /runInherit\('pnpm', \['--filter', 'api-gateway', 'run', 'db:seed'\]/,
+      'expected runBackendSeed to invoke the existing `pnpm --filter api-gateway run db:seed` script',
+    );
+  });
+
+  test('a seed failure is non-fatal — warns with manual-run instructions, never sets a failing exit code', () => {
+    const fnStart = codeOnly.indexOf('async function runBackendSeed');
+    assert.ok(fnStart !== -1, 'expected a runBackendSeed function');
+    const fnEnd = codeOnly.indexOf('\n}', fnStart) + 2;
+    const fnBody = codeOnly.slice(fnStart, fnEnd);
+
+    assert.match(fnBody, /log\.warn\(/, 'expected a warning to be logged on seed failure');
+    assert.match(fnBody, /db:seed/, 'expected the manual-run guidance to name the db:seed command');
+    assert.doesNotMatch(
+      fnBody,
+      /process\.exitCode/,
+      'a seed failure must not set a failing exit code — same non-fatal contract as runBackendMigrations',
+    );
+  });
 });
 
 describe('cross-platform shape', () => {

@@ -67,7 +67,8 @@ Usage: node tools/dev/bootstrap.mjs [app] [options]
 
 Options:
   --setup                First-time only: install frontend+backend dependencies, scaffold
-                          apps/api-gateway/.env if missing, and run backend Prisma migrations.
+                          apps/api-gateway/.env if missing, and run backend Prisma migrations
+                          and the development database seed.
   --backend-only          Start/verify infrastructure and exit; equivalent to "app=none".
   --skip-infrastructure   Never touch Docker; only validate tools and hand off to the app.
   --verbose               Full error output and DEBUG/TRACE logs.
@@ -292,6 +293,34 @@ async function runBackendMigrations(runInherit) {
 }
 
 /**
+ * First-time only (--setup), run unconditionally immediately after runBackendMigrations() —
+ * regardless of whether that step reported success or a warning, same as verifyDockerDatabaseSchema()
+ * below it (runBackendMigrations() has no return value to branch on, by design — see its own doc
+ * comment). Same non-fatal contract as that function: a seed failure (a transient hiccup, a
+ * developer's own schema drift, a migration that didn't actually apply, etc.) must not block
+ * `pnpm run setup` from finishing; it should just tell the developer clearly how to run it
+ * themselves once fixed. Never runs during daily `pnpm run dev` — only --setup reaches this
+ * function, matching runBackendMigrations()'s own "must never run as part of daily startup" rule.
+ *
+ * Runs `pnpm --filter api-gateway run db:seed` (via the backend's own `db:seed` script) — the
+ * exact same command a developer would run manually or backend-ci.yml already runs in CI, not a
+ * second seed implementation. Populates development-only baseline data (seeded test accounts,
+ * restaurants, menus, delivery partners, orders, coupons, FAQs) so a fresh clone is immediately
+ * usable end-to-end, not just an empty, migrated schema.
+ */
+async function runBackendSeed(runInherit) {
+  log.section('Backend database seed');
+  log.detail('Running `db:seed` — populates development-only baseline data (seeded users, restaurants, menus, orders).');
+  const result = await runInherit('pnpm', ['--filter', 'api-gateway', 'run', 'db:seed'], { cwd: BACKEND_REPO });
+  if (result.code !== 0) {
+    log.warn('Backend database seed did not complete successfully.');
+    log.detail(`Run it manually once fixed: pnpm --filter api-gateway run db:seed  (from ${BACKEND_REPO})`);
+    return;
+  }
+  log.ok('Backend database seeded with development baseline data.');
+}
+
+/**
  * First-time only (--setup), run unconditionally after runBackendMigrations() — regardless of
  * whether that step reported success or a warning. This exists because `prisma migrate dev`'s exit
  * code alone can't detect the actual incident this guards against: DATABASE_URL in
@@ -471,6 +500,7 @@ async function main() {
 
     if (args.setup && backendPresent) {
       await runBackendMigrations(runInherit);
+      await runBackendSeed(runInherit);
       const dbVerification = await verifyDockerDatabaseSchema(runCapture);
       if (!dbVerification.ok) {
         log.failWithGuidance({ ...dbVerification, verbose: args.verbose });
