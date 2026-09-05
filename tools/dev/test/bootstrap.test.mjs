@@ -112,6 +112,27 @@ describe('bootstrap.mjs safety properties (source-level)', () => {
     assert.match(codeOnly, /ensureEnvFile\(/);
     assert.doesNotMatch(codeOnly, /copyFileSync\(/, 'bootstrap.mjs itself should not perform file copies directly — that logic (and its overwrite-safety) lives in, and is tested by, lib/env-file.mjs');
   });
+
+  test('verifies the Docker database schema after migrating, and stops setup if it is missing', () => {
+    assert.match(codeOnly, /verifyDockerDatabaseSchema\(/, 'expected the post-migration database verification to be called');
+
+    const migrateCallIndex = codeOnly.indexOf('await runBackendMigrations(runInherit)');
+    const verifyCallIndex = codeOnly.indexOf('await verifyDockerDatabaseSchema(runCapture)');
+    assert.ok(migrateCallIndex !== -1 && verifyCallIndex !== -1);
+    assert.ok(migrateCallIndex < verifyCallIndex, 'verifyDockerDatabaseSchema must run after runBackendMigrations, not before');
+
+    // Unlike a bare migration-command failure (non-fatal by design, tested above via db:migrate),
+    // a schema-verification failure must actually stop the script — never silently fall through to
+    // launching a frontend app against a backend whose registration would 500.
+    const verifySection = codeOnly.slice(verifyCallIndex, verifyCallIndex + 400);
+    assert.match(verifySection, /if\s*\(!dbVerification\.ok\)/);
+    assert.match(verifySection, /process\.exitCode\s*=\s*1/);
+    assert.match(verifySection, /return;/);
+  });
+
+  test('database verification only ever reads — never a destructive Prisma or SQL command', () => {
+    assert.doesNotMatch(codeOnly, /migrate reset|db push|DROP\s|DELETE\s+FROM|TRUNCATE/i);
+  });
 });
 
 describe('cross-platform shape', () => {

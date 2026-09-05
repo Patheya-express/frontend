@@ -52,13 +52,16 @@ Docker Desktop
     ▼
 Docker Compose (patheya-express-platform/infrastructure/docker/docker-compose.yml)
     │
-    ├── PostgreSQL  :5432
+    ├── PostgreSQL  :15432 (host) → :5432 (container)  ← see "Why 15432, not 5432?" below
     ├── Redis       :6379
     ├── Kafka       :9092   (present only because an env var requires it — unused by app code)
     ├── Zookeeper
     └── API Gateway :3000   ← the only backend process. Built from the backend repo's root
                                Dockerfile, published on 3000 by Compose itself.
 ```
+
+`api-gateway` always talks to `postgres:5432` over the internal Compose network — the host-side
+`15432` mapping only exists for tools running on your machine (Prisma CLI, `psql`, a GUI client).
 
 **There is exactly one process on port 3000, ever: the Compose-managed `api-gateway` container.**
 Nothing in this repo's tooling — not `tools/launcher`, not `tools/dev/bootstrap.mjs` — starts a
@@ -78,12 +81,48 @@ yourself and pass `--skip-infrastructure` — see "Backend-only" below.
 | Partner/Restaurant App | `4201` | `nx serve restaurant-app` |
 | Admin App | `4202` | `nx serve admin-app` |
 | Delivery App | `4203` | `nx serve delivery-app` |
-| PostgreSQL | `5432` | Docker Compose |
+| PostgreSQL | `15432` (host) → `5432` (container) | Docker Compose |
 | Redis | `6379` | Docker Compose |
 | Kafka | `9092` | Docker Compose (unused by application code) |
 
 (Verified against `patheya-express-platform/infrastructure/docker/docker-compose.yml` and this
 repo's `tools/launcher/lib/registry.mjs`'s `defaultPort` per app.)
+
+### Why 15432, not 5432?
+
+A native PostgreSQL install (common on Windows, also possible on macOS/Linux) commonly already
+owns port 5432 on a developer's machine. If Docker Compose's `postgres` container also tried to
+publish on 5432, the two race for the same host port — sometimes Docker wins the bind, sometimes
+the native server does, non-deterministically depending on start order — and whichever one *isn't*
+currently holding the port is invisible to host-side tools even though `docker ps`/`docker exec`
+still work fine against the container directly. That produced exactly this incident: `prisma
+migrate status` reported "up to date" against whichever server `localhost:5432` happened to
+resolve to, while the actual Docker database (queried via `docker exec`) had no tables at all.
+
+The fix is to never let them contend for the same port: Compose publishes `postgres` on host port
+**15432** instead, while the container itself still listens on 5432 internally — `api-gateway`
+inside Compose still connects to `postgres:5432` and is completely unaffected. **You do not need
+to uninstall or stop a native PostgreSQL install** — it can keep running on 5432 exactly as
+before; Docker Compose no longer touches that port at all. This is purely a local-development
+change — production database connectivity (`k8s/`, Render, Neon, etc.) never went through this
+Compose file and is unaffected.
+
+Only using `patheya-express-platform/scripts/start-dev.ps1`'s native-Postgres workflow instead of
+Docker Compose? That path assumes a native PostgreSQL install on the standard port 5432 and reads
+the same `apps/api-gateway/.env` this tooling scaffolds — since that file's checked-in default now
+points at Docker's port, set `DATABASE_URL` back to `localhost:5432` in your own `.env` if you use
+that path instead of `pnpm run setup`/`pnpm run dev`.
+
+**Already have a Docker `postgres` volume from before this change?** Its data isn't affected — the
+port a container publishes is a run-time setting, not something stored in the volume, so
+`docker compose down` (which removes containers, not volumes, unless you pass `-v`) followed by
+`docker compose up -d` recreates the same containers attached to the same `postgres-data` volume,
+now published on 15432 instead of 5432. Nothing here runs `docker compose down -v`, `docker volume
+rm`, or any Prisma command more destructive than `migrate dev`, so existing local data survives
+this change. If your own `apps/api-gateway/.env` already has a `DATABASE_URL` (it's gitignored and
+never overwritten by this tooling — see `ensureEnvFile` in `tools/dev/lib/env-file.mjs`), you'll
+need to update it to `localhost:15432` yourself; only a fresh `.env` scaffolded from
+`.env.example` after this change picks up the new default automatically.
 
 ## One canonical path
 
@@ -109,8 +148,10 @@ pnpm run setup
    safe to check, since dependencies were just confirmed installed in step 1.
 3. Scaffolds `patheya-express-platform/apps/api-gateway/.env` from its own `.env.example` if one
    doesn't already exist (never overwrites a real one). Its defaults already match Compose's
-   Postgres/Redis/Kafka ports, so this alone is enough for local development — fill in
-   Razorpay/SMTP/Cloudinary values yourself only if you need those specific flows.
+   Postgres/Redis/Kafka ports — including `DATABASE_URL` pointing at `localhost:15432`, Compose's
+   host-published Postgres port (see "Why 15432, not 5432?" above) — so this alone is enough for
+   local development; fill in Razorpay/SMTP/Cloudinary values yourself only if you need those
+   specific flows.
 4. Starts Docker Desktop if it isn't running yet, then `docker compose up -d` (Postgres, Redis,
    Kafka, Zookeeper, api-gateway).
 5. Waits for `GET /api/v1/health` to report `{success: true, data: {status: "ok", ...}}` — via the
@@ -120,6 +161,13 @@ pnpm run setup
    unmigrated database still reports "healthy," since the health check is a raw connectivity probe,
    not a schema check). Runs with your terminal attached, so if Prisma ever needs to ask a
    confirmation question, you see and answer it yourself — see "Prisma asks a question" below.
+   Then independently verifies, against the Docker `postgres` container itself, that
+   `_prisma_migrations` and the `users` table actually exist — `prisma migrate dev` reporting
+   success only proves *some* reachable PostgreSQL server has that migration history applied, not
+   that it's the same server the Docker `api-gateway` container uses (see "Why 15432, not 5432?"
+   above for the incident this catches). Unlike a migration command failure, this verification
+   failing **stops setup** with a clear diagnosis rather than continuing to a frontend launch that
+   would just fail registration with `public.users does not exist`.
 7. Starts the Customer App via the frontend launcher.
 
 Only failures print guidance and stop the flow — nothing fails silently. Verified against an actual
@@ -286,6 +334,19 @@ above for why they're allowed to differ and how `pnpm run setup` reports both.
 frontend afterward) — fix the error shown, then run
 `pnpm --filter api-gateway run db:migrate` yourself from `patheya-express-platform`.
 
+**"Migrations reported success, but the Docker PostgreSQL container is missing..."** — This is the
+post-migration database verification (see "Why 15432, not 5432?" above), and unlike a bare
+migration failure, it's fatal by design: it means `DATABASE_URL` in
+`patheya-express-platform/apps/api-gateway/.env` resolved to a PostgreSQL server other than the
+Docker `postgres` container — most often a native PostgreSQL install answering on the same port.
+Fix `DATABASE_URL` to point at Docker's published port (default `localhost:15432`) and re-run
+`pnpm run setup`. This never deletes or resets any existing database — it only reads.
+
+**"Host tools cannot reach PostgreSQL at ..."** — The same verification failing at the connectivity
+stage: nothing is listening at the host/port your `.env`'s `DATABASE_URL` names at all. Confirm
+Compose actually published Postgres there: `docker compose -f infrastructure/docker/docker-compose.yml
+port postgres 5432` (run from `patheya-express-platform`) should print `0.0.0.0:15432`.
+
 **Prisma asks a question during migration** — `pnpm run setup` runs `prisma migrate dev` with its
 output/input connected directly to your terminal (not captured or auto-answered by this tooling).
 On a genuinely fresh database this shouldn't happen — there's no prior schema to have drifted from —
@@ -296,9 +357,14 @@ Answer it based on your own judgment of the data in that database.
 ## Testing
 
 ```bash
-pnpm run test:dev        # tools/dev/'s own tests (arg parsing, guard rails)
+pnpm run test:dev        # tools/dev/'s own tests (arg parsing, guard rails, database verification)
 pnpm run test:launcher   # tools/launcher/'s tests (health parsing, tool checks, ...) — reused, not duplicated
 ```
+
+`tools/dev/test/db-verify.test.mjs` covers the post-migration database verification's parsing and
+port-probing logic in isolation (no Docker required); the verification's actual `docker compose
+exec psql` call is exercised by running `pnpm run setup` for real, same as the rest of this file's
+Docker-dependent behavior.
 
 ## Bootstrap v5 migration
 

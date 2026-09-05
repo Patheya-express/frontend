@@ -15,6 +15,8 @@
 //   - Output formatting                              -> tools/launcher/lib/log.mjs
 //   - Process spawning (post-install)                -> tools/launcher/lib/exec.mjs
 //   - Frontend app/platform selection & startup      -> tools/launcher/cli.mjs itself
+//   - Post-migration database schema verification    -> tools/dev/lib/db-verify.mjs (see its own
+//     doc comment for the false-positive-migration incident this specifically guards against)
 // See tools/launcher/README.md's "Relationship to tools/dev/" section and DEVELOPMENT.md for the
 // full responsibility model this fits into.
 //
@@ -25,8 +27,9 @@
 // dependencies couldn't itself load without dependencies already being installed — that was this
 // script's actual first bug (`cross-spawn`, pulled in transitively via tools/launcher/lib/exec.mjs
 // and detect-backend.mjs, both true frontend dependencies). registry.mjs, log.mjs, and this
-// directory's own lib/args.mjs and lib/env-file.mjs are all independently built-ins-only (verified
-// by tools/dev/test/bootstrap.test.mjs's source-inspection test), so they're safe to import
+// directory's own lib/args.mjs, lib/env-file.mjs, and lib/db-verify.mjs are all independently
+// built-ins-only (verified by tools/dev/test/bootstrap.test.mjs's source-inspection test), so
+// they're safe to import
 // statically even before `pnpm install` has ever run. Everything that genuinely needs a real
 // dependency (`exec.mjs`, `validate-environment.mjs`, `detect-backend.mjs` — via `cross-spawn`) is
 // loaded with a dynamic `import()` *after* dependency installation is confirmed complete — see
@@ -38,6 +41,7 @@ import * as log from '../launcher/lib/log.mjs';
 import { repoRoot, resolveApp, resolveEnvironment, APPS } from '../launcher/lib/registry.mjs';
 import { parseDevArgs } from './lib/args.mjs';
 import { ensureEnvFile } from './lib/env-file.mjs';
+import { extractDatabaseUrl, parseDatabaseUrl, probeTcpPort, buildSchemaCheckCommand, isSchemaPresent } from './lib/db-verify.mjs';
 
 // The backend is always a sibling checkout, never nested in this repo — same convention
 // tools/launcher/lib/detect-backend.mjs uses for its own local-backend auto-start, kept in sync
@@ -287,6 +291,73 @@ async function runBackendMigrations(runInherit) {
   log.ok('Backend database is up to date.');
 }
 
+/**
+ * First-time only (--setup), run unconditionally after runBackendMigrations() — regardless of
+ * whether that step reported success or a warning. This exists because `prisma migrate dev`'s exit
+ * code alone can't detect the actual incident this guards against: DATABASE_URL in
+ * apps/api-gateway/.env resolving to a *different* PostgreSQL server than the one the Docker
+ * api-gateway container uses (e.g. a native PostgreSQL install answering on the same host port) —
+ * Prisma reports "up to date" happily against that other server's own migration history, while the
+ * real Docker database never gets touched. Unlike runBackendMigrations' own failures (non-fatal by
+ * long-standing design — see that function's doc comment), THIS check failing is fatal: it means
+ * `pnpm run setup` would otherwise hand the developer a "successful" setup that 500s on first
+ * registration (`public.users does not exist`), which is strictly worse than stopping here with a
+ * clear diagnosis.
+ */
+async function verifyDockerDatabaseSchema(runCapture) {
+  log.section('Backend database verification');
+
+  let envContents;
+  try {
+    envContents = readFileSync(BACKEND_ENV_FILE, 'utf8');
+  } catch {
+    log.warn('Could not read backend apps/api-gateway/.env — skipping database verification.');
+    return { ok: true };
+  }
+
+  const databaseUrl = extractDatabaseUrl(envContents);
+  if (!databaseUrl) {
+    log.warn('DATABASE_URL not found in backend apps/api-gateway/.env — skipping database verification.');
+    return { ok: true };
+  }
+
+  let parsed;
+  try {
+    parsed = parseDatabaseUrl(databaseUrl);
+  } catch {
+    return {
+      ok: false,
+      rootCause: `apps/api-gateway/.env's DATABASE_URL is not a valid PostgreSQL connection string: ${databaseUrl}`,
+      suggestedFix: 'Fix DATABASE_URL, e.g. postgresql://postgres:postgres@localhost:15432/patheya_express_db?schema=public',
+    };
+  }
+
+  log.detail(`Checking host connectivity to ${parsed.host}:${parsed.port}…`);
+  const reachable = await probeTcpPort(parsed.host, parsed.port);
+  if (!reachable) {
+    return {
+      ok: false,
+      rootCause: `Host tools cannot reach PostgreSQL at ${parsed.host}:${parsed.port} (apps/api-gateway/.env's DATABASE_URL).`,
+      suggestedFix: `Confirm Docker Compose published Postgres there: docker compose -f infrastructure/docker/docker-compose.yml port postgres 5432  (run from ${BACKEND_REPO})`,
+      nextAction: 'If a native PostgreSQL install already owns port 5432, the Docker default is 15432 — see DEVELOPMENT.md\'s "Why 15432, not 5432?".',
+    };
+  }
+
+  const checkArgs = buildSchemaCheckCommand({ composeFile: 'infrastructure/docker/docker-compose.yml', user: parsed.user, database: parsed.database });
+  const result = await runCapture('docker', checkArgs, { cwd: BACKEND_REPO });
+  if (result.code !== 0 || !isSchemaPresent(result.stdout ?? '')) {
+    return {
+      ok: false,
+      rootCause: `Migrations reported success, but the Docker PostgreSQL container is missing "_prisma_migrations" and/or "users" — the database Prisma just migrated is not the one the API container actually uses.`,
+      suggestedFix: `Something other than Docker Compose's postgres container is answering at ${parsed.host}:${parsed.port} (commonly a native PostgreSQL install also on that port). Point DATABASE_URL at the Docker container's published port instead — the default is 15432.`,
+      nextAction: `Verify directly: docker exec patheya-express-postgres psql -U ${parsed.user} -d ${parsed.database} -c "\\dt"`,
+    };
+  }
+
+  log.ok(`Verified: PostgreSQL at ${parsed.host}:${parsed.port} has _prisma_migrations and users tables.`);
+  return { ok: true };
+}
+
 async function main() {
   const args = parseDevArgs(process.argv.slice(2));
   log.setVerbose(args.verbose);
@@ -400,6 +471,12 @@ async function main() {
 
     if (args.setup && backendPresent) {
       await runBackendMigrations(runInherit);
+      const dbVerification = await verifyDockerDatabaseSchema(runCapture);
+      if (!dbVerification.ok) {
+        log.failWithGuidance({ ...dbVerification, verbose: args.verbose });
+        process.exitCode = 1;
+        return;
+      }
     }
   } else {
     log.info('Infrastructure startup skipped (--skip-infrastructure).');
