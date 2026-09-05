@@ -13,4 +13,7 @@ export const environment: AppEnvironment = {
   mediaBaseUrl: 'https://patheya-express-api-gateway-sg.onrender.com',
   razorpayKeyId: 'rzp_test_Sop8avBtckAdw2',
   maps: { provider: 'GOOGLE_MAPS', googleMapsApiKey: '' },
+  environmentName: 'qa',
+  releaseVersion: '1.0',
+  sentryDsn: '',
 };

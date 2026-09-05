@@ -31,6 +31,18 @@
         "./libs/shared/auth-ui/src/index.ts"
       ],
       "@patheya-express-frontend/core": ["./libs/shared/core/src/index.ts"],
+      "@patheya-express-frontend/mobile-networking": [
+        "./libs/shared/mobile-networking/src/index.ts"
+      ],
+      "@patheya-express-frontend/mobile-observability": [
+        "./libs/shared/mobile-observability/src/index.ts"
+      ],
+      "@patheya-express-frontend/mobile-offline": [
+        "./libs/shared/mobile-offline/src/index.ts"
+      ],
+      "@patheya-express-frontend/mobile-security": [
+        "./libs/shared/mobile-security/src/index.ts"
+      ],
       "@patheya-express-frontend/models": ["./libs/shared/models/src/index.ts"],
       "@patheya-express-frontend/ui": ["./libs/shared/ui/src/index.ts"],
       "@patheya-express-frontend/map-picker": [
@@ -52,10 +64,18 @@
         "./libs/features/restaurant-menu/src/index.ts"
       ],
       "@patheya-express-frontend/cart": ["./libs/features/cart/src/index.ts"],
-      "@patheya-express-frontend/cart-ui": ["./libs/features/cart-ui/src/index.ts"],
-      "@patheya-express-frontend/checkout": ["./libs/features/checkout/src/index.ts"],
-      "@patheya-express-frontend/coupons": ["./libs/features/coupons/src/index.ts"],
-      "@patheya-express-frontend/addresses": ["./libs/features/addresses/src/index.ts"],
+      "@patheya-express-frontend/cart-ui": [
+        "./libs/features/cart-ui/src/index.ts"
+      ],
+      "@patheya-express-frontend/checkout": [
+        "./libs/features/checkout/src/index.ts"
+      ],
+      "@patheya-express-frontend/coupons": [
+        "./libs/features/coupons/src/index.ts"
+      ],
+      "@patheya-express-frontend/addresses": [
+        "./libs/features/addresses/src/index.ts"
+      ],
       "@patheya-express-frontend/order-details": [
         "./libs/features/order-details/src/index.ts"
       ],

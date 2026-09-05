@@ -24,21 +24,40 @@ describe('AuthStore — logout / session teardown', () => {
     return { success: true, timestamp: new Date().toISOString(), data };
   }
 
-  function seedStoredSession(overrides: { accessToken?: string; refreshToken?: string } = {}) {
-    localStorage.setItem('patheya.auth.accessToken', overrides.accessToken ?? 'access-token-1');
-    localStorage.setItem('patheya.auth.refreshToken', overrides.refreshToken ?? 'refresh-token-1');
+  function seedStoredSession(
+    overrides: { accessToken?: string; refreshToken?: string } = {},
+  ) {
+    localStorage.setItem(
+      'patheya.auth.accessToken',
+      overrides.accessToken ?? 'access-token-1',
+    );
+    localStorage.setItem(
+      'patheya.auth.refreshToken',
+      overrides.refreshToken ?? 'refresh-token-1',
+    );
     localStorage.setItem(
       'patheya.auth.user',
-      JSON.stringify({ id: 'user-1', email: 'user@example.com', role: 'CUSTOMER' }),
+      JSON.stringify({
+        id: 'user-1',
+        email: 'user@example.com',
+        role: 'CUSTOMER',
+      }),
     );
   }
 
   beforeEach(() => {
     localStorage.clear();
-    logoutSpy = jest.fn().mockResolvedValue(envelope({ message: 'Logged out successfully' }));
+    logoutSpy = jest
+      .fn()
+      .mockResolvedValue(envelope({ message: 'Logged out successfully' }));
 
     TestBed.configureTestingModule({
-      providers: [{ provide: GeneratedAuthService, useValue: { authControllerLogout: logoutSpy } }],
+      providers: [
+        {
+          provide: GeneratedAuthService,
+          useValue: { authControllerLogout: logoutSpy },
+        },
+      ],
     });
 
     store = TestBed.inject(AuthStore);
@@ -56,7 +75,9 @@ describe('AuthStore — logout / session teardown', () => {
 
     await store.logout();
 
-    expect(logoutSpy).toHaveBeenCalledWith({ body: { refreshToken: 'the-refresh-token' } });
+    expect(logoutSpy).toHaveBeenCalledWith({
+      body: { refreshToken: 'the-refresh-token' },
+    });
   });
 
   it('clears all three localStorage keys and the in-memory session', async () => {
@@ -145,7 +166,10 @@ describe('AuthStore — logout / session teardown', () => {
       // A refresh in another tab rotates the tokens but the session stays present — must not be
       // mistaken for a logout.
       localStorage.setItem('patheya.auth.accessToken', 'rotated-access-token');
-      localStorage.setItem('patheya.auth.refreshToken', 'rotated-refresh-token');
+      localStorage.setItem(
+        'patheya.auth.refreshToken',
+        'rotated-refresh-token',
+      );
       window.dispatchEvent(new Event('storage'));
 
       expect(store.isAuthenticated()).toBe(true);
@@ -160,6 +184,64 @@ describe('AuthStore — logout / session teardown', () => {
 
       expect(handler).not.toHaveBeenCalled();
       expect(logoutSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  /** M4: `RealtimeSocketService` reacts to this signal instead of polling `getAccessToken()` —
+   *  these tests exist to prove the signal actually reflects every transition a realtime consumer
+   *  needs to observe, independent of anything realtime-specific. */
+  describe('accessToken signal (M4 realtime consumption)', () => {
+    it('is null before a session is loaded', () => {
+      expect(store.accessToken()).toBeNull();
+    });
+
+    it('reflects the token restored by initialize()', () => {
+      seedStoredSession({ accessToken: 'restored-token' });
+
+      store.initialize();
+
+      expect(store.accessToken()).toBe('restored-token');
+    });
+
+    it('reflects a rotated token after a successful refreshSession()', async () => {
+      const refreshSpy = jest
+        .fn()
+        .mockResolvedValue(
+          envelope({ accessToken: 'new-token', refreshToken: 'refresh-2' }),
+        );
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({
+        providers: [
+          {
+            provide: GeneratedAuthService,
+            useValue: {
+              authControllerLogout: logoutSpy,
+              authControllerRefreshToken: refreshSpy,
+            },
+          },
+        ],
+      });
+      store = TestBed.inject(AuthStore);
+      seedStoredSession({
+        accessToken: 'old-token',
+        refreshToken: 'refresh-1',
+      });
+      store.initialize();
+
+      const refreshed = await store.refreshSession();
+
+      expect(refreshed).toBe(true);
+      expect(store.accessToken()).toBe('new-token');
+    });
+
+    it('becomes null after logout', async () => {
+      seedStoredSession();
+      store.initialize();
+      expect(store.accessToken()).not.toBeNull();
+
+      await store.logout();
+
+      expect(store.accessToken()).toBeNull();
     });
   });
 });

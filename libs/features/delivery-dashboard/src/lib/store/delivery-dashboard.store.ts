@@ -7,6 +7,7 @@ import type {
 } from '@patheya-express-frontend/api-sdk';
 import { LogoutCleanupRegistry } from '@patheya-express-frontend/auth';
 import { MobilePlatformService } from '@patheya-express-frontend/core';
+import { LoggerService } from '@patheya-express-frontend/mobile-observability';
 import { formatCurrency } from '@patheya-express-frontend/ui';
 import { DeliveryDashboardService } from '../services/delivery-dashboard.service';
 
@@ -16,7 +17,10 @@ export interface DashboardMetric {
   value: string;
 }
 
-const ACTIVE_ORDER_STATUSES: ReadonlyArray<OrderResponseDto['status']> = ['READY_FOR_PICKUP', 'OUT_FOR_DELIVERY'];
+const ACTIVE_ORDER_STATUSES: ReadonlyArray<OrderResponseDto['status']> = [
+  'READY_FOR_PICKUP',
+  'OUT_FOR_DELIVERY',
+];
 
 /**
  * Presence Heartbeat Hardening — how often the online-status Redis TTL (120s server-side, see
@@ -31,21 +35,44 @@ function isToday(isoDate: string): boolean {
   const date = new Date(isoDate);
   const now = new Date();
   return (
-    date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate()
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate()
   );
 }
 
-function buildMetrics(orders: OrderResponseDto[], pendingAssignmentsCount: number): DashboardMetric[] {
+function buildMetrics(
+  orders: OrderResponseDto[],
+  pendingAssignmentsCount: number,
+): DashboardMetric[] {
   const deliveredToday = orders.filter(
-    (order) => order.status === 'DELIVERED' && !!order.deliveredAt && isToday(order.deliveredAt),
+    (order) =>
+      order.status === 'DELIVERED' &&
+      !!order.deliveredAt &&
+      isToday(order.deliveredAt),
   );
-  const feesToday = deliveredToday.reduce((sum, order) => sum + Number(order.deliveryFee), 0);
+  const feesToday = deliveredToday.reduce(
+    (sum, order) => sum + Number(order.deliveryFee),
+    0,
+  );
 
   return [
-    { key: 'availableAssignments', label: 'Available Assignments', value: String(pendingAssignmentsCount) },
-    { key: 'completedToday', label: 'Completed Deliveries Today', value: String(deliveredToday.length) },
+    {
+      key: 'availableAssignments',
+      label: 'Available Assignments',
+      value: String(pendingAssignmentsCount),
+    },
+    {
+      key: 'completedToday',
+      label: 'Completed Deliveries Today',
+      value: String(deliveredToday.length),
+    },
     // Sum of delivery fees, not a final payout — no commission/earnings model exists yet.
-    { key: 'feesToday', label: 'Delivery Fees Today (Estimated)', value: formatCurrency(feesToday) },
+    {
+      key: 'feesToday',
+      label: 'Delivery Fees Today (Estimated)',
+      value: formatCurrency(feesToday),
+    },
   ];
 }
 
@@ -53,6 +80,7 @@ function buildMetrics(orders: OrderResponseDto[], pendingAssignmentsCount: numbe
 export class DeliveryDashboardStore {
   private readonly dashboardService = inject(DeliveryDashboardService);
   private readonly mobilePlatform = inject(MobilePlatformService);
+  private readonly logger = inject(LoggerService);
 
   private heartbeatHandle: ReturnType<typeof setInterval> | null = null;
 
@@ -80,31 +108,42 @@ export class DeliveryDashboardStore {
     // the `@capacitor/app` plugin import confined to shared/core (this workspace's existing
     // convention), rather than this feature lib depending on it directly; it's already a no-op
     // on web, so no separate isNative() guard is needed here.
-    this.mobilePlatform.onResume(() => this.onLifecycleResume('presence_app_resumed'));
+    this.mobilePlatform.onResume(() =>
+      this.onLifecycleResume('presence_app_resumed'),
+    );
 
     // Change 4 (network resilience): browser/WebView network reconnect — works identically on
     // web and inside the Capacitor WebView, no extra native plugin dependency needed.
-    window.addEventListener('online', () => this.onLifecycleResume('presence_network_reconnected'));
+    window.addEventListener('online', () =>
+      this.onLifecycleResume('presence_network_reconnected'),
+    );
   }
 
   readonly isOnline = computed(() => this._partner()?.status === 'AVAILABLE');
 
   private readonly pendingAssignmentsCount = computed(
-    () => this._assignments().filter((assignment) => assignment.status === 'PENDING').length,
+    () =>
+      this._assignments().filter(
+        (assignment) => assignment.status === 'PENDING',
+      ).length,
   );
 
   /** The accepted assignment whose order hasn't reached a terminal state yet, if any. */
-  readonly currentAssignment = computed<AssignmentOrderSummaryDto | null>(() => {
-    const active = this._assignments().find(
-      (assignment) =>
-        assignment.status === 'ACCEPTED' &&
-        !!assignment.order &&
-        ACTIVE_ORDER_STATUSES.includes(assignment.order.status),
-    );
-    return active?.order ?? null;
-  });
+  readonly currentAssignment = computed<AssignmentOrderSummaryDto | null>(
+    () => {
+      const active = this._assignments().find(
+        (assignment) =>
+          assignment.status === 'ACCEPTED' &&
+          !!assignment.order &&
+          ACTIVE_ORDER_STATUSES.includes(assignment.order.status),
+      );
+      return active?.order ?? null;
+    },
+  );
 
-  readonly metrics = computed(() => buildMetrics(this._orders(), this.pendingAssignmentsCount()));
+  readonly metrics = computed(() =>
+    buildMetrics(this._orders(), this.pendingAssignmentsCount()),
+  );
 
   async loadDashboard(): Promise<void> {
     this._loading.set(true);
@@ -131,7 +170,9 @@ export class DeliveryDashboardStore {
         this.startHeartbeat();
       }
     } catch {
-      this._error.set('Unable to load your dashboard. Make sure you have completed delivery partner registration.');
+      this._error.set(
+        'Unable to load your dashboard. Make sure you have completed delivery partner registration.',
+      );
     } finally {
       this._loading.set(false);
     }
@@ -175,14 +216,19 @@ export class DeliveryDashboardStore {
    * call while a heartbeat is already running is a guaranteed no-op, so there is never more than
    * one interval in flight no matter how many of those call sites fire.
    */
-  private startHeartbeat(intervalSeconds = DELIVERY_PRESENCE_HEARTBEAT_SECONDS): void {
+  private startHeartbeat(
+    intervalSeconds = DELIVERY_PRESENCE_HEARTBEAT_SECONDS,
+  ): void {
     if (this.heartbeatHandle) {
       return;
     }
 
     this.logHeartbeatEvent('presence_heartbeat_started', { intervalSeconds });
 
-    this.heartbeatHandle = setInterval(() => void this.sendHeartbeat(), intervalSeconds * 1000);
+    this.heartbeatHandle = setInterval(
+      () => void this.sendHeartbeat(),
+      intervalSeconds * 1000,
+    );
   }
 
   /** Change 2 (stop heartbeat) + Change 3 (logout cleanup calls this directly). Idempotent. */
@@ -208,7 +254,11 @@ export class DeliveryDashboardStore {
       await this.dashboardService.pingOnline();
       this.logHeartbeatEvent('presence_heartbeat_sent');
     } catch (error) {
-      this.logHeartbeatEvent('presence_heartbeat_failed', { reason: String(error) }, 'warn');
+      this.logHeartbeatEvent(
+        'presence_heartbeat_failed',
+        { reason: String(error) },
+        'warn',
+      );
     }
   }
 
@@ -220,7 +270,9 @@ export class DeliveryDashboardStore {
    * driver isn't currently online (no heartbeat running) — there is nothing to refresh, and this
    * must never be what starts a heartbeat on its own.
    */
-  private onLifecycleResume(event: 'presence_app_resumed' | 'presence_network_reconnected'): void {
+  private onLifecycleResume(
+    event: 'presence_app_resumed' | 'presence_network_reconnected',
+  ): void {
     if (!this.heartbeatHandle) {
       return;
     }
@@ -229,9 +281,8 @@ export class DeliveryDashboardStore {
     void this.sendHeartbeat();
   }
 
-  /** Change 7 (observability). No structured-logging service exists on this frontend today (only
-   *  UI-facing error signals) — a plain console call with the exact required fields is the
-   *  minimal way to satisfy this without inventing new logging infrastructure. */
+  /** M7: routed through the shared `LoggerService` (`libs/shared/mobile-observability`) instead of
+   *  a raw console call — see that service's doc comment for the debug/info/warn/error contract. */
   private logHeartbeatEvent(
     event: string,
     extra?: Record<string, unknown>,
@@ -239,17 +290,17 @@ export class DeliveryDashboardStore {
   ): void {
     const partner = this._partner();
 
-    const payload = {
-      event,
+    const metadata = {
+      feature: 'delivery-dashboard',
       userId: partner?.userId,
       deliveryPartnerId: partner?.id,
       ...extra,
     };
 
     if (level === 'warn') {
-      console.warn(payload);
+      this.logger.warn(event, metadata);
     } else {
-      console.info(payload);
+      this.logger.info(event, metadata);
     }
   }
 }

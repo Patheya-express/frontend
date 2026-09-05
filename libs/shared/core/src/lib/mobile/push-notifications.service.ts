@@ -1,12 +1,22 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { Capacitor } from '@capacitor/core';
-import { PushNotifications, type ActionPerformed, type PushNotificationSchema, type Token } from '@capacitor/push-notifications';
+import {
+  PushNotifications,
+  type ActionPerformed,
+  type PushNotificationSchema,
+  type Token,
+} from '@capacitor/push-notifications';
 import { LogoutCleanupRegistry } from '@patheya-express-frontend/auth';
 
 export interface PushNotificationTapped {
   data: unknown;
   notification: PushNotificationSchema;
 }
+
+/** `'unknown'` before `initialize()` has resolved a permission decision (or on web, where push
+ *  isn't offered at all). `'denied'` is sticky for the session — see `initialize()`'s doc comment
+ *  for why this deliberately never re-prompts once set. */
+export type PushPermissionState = 'unknown' | 'granted' | 'denied';
 
 /**
  * Client-side push notification foundation — no-op on web. Deliberately dumb: registers for push,
@@ -23,7 +33,9 @@ export class PushNotificationsService {
 
   private readonly _token = signal<string | null>(null);
   private readonly _tapped = signal<PushNotificationTapped | null>(null);
-  private readonly _foregroundNotification = signal<PushNotificationSchema | null>(null);
+  private readonly _foregroundNotification =
+    signal<PushNotificationSchema | null>(null);
+  private readonly _permissionState = signal<PushPermissionState>('unknown');
 
   /** The device's current push token once registration succeeds. Null on web, or on native before
    *  registration completes/if the user denied permission. */
@@ -34,6 +46,9 @@ export class PushNotificationsService {
   /** Set when a push arrives while the app is already in the foreground (no OS banner shown by
    *  default in that case) — the app decides what, if anything, to surface for this. */
   readonly foregroundNotification = this._foregroundNotification.asReadonly();
+  /** The outcome of the one permission prompt `initialize()` ever issues in a session — lets the
+   *  app show a "notifications are off" hint instead of silently doing nothing. */
+  readonly permissionState = this._permissionState.asReadonly();
 
   constructor() {
     inject(LogoutCleanupRegistry).register(() => void this.reset());
@@ -53,8 +68,10 @@ export class PushNotificationsService {
 
     const permission = await PushNotifications.requestPermissions();
     if (permission.receive !== 'granted') {
+      this._permissionState.set('denied');
       return;
     }
+    this._permissionState.set('granted');
 
     await PushNotifications.addListener('registration', (token: Token) => {
       this._token.set(token.value);
@@ -64,13 +81,22 @@ export class PushNotificationsService {
       this._token.set(null);
     });
 
-    await PushNotifications.addListener('pushNotificationReceived', (notification: PushNotificationSchema) => {
-      this._foregroundNotification.set(notification);
-    });
+    await PushNotifications.addListener(
+      'pushNotificationReceived',
+      (notification: PushNotificationSchema) => {
+        this._foregroundNotification.set(notification);
+      },
+    );
 
-    await PushNotifications.addListener('pushNotificationActionPerformed', (action: ActionPerformed) => {
-      this._tapped.set({ data: action.notification.data, notification: action.notification });
-    });
+    await PushNotifications.addListener(
+      'pushNotificationActionPerformed',
+      (action: ActionPerformed) => {
+        this._tapped.set({
+          data: action.notification.data,
+          notification: action.notification,
+        });
+      },
+    );
 
     await PushNotifications.register();
   }
@@ -90,6 +116,7 @@ export class PushNotificationsService {
     this._token.set(null);
     this._tapped.set(null);
     this._foregroundNotification.set(null);
+    this._permissionState.set('unknown');
     const wasInitialized = this.initialized;
     this.initialized = false;
 

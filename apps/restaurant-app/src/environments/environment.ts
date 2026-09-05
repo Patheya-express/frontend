@@ -8,5 +8,11 @@ export const environment: AppEnvironment = {
   mediaBaseUrl: 'http://localhost:3000',
   // Restaurant App never initiates a Razorpay checkout — not used, kept empty.
   razorpayKeyId: '',
-  maps: { provider: 'GOOGLE_MAPS', googleMapsApiKey: 'AIzaSyCbp27jnxrEf4tHQqx3o1dMMRTXtsKO2Xg' },
+  maps: {
+    provider: 'GOOGLE_MAPS',
+    googleMapsApiKey: 'AIzaSyCbp27jnxrEf4tHQqx3o1dMMRTXtsKO2Xg',
+  },
+  environmentName: 'development',
+  releaseVersion: '1.0',
+  sentryDsn: '',
 };

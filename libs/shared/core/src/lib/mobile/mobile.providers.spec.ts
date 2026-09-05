@@ -21,7 +21,10 @@ jest.mock('@capacitor/splash-screen', () => ({
   SplashScreen: { hide: jest.fn() },
 }));
 jest.mock('@capacitor/app', () => ({
-  App: { addListener: jest.fn().mockResolvedValue({ remove: jest.fn() }), exitApp: jest.fn() },
+  App: {
+    addListener: jest.fn().mockResolvedValue({ remove: jest.fn() }),
+    exitApp: jest.fn(),
+  },
 }));
 
 const mockedKeyboard = jest.mocked(Keyboard);
@@ -37,7 +40,11 @@ function configureTestBed(mobilePlatform: Partial<MobilePlatformService>) {
       { provide: Router, useValue: { navigateByUrl: jest.fn() } },
       {
         provide: MobilePlatformService,
-        useValue: { isNative: () => true, isAndroid: () => true, ...mobilePlatform },
+        useValue: {
+          isNative: () => true,
+          isAndroid: () => true,
+          ...mobilePlatform,
+        },
       },
     ],
   });
@@ -66,7 +73,9 @@ describe('provideMobilePlatform', () => {
   it('is a no-op on web — never touches native plugins, and bootstrap completes', async () => {
     configureTestBed({ isNative: () => false });
 
-    await expect(TestBed.inject(ApplicationInitStatus).donePromise).resolves.toBeUndefined();
+    await expect(
+      TestBed.inject(ApplicationInitStatus).donePromise,
+    ).resolves.toBeUndefined();
 
     expect(mockedKeyboard.setResizeMode).not.toHaveBeenCalled();
   });
@@ -78,19 +87,27 @@ describe('provideMobilePlatform', () => {
 
     expect(mockedKeyboard.setResizeMode).toHaveBeenCalledWith({ mode: 'body' });
     expect(mockedStatusBar.setStyle).toHaveBeenCalledWith({ style: 'LIGHT' });
-    expect(mockedStatusBar.setBackgroundColor).toHaveBeenCalledWith({ color: '#ffffff' });
+    expect(mockedStatusBar.setBackgroundColor).toHaveBeenCalledWith({
+      color: '#ffffff',
+    });
     expect(mockedSplashScreen.hide).toHaveBeenCalled();
   });
 
   it('does not reject bootstrap when Keyboard.setResizeMode rejects, as it does on Android with @capacitor/keyboard 8.0.5', async () => {
-    mockedKeyboard.setResizeMode.mockRejectedValue(new Error('Not implemented'));
+    mockedKeyboard.setResizeMode.mockRejectedValue(
+      new Error('Not implemented'),
+    );
     configureTestBed({});
 
-    await expect(TestBed.inject(ApplicationInitStatus).donePromise).resolves.toBeUndefined();
+    await expect(
+      TestBed.inject(ApplicationInitStatus).donePromise,
+    ).resolves.toBeUndefined();
   });
 
   it('continues running the rest of the initializer after Keyboard.setResizeMode rejects', async () => {
-    mockedKeyboard.setResizeMode.mockRejectedValue(new Error('Not implemented'));
+    mockedKeyboard.setResizeMode.mockRejectedValue(
+      new Error('Not implemented'),
+    );
     configureTestBed({});
 
     await TestBed.inject(ApplicationInitStatus).donePromise;
@@ -101,7 +118,11 @@ describe('provideMobilePlatform', () => {
   });
 
   it('tolerates any single optional native call rejecting, one at a time', async () => {
-    for (const rejecting of [mockedStatusBar.setStyle, mockedStatusBar.setBackgroundColor, mockedSplashScreen.hide]) {
+    for (const rejecting of [
+      mockedStatusBar.setStyle,
+      mockedStatusBar.setBackgroundColor,
+      mockedSplashScreen.hide,
+    ]) {
       jest.clearAllMocks();
       mockedKeyboard.setResizeMode.mockResolvedValue(undefined);
       mockedStatusBar.setStyle.mockResolvedValue(undefined);
@@ -111,7 +132,9 @@ describe('provideMobilePlatform', () => {
 
       configureTestBed({});
 
-      await expect(TestBed.inject(ApplicationInitStatus).donePromise).resolves.toBeUndefined();
+      await expect(
+        TestBed.inject(ApplicationInitStatus).donePromise,
+      ).resolves.toBeUndefined();
       TestBed.resetTestingModule();
     }
   });
@@ -127,8 +150,84 @@ describe('provideMobilePlatform', () => {
       },
     });
 
-    await expect(TestBed.inject(ApplicationInitStatus).donePromise).rejects.toThrow(
-      'unrelated configuration failure',
-    );
+    await expect(
+      TestBed.inject(ApplicationInitStatus).donePromise,
+    ).rejects.toThrow('unrelated configuration failure');
+  });
+});
+
+/**
+ * The appUrlOpen listener itself is registered unconditionally (see `provideMobilePlatform`
+ * above); what changed for M1 is that it now defers to `validateDeepLink` (mobile-security)
+ * before ever calling `router.navigateByUrl`. These tests cover that wiring specifically —
+ * `validateDeepLink`'s own allow-list logic is unit-tested in
+ * `libs/shared/mobile-security/src/lib/deep-link/deep-link-validator.spec.ts`.
+ */
+describe('appUrlOpen deep-link handling', () => {
+  function getAppUrlOpenHandler(): (event: { url: string }) => void {
+    // `App.addListener` is overloaded per event name, which makes `mock.calls` a union of
+    // per-overload tuples that TS won't let us search across with a single `===` — this mock
+    // only cares that calls are `[eventName, handler]` pairs, so that's what it's cast to.
+    const calls = mockedApp.addListener.mock.calls as unknown as Array<
+      [string, (event: { url: string }) => void]
+    >;
+    const call = calls.find(([eventName]) => eventName === 'appUrlOpen');
+    if (!call) {
+      throw new Error('appUrlOpen listener was never registered');
+    }
+    return call[1];
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockedKeyboard.setResizeMode.mockResolvedValue(undefined);
+    mockedStatusBar.setStyle.mockResolvedValue(undefined);
+    mockedStatusBar.setBackgroundColor.mockResolvedValue(undefined);
+    mockedSplashScreen.hide.mockResolvedValue(undefined);
+    mockedApp.addListener.mockResolvedValue({ remove: jest.fn() } as never);
+  });
+
+  afterEach(() => {
+    TestBed.resetTestingModule();
+  });
+
+  it('navigates the router for an allow-listed deep link', async () => {
+    const navigateByUrl = jest.fn();
+    TestBed.configureTestingModule({
+      providers: [
+        provideMobilePlatform(),
+        { provide: Location, useValue: { back: jest.fn() } },
+        { provide: Router, useValue: { navigateByUrl } },
+        {
+          provide: MobilePlatformService,
+          useValue: { isNative: () => true, isAndroid: () => true },
+        },
+      ],
+    });
+
+    await TestBed.inject(ApplicationInitStatus).donePromise;
+    getAppUrlOpenHandler()({ url: 'patheyaexpress://restaurants/abc123' });
+
+    expect(navigateByUrl).toHaveBeenCalledWith('/restaurants/abc123');
+  });
+
+  it('does not navigate when the URL fails validation — e.g. an external URL', async () => {
+    const navigateByUrl = jest.fn();
+    TestBed.configureTestingModule({
+      providers: [
+        provideMobilePlatform(),
+        { provide: Location, useValue: { back: jest.fn() } },
+        { provide: Router, useValue: { navigateByUrl } },
+        {
+          provide: MobilePlatformService,
+          useValue: { isNative: () => true, isAndroid: () => true },
+        },
+      ],
+    });
+
+    await TestBed.inject(ApplicationInitStatus).donePromise;
+    getAppUrlOpenHandler()({ url: 'https://evil.example/restaurants/abc123' });
+
+    expect(navigateByUrl).not.toHaveBeenCalled();
   });
 });

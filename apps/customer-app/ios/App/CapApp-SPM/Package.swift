@@ -19,6 +19,7 @@ let package = Package(
         .package(name: "CapacitorPushNotifications", path: "..\..\..\..\..\node_modules\.pnpm\@capacitor+push-notifications@8.1.2_@capacitor+core@8.4.2\node_modules\@capacitor\push-notifications"),
         .package(name: "CapacitorSplashScreen", path: "..\..\..\..\..\node_modules\.pnpm\@capacitor+splash-screen@8.0.2_@capacitor+core@8.4.2\node_modules\@capacitor\splash-screen"),
         .package(name: "CapacitorStatusBar", path: "..\..\..\..\..\node_modules\.pnpm\@capacitor+status-bar@8.0.3_@capacitor+core@8.4.2\node_modules\@capacitor\status-bar"),
+        .package(name: "SentryCapacitor", path: "..\..\..\..\..\node_modules\.pnpm\@sentry+capacitor@4.3.0_@ca_5a6edab934403fa5f680f596a634d223\node_modules\@sentry\capacitor"),
         .package(name: "CapacitorSecureStoragePlugin", path: "..\..\..\..\..\node_modules\.pnpm\capacitor-secure-storage-plugin@0.13.0_@capacitor+core@8.4.2\node_modules\capacitor-secure-storage-plugin")
     ],
     targets: [
@@ -34,6 +35,7 @@ let package = Package(
                 .product(name: "CapacitorPushNotifications", package: "CapacitorPushNotifications"),
                 .product(name: "CapacitorSplashScreen", package: "CapacitorSplashScreen"),
                 .product(name: "CapacitorStatusBar", package: "CapacitorStatusBar"),
+                .product(name: "SentryCapacitor", package: "SentryCapacitor"),
                 .product(name: "CapacitorSecureStoragePlugin", package: "CapacitorSecureStoragePlugin")
             ]
         )

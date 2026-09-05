@@ -1,28 +1,18 @@
 import { Location } from '@angular/common';
-import { EnvironmentProviders, inject, makeEnvironmentProviders, provideAppInitializer } from '@angular/core';
+import {
+  EnvironmentProviders,
+  inject,
+  makeEnvironmentProviders,
+  provideAppInitializer,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { App, URLOpenListenerEvent } from '@capacitor/app';
 import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
 import { SplashScreen } from '@capacitor/splash-screen';
 import { StatusBar, Style } from '@capacitor/status-bar';
+import { validateDeepLink } from '@patheya-express-frontend/mobile-security';
 import { BACK_BUTTON_OVERLAY_HANDLER } from './back-button-overlay-handler.token';
 import { MobilePlatformService } from './mobile-platform.service';
-
-/**
- * `patheyaexpress://restaurants/abc123` parses via `new URL()` with `hostname: 'restaurants'` and
- * `pathname: '/abc123'` — custom schemes have no real host, so the first path segment lands there
- * instead of in `pathname`. Reassembling `/${hostname}${pathname}` recovers the route Angular's
- * Router actually expects (`/restaurants/abc123`), matching `app.routes.ts` exactly.
- */
-function toRouterPath(url: string): string | undefined {
-  try {
-    const parsed = new URL(url);
-    const path = `/${parsed.hostname}${parsed.pathname}${parsed.search}`.replace(/\/+/g, '/');
-    return path === '/' ? undefined : path;
-  } catch {
-    return undefined;
-  }
-}
 
 /**
  * Runs an optional platform convenience (resize mode, status bar styling, hiding a splash screen
@@ -62,11 +52,15 @@ export function provideMobilePlatform(): EnvironmentProviders {
       const router = inject(Router);
       const closeTopOverlay = inject(BACK_BUTTON_OVERLAY_HANDLER);
 
-      await bestEffort(() => Keyboard.setResizeMode({ mode: KeyboardResize.Body }));
+      await bestEffort(() =>
+        Keyboard.setResizeMode({ mode: KeyboardResize.Body }),
+      );
       await bestEffort(() => StatusBar.setStyle({ style: Style.Light }));
 
       if (mobilePlatform.isAndroid()) {
-        await bestEffort(() => StatusBar.setBackgroundColor({ color: '#ffffff' }));
+        await bestEffort(() =>
+          StatusBar.setBackgroundColor({ color: '#ffffff' }),
+        );
       }
 
       // Hardware back button (Android): if a modal/bottom-sheet/dialog is open on top of the
@@ -88,11 +82,15 @@ export function provideMobilePlatform(): EnvironmentProviders {
       });
 
       // Deep links (patheyaexpress://…, registered in AndroidManifest.xml / Info.plist) — routed
-      // through the existing Router, not a separate native screen.
+      // through the existing Router, not a separate native screen. The Android intent-filter for
+      // this scheme has no host/path restriction, so the OS will hand this listener literally any
+      // `patheyaexpress://…` URI; `validateDeepLink` (libs/shared/mobile-security) is the security
+      // boundary that decides what's actually safe to navigate to before anything reaches the
+      // Router — see its doc comment for the allow-list this enforces.
       void App.addListener('appUrlOpen', (event: URLOpenListenerEvent) => {
-        const path = toRouterPath(event.url);
-        if (path) {
-          void router.navigateByUrl(path);
+        const result = validateDeepLink(event.url);
+        if (result.allowed) {
+          void router.navigateByUrl(result.routerPath);
         }
       });
 

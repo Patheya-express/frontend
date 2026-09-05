@@ -1,9 +1,33 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
-import { PartnerShellComponent, StatusChipComponent, NotificationBadgeComponent, type PartnerNavLink, type StatusChipTone } from '@patheya-express-frontend/ui';
+import {
+  PartnerShellComponent,
+  StatusChipComponent,
+  NotificationBadgeComponent,
+  type PartnerNavLink,
+  type StatusChipTone,
+} from '@patheya-express-frontend/ui';
 import { AuthFacade } from '@patheya-express-frontend/auth';
-import { RealtimeSocketService, CurrentDeliveryPartnerService, CurrentDeliveryVerificationService } from '@patheya-express-frontend/core';
-import type { DeliveryPartnerResponseDto, DeliveryVerificationResponseDto } from '@patheya-express-frontend/api-sdk';
+import {
+  RealtimeSocketService,
+  CurrentDeliveryPartnerService,
+  CurrentDeliveryVerificationService,
+  MobilePlatformService,
+  PushNotificationsService,
+  resolvePushTapRoute,
+} from '@patheya-express-frontend/core';
+import {
+  NotificationsService,
+  type DeliveryPartnerResponseDto,
+  type DeliveryVerificationResponseDto,
+} from '@patheya-express-frontend/api-sdk';
 
 const BASE_NAV_LINKS: PartnerNavLink[] = [
   { label: 'Dashboard', path: '/dashboard' },
@@ -19,9 +43,14 @@ const APPROVED_ONLY_NAV_LINKS: PartnerNavLink[] = [
   { label: 'Compliance', path: '/profile/compliance' },
 ];
 
-const VERIFICATION_NAV_LINK: PartnerNavLink = { label: 'Verification', path: '/verification' };
+const VERIFICATION_NAV_LINK: PartnerNavLink = {
+  label: 'Verification',
+  path: '/verification',
+};
 
-function stageTone(stage: DeliveryVerificationResponseDto['stage'] | undefined): StatusChipTone {
+function stageTone(
+  stage: DeliveryVerificationResponseDto['stage'] | undefined,
+): StatusChipTone {
   switch (stage) {
     case 'APPROVED':
       return 'success';
@@ -46,7 +75,12 @@ function stageTone(stage: DeliveryVerificationResponseDto['stage'] | undefined):
 @Component({
   standalone: true,
   selector: 'app-root',
-  imports: [RouterOutlet, PartnerShellComponent, StatusChipComponent, NotificationBadgeComponent],
+  imports: [
+    RouterOutlet,
+    PartnerShellComponent,
+    StatusChipComponent,
+    NotificationBadgeComponent,
+  ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -55,21 +89,33 @@ export class App {
   private readonly authFacade = inject(AuthFacade);
   private readonly router = inject(Router);
   private readonly realtimeSocketService = inject(RealtimeSocketService);
-  private readonly currentDeliveryPartnerService = inject(CurrentDeliveryPartnerService);
-  private readonly currentDeliveryVerificationService = inject(CurrentDeliveryVerificationService);
+  private readonly currentDeliveryPartnerService = inject(
+    CurrentDeliveryPartnerService,
+  );
+  private readonly currentDeliveryVerificationService = inject(
+    CurrentDeliveryVerificationService,
+  );
+  private readonly mobilePlatformService = inject(MobilePlatformService);
+  private readonly pushNotificationsService = inject(PushNotificationsService);
+  private readonly notificationsService = inject(NotificationsService);
 
   protected readonly isAuthenticated = this.authFacade.isAuthenticated;
+  protected readonly isNative = this.mobilePlatformService.isNative();
   protected readonly brandName = 'Patheya Express Courier';
   protected readonly stageTone = stageTone;
 
   private readonly _partner = signal<DeliveryPartnerResponseDto | null>(null);
-  private readonly _verification = signal<DeliveryVerificationResponseDto | null>(null);
+  private readonly _verification =
+    signal<DeliveryVerificationResponseDto | null>(null);
   private readonly _unreadNotifications = signal(0);
 
   protected readonly verification = this._verification.asReadonly();
-  protected readonly unreadNotifications = this._unreadNotifications.asReadonly();
+  protected readonly unreadNotifications =
+    this._unreadNotifications.asReadonly();
 
-  protected readonly isApproved = computed(() => this._verification()?.stage === 'APPROVED');
+  protected readonly isApproved = computed(
+    () => this._verification()?.stage === 'APPROVED',
+  );
 
   /**
    * Online Protection UI: nav items requiring approval (Profile/Vehicles/Documents/Bank/
@@ -108,6 +154,50 @@ export class App {
       // Any notification could be a verification-status change — cheap to just refresh.
       this.currentDeliveryVerificationService.invalidate();
       void this.loadHeaderData();
+    });
+
+    // Push notifications: request permission + register once signed in on native; a signed-out
+    // guest is never prompted. Independent of the realtime socket above — push is for when the app
+    // is backgrounded/killed and the socket isn't connected, not a replacement for it.
+    effect(() => {
+      if (this.isNative && this.isAuthenticated()) {
+        void this.pushNotificationsService.initialize();
+      }
+    });
+
+    // Sends the device token to the backend as soon as registration completes, and again if it
+    // ever changes.
+    effect(() => {
+      const token = this.pushNotificationsService.token();
+      const platform = this.mobilePlatformService.platform();
+
+      if (!token || platform === 'web' || !this.isAuthenticated()) {
+        return;
+      }
+
+      void this.notificationsService.notificationsControllerRegisterPushToken({
+        body: { platform, token },
+      });
+    });
+
+    // Delivery-app has no per-assignment push payload contract yet — a tap always wakes the app to
+    // the Assignments screen, which is the same authoritative REST-backed list this store already
+    // polls/refreshes. Push here is purely "wake and look" — it never carries assignment state
+    // itself (that stays in DeliveryAssignmentsStore via REST/Socket.IO, per M6's transport split).
+    effect(() => {
+      const tapped = this.pushNotificationsService.tapped();
+      if (!tapped) {
+        return;
+      }
+
+      this.pushNotificationsService.acknowledgeTap();
+
+      const routerPath = resolvePushTapRoute(tapped.data, {
+        rootSegment: 'assignments',
+      });
+      if (routerPath) {
+        void this.router.navigateByUrl(routerPath);
+      }
     });
   }
 

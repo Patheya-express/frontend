@@ -50,4 +50,8 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Required on Android 13+ (API 33) to show push notifications at all — the OS treats this as
+         a runtime-requestable permission; @capacitor/push-notifications requests it via
+         PushNotifications.requestPermissions(), which no-ops without this declaration. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>

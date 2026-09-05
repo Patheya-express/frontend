@@ -52,6 +52,14 @@ export class AuthStore {
   readonly error = this._error.asReadonly();
   readonly isAuthenticated = computed(() => !!this._accessToken());
   readonly sessionExpired = this._sessionExpired.asReadonly();
+  /**
+   * M4: the single reactive signal other layers should read to stay in sync with the current
+   * access token — added specifically so `RealtimeSocketService` can react to a token rotated by
+   * `refreshSession()` (itself unchanged) without polling `getAccessToken()` or duplicating any
+   * refresh logic. This exposes the existing private signal read-only, the same pattern already
+   * used for every other field above; nothing about how/when the token changes is altered.
+   */
+  readonly accessToken = this._accessToken.asReadonly();
 
   constructor() {
     // Same-browser tabs share localStorage: when a different tab logs out, it clears the auth
@@ -89,14 +97,20 @@ export class AuthStore {
   }
 
   async registerDeliveryPartner(dto: RegisterDto): Promise<boolean> {
-    return this.runRegistration(() => this.authService.registerDeliveryPartner(dto));
+    return this.runRegistration(() =>
+      this.authService.registerDeliveryPartner(dto),
+    );
   }
 
   async registerRestaurantOwner(dto: RegisterDto): Promise<boolean> {
-    return this.runRegistration(() => this.authService.registerRestaurantOwner(dto));
+    return this.runRegistration(() =>
+      this.authService.registerRestaurantOwner(dto),
+    );
   }
 
-  private async runRegistration(register: () => Promise<RegisterResponseDto>): Promise<boolean> {
+  private async runRegistration(
+    register: () => Promise<RegisterResponseDto>,
+  ): Promise<boolean> {
     if (this._loading()) {
       return false;
     }
@@ -106,11 +120,18 @@ export class AuthStore {
 
     try {
       const response = await register();
-      this.applySession(response.accessToken, response.refreshToken, response.user);
+      this.applySession(
+        response.accessToken,
+        response.refreshToken,
+        response.user,
+      );
       return true;
     } catch (err) {
       this._error.set(
-        extractAuthErrorMessage(err, 'Unable to create your account. The email may already be registered.'),
+        extractAuthErrorMessage(
+          err,
+          'Unable to create your account. The email may already be registered.',
+        ),
       );
       return false;
     } finally {
@@ -128,10 +149,16 @@ export class AuthStore {
 
     try {
       const response = await this.authService.login(dto);
-      this.applySession(response.accessToken, response.refreshToken, response.user);
+      this.applySession(
+        response.accessToken,
+        response.refreshToken,
+        response.user,
+      );
       return true;
     } catch (err) {
-      this._error.set(extractAuthErrorMessage(err, 'Invalid email or password.'));
+      this._error.set(
+        extractAuthErrorMessage(err, 'Invalid email or password.'),
+      );
       return false;
     } finally {
       this._loading.set(false);
@@ -199,7 +226,9 @@ export class AuthStore {
     }
 
     try {
-      const response = await this.authService.refreshToken(session.refreshToken);
+      const response = await this.authService.refreshToken(
+        session.refreshToken,
+      );
 
       this.authStorage.save({
         accessToken: response.accessToken,
@@ -233,7 +262,9 @@ export class AuthStore {
       await this.authService.forgotPassword(dto);
       return true;
     } catch (err) {
-      this._error.set(extractAuthErrorMessage(err, 'Something went wrong. Please try again.'));
+      this._error.set(
+        extractAuthErrorMessage(err, 'Something went wrong. Please try again.'),
+      );
       return false;
     } finally {
       this._loading.set(false);
@@ -248,14 +279,23 @@ export class AuthStore {
       await this.authService.resetPassword(dto);
       return true;
     } catch (err) {
-      this._error.set(extractAuthErrorMessage(err, 'This reset link is invalid or has expired.'));
+      this._error.set(
+        extractAuthErrorMessage(
+          err,
+          'This reset link is invalid or has expired.',
+        ),
+      );
       return false;
     } finally {
       this._loading.set(false);
     }
   }
 
-  private applySession(accessToken: string, refreshToken: string, user: AuthUserDto): void {
+  private applySession(
+    accessToken: string,
+    refreshToken: string,
+    user: AuthUserDto,
+  ): void {
     this.authStorage.save({ accessToken, refreshToken, user });
     this._accessToken.set(accessToken);
     this._user.set(user);

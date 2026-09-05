@@ -1,8 +1,14 @@
 <div class="delivery-assignments-page">
+  <lib-offline-banner />
+
   <h1>Assignments</h1>
 
   @if (actionError(); as message) {
-    <lib-error-state title="Action failed" [message]="message" (retry)="dismissActionError()" />
+    <lib-error-state
+      title="Action failed"
+      [message]="message"
+      (retry)="dismissActionError()"
+    />
   }
 
   @if (loading()) {
@@ -13,13 +19,26 @@
     <section class="assignments-section">
       <h2>Current Delivery</h2>
       @if (groups().active.length > 0) {
+        @if (activeAssignmentStatus() === 'stale') {
+          <p class="assignments-location-notice">
+            Showing your last known delivery status — reconnecting to confirm
+            it's still current.
+          </p>
+        }
         @if (locationStatus() === 'permission-denied') {
           <p class="assignments-location-notice">
-            Location access is off — turn it on so the customer can see your live position.
+            Location access is off — turn it on so the customer can see your
+            live position.
           </p>
         } @else if (locationStatus() === 'unavailable') {
           <p class="assignments-location-notice">
-            Can't get a GPS fix right now — your live position won't update until signal returns.
+            Can't get a GPS fix right now — your live position won't update
+            until signal returns.
+          </p>
+        } @else if (locationStatus() === 'paused') {
+          <p class="assignments-location-notice">
+            Live location pauses while the app is in the background — reopen it
+            to keep sharing your position.
           </p>
         }
         <div class="assignments-list">
@@ -27,6 +46,10 @@
             <lib-assignment-card [assignment]="assignment" />
           }
         </div>
+      } @else if (activeAssignmentStatus() === 'offline') {
+        <p class="assignments-section-empty">
+          You're offline — can't check for an active delivery right now.
+        </p>
       } @else {
         <p class="assignments-section-empty">No active delivery right now.</p>
       }

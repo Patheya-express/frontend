@@ -38,7 +38,7 @@ business-logic changes, no new UI — this is packaging + platform plumbing only
   `environment.mobile.ts` + `mobile` build configuration was added alongside them, for one reason:
   a native shell (emulator or physical device) cannot resolve the host machine's `localhost`, so
   it needs a real reachable origin. It points at the same QA origin `environment.qa.ts` already
-  uses. Nothing about the environment *mechanism* changed.
+  uses. Nothing about the environment _mechanism_ changed.
 - **Safe-area and viewport** are additive-only: `viewport-fit=cover` was added to each mobile
   app's `index.html` (harmless on web/desktop) and a set of opt-in `--safe-area-*` CSS custom
   properties + `.safe-area-*` utility classes were added to the shared `theme.scss` (used by all
@@ -128,16 +128,16 @@ libs/shared/core/src/lib/mobile/
 
 `android/` and `ios/` are committed (same convention as React Native/Capacitor projects generally
 — they hold platform-specific config, icons, permissions that aren't regeneratable from nothing).
-Their *build output* (`build/`, `Pods/`, `DerivedData/`, `xcuserdata/`, etc.) and signing secrets
+Their _build output_ (`build/`, `Pods/`, `DerivedData/`, `xcuserdata/`, etc.) and signing secrets
 (`keystore.properties`, `*.jks`, `exportOptions.plist`) are gitignored — see `.gitignore`.
 
 ## 5. Application IDs, names, versioning
 
-| App              | Bundle/Application ID          | Display name                | minSdk / compileSdk / targetSdk |
-|-------------------|--------------------------------|------------------------------|----------------------------------|
-| customer-app       | `com.patheyaexpress.customer` | Patheya Express              | 24 / 36 / 36 |
-| restaurant-app     | `com.patheyaexpress.partner`  | Patheya Express Partner      | 24 / 36 / 36 |
-| delivery-app       | `com.patheyaexpress.delivery` | Patheya Express Delivery     | 24 / 36 / 36 |
+| App            | Bundle/Application ID         | Display name             | minSdk / compileSdk / targetSdk |
+| -------------- | ----------------------------- | ------------------------ | ------------------------------- |
+| customer-app   | `com.patheyaexpress.customer` | Patheya Express          | 24 / 36 / 36                    |
+| restaurant-app | `com.patheyaexpress.partner`  | Patheya Express Partner  | 24 / 36 / 36                    |
+| delivery-app   | `com.patheyaexpress.delivery` | Patheya Express Delivery | 24 / 36 / 36                    |
 
 `versionCode`/`versionName` (Android, `android/app/build.gradle`) and
 `CURRENT_PROJECT_VERSION`/`MARKETING_VERSION` (iOS, `App.xcodeproj`) start at `1`/`1.0` in all
@@ -238,10 +238,14 @@ from inside `apps/<app>/` (or `pod install` inside `ios/App/`) before opening th
   Android/iOS icons and a blank splash. Run `@capacitor/assets` (or equivalent) against real
   brand assets per app before a store submission; out of scope for "no UI" Phase 1.
   Explicitly deferred per the brief.
-- **Push notifications, deep links, native permissions (camera/location for delivery-app's live
-  tracking, etc.)** are not configured — no `@capacitor/push-notifications`,
-  `@capacitor/geolocation`, or platform manifest/entitlement changes were made. Those are
-  feature-shaped work for a later phase, not foundation.
+- **Push notifications (M6)**: `@capacitor/push-notifications` is wired in all three native apps
+  (customer/restaurant/delivery), including the Android 13+ `POST_NOTIFICATIONS` manifest
+  permission and the iOS `UIBackgroundModes: remote-notification` Info.plist key. One manual,
+  Mac-only step remains for each app before push actually works on iOS: open
+  `apps/<app>/ios/App/App.xcodeproj` in Xcode, select the App target → Signing & Capabilities →
+  "+ Capability" → "Push Notifications". This generates the `aps-environment` entitlement, which
+  can't be produced from a Windows checkout and isn't required for Android. Server-side APNs/FCM
+  key configuration is a separate backend concern, out of scope here.
 - **Real device testing of the hardware back-button handler** (`mobile.providers.ts`) hasn't
   happened — it's implemented against the documented `@capacitor/app` API but only exercised via
   a successful TypeScript compile, not a running Android device.

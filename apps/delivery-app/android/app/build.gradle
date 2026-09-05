@@ -39,7 +39,12 @@ android {
     buildTypes {
         release {
             signingConfig keystorePropertiesFile.exists() ? signingConfigs.release : signingConfigs.debug
-            minifyEnabled false
+            // M1: R8 shrinking/obfuscation for release builds. Safe without hand-written keep
+            // rules — see proguard-rules.pro for why (capacitor-android's own consumer ProGuard
+            // rules already keep every Capacitor plugin class; the one non-@capacitor plugin in
+            // this app uses direct construction, not reflection). debug is untouched by this
+            // build type and keeps its AGP default of debuggable=true, minifyEnabled=false.
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }

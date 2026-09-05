@@ -96,6 +96,8 @@
     "@capacitor/splash-screen": "^8.0.2",
     "@capacitor/status-bar": "^8.0.3",
     "@googlemaps/js-api-loader": "^2.1.1",
+    "@sentry/angular": "^10.69.0",
+    "@sentry/capacitor": "^4.3.0",
     "capacitor-secure-storage-plugin": "^0.13.0",
     "playcanvas": "^2.21.4",
     "socket.io-client": "^4.8.3"

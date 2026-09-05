@@ -6,6 +6,10 @@ packages:
 autoInstallPeers: true
 allowBuilds:
   '@parcel/watcher': true
+  # @sentry/capacitor's "build" script only (re)compiles its own TypeScript source for its own
+  # repo's CI — the published npm package already ships prebuilt dist/ output, so there's nothing
+  # this workspace needs that script to produce. Deliberately false, not left as pnpm's placeholder.
+  '@sentry/capacitor': false
   esbuild: true
   less: true
   lmdb: true

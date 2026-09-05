@@ -16,6 +16,8 @@ export class AuthFacade {
   readonly error = this.store.error;
   readonly isAuthenticated = this.store.isAuthenticated;
   readonly sessionExpired = this.store.sessionExpired;
+  /** Reactive current-access-token signal — see `AuthStore.accessToken`'s doc comment. */
+  readonly accessToken = this.store.accessToken;
 
   /** Native only — no-op on web. See `AuthStore.hydrateNativeSession()`. */
   hydrateNativeSession(): Promise<void> {

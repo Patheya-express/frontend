@@ -6,6 +6,7 @@ export class DeliveryAssignmentsFacade {
   private readonly store = inject(DeliveryAssignmentsStore);
 
   readonly groups = this.store.groups;
+  readonly activeAssignmentStatus = this.store.activeAssignmentStatus;
   readonly loading = this.store.loading;
   readonly error = this.store.error;
   readonly processingId = this.store.processingId;

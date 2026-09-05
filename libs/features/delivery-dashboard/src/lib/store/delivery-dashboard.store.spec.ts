@@ -7,7 +7,9 @@ import { DeliveryDashboardService } from '../services/delivery-dashboard.service
 
 const HEARTBEAT_MS = 60_000;
 
-function buildPartner(overrides: Partial<DeliveryPartnerResponseDto> = {}): DeliveryPartnerResponseDto {
+function buildPartner(
+  overrides: Partial<DeliveryPartnerResponseDto> = {},
+): DeliveryPartnerResponseDto {
   return {
     id: 'partner-1',
     userId: 'user-1',
@@ -39,11 +41,17 @@ describe('DeliveryDashboardStore — Presence Heartbeat Hardening', () => {
     resumeCallback = undefined;
 
     dashboardService = {
-      getPartner: jest.fn().mockResolvedValue(buildPartner({ status: 'OFFLINE' })),
+      getPartner: jest
+        .fn()
+        .mockResolvedValue(buildPartner({ status: 'OFFLINE' })),
       getAssignedOrders: jest.fn().mockResolvedValue([]),
       getMyAssignments: jest.fn().mockResolvedValue([]),
-      goOnline: jest.fn().mockResolvedValue(buildPartner({ status: 'AVAILABLE' })),
-      goOffline: jest.fn().mockResolvedValue(buildPartner({ status: 'OFFLINE' })),
+      goOnline: jest
+        .fn()
+        .mockResolvedValue(buildPartner({ status: 'AVAILABLE' })),
+      goOffline: jest
+        .fn()
+        .mockResolvedValue(buildPartner({ status: 'OFFLINE' })),
       pingOnline: jest.fn().mockResolvedValue(undefined),
     };
 
@@ -164,7 +172,9 @@ describe('DeliveryDashboardStore — Presence Heartbeat Hardening', () => {
 
   it('a failed heartbeat is logged and retried naturally on the next interval, never flips the driver offline', async () => {
     const store = TestBed.inject(DeliveryDashboardStore);
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const warnSpy = jest
+      .spyOn(console, 'warn')
+      .mockImplementation(() => undefined);
 
     dashboardService.pingOnline
       .mockRejectedValueOnce(new Error('network blip'))
@@ -175,7 +185,10 @@ describe('DeliveryDashboardStore — Presence Heartbeat Hardening', () => {
     jest.advanceTimersByTime(HEARTBEAT_MS);
     await flush();
     expect(dashboardService.pingOnline).toHaveBeenCalledTimes(1);
-    expect(warnSpy).toHaveBeenCalledWith(expect.objectContaining({ event: 'presence_heartbeat_failed' }));
+    expect(warnSpy).toHaveBeenCalledWith(
+      'presence_heartbeat_failed',
+      expect.objectContaining({ feature: 'delivery-dashboard' }),
+    );
     // Never flips isOnline() based on a failed ping — that signal is driven by partner.status only.
     expect(store.isOnline()).toBe(true);
 
@@ -215,7 +228,9 @@ describe('DeliveryDashboardStore — Presence Heartbeat Hardening', () => {
   });
 
   it('loadDashboard() restarts the heartbeat if the partner is already AVAILABLE (survives app relaunch)', async () => {
-    dashboardService.getPartner.mockResolvedValue(buildPartner({ status: 'AVAILABLE' }));
+    dashboardService.getPartner.mockResolvedValue(
+      buildPartner({ status: 'AVAILABLE' }),
+    );
     const store = TestBed.inject(DeliveryDashboardStore);
 
     await store.loadDashboard();

@@ -1,5 +1,16 @@
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject } from '@angular/core';
-import { EmptyStateComponent, ErrorStateComponent, SkeletonComponent } from '@patheya-express-frontend/ui';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnDestroy,
+  OnInit,
+  inject,
+} from '@angular/core';
+import {
+  EmptyStateComponent,
+  ErrorStateComponent,
+  OfflineBannerComponent,
+  SkeletonComponent,
+} from '@patheya-express-frontend/ui';
 import { DeliveryAssignmentsFacade } from '../../facades/delivery-assignments.facade';
 import { AssignmentCardComponent } from '../../components/assignment-card/assignment-card.component';
 import { ProofOtpDialogComponent } from '../../components/proof-otp-dialog/proof-otp-dialog.component';
@@ -7,7 +18,14 @@ import { ProofOtpDialogComponent } from '../../components/proof-otp-dialog/proof
 @Component({
   selector: 'lib-delivery-assignments-page',
   standalone: true,
-  imports: [SkeletonComponent, EmptyStateComponent, ErrorStateComponent, AssignmentCardComponent, ProofOtpDialogComponent],
+  imports: [
+    SkeletonComponent,
+    EmptyStateComponent,
+    ErrorStateComponent,
+    OfflineBannerComponent,
+    AssignmentCardComponent,
+    ProofOtpDialogComponent,
+  ],
   templateUrl: './delivery-assignments-page.component.html',
   styleUrl: './delivery-assignments-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -16,6 +34,8 @@ export class DeliveryAssignmentsPageComponent implements OnInit, OnDestroy {
   private readonly facade = inject(DeliveryAssignmentsFacade);
 
   protected readonly groups = this.facade.groups;
+  protected readonly activeAssignmentStatus =
+    this.facade.activeAssignmentStatus;
   protected readonly loading = this.facade.loading;
   protected readonly error = this.facade.error;
   protected readonly actionError = this.facade.actionError;

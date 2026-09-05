@@ -28,6 +28,14 @@
 	     @capacitor/geolocation when a delivery partner has an active out-for-delivery order. -->
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Patheya Express Delivery uses your location to share your live position with customers while you're delivering their order.</string>
+	<!-- Required for @capacitor/push-notifications to deliver silent/background pushes. The
+	     "Push Notifications" capability itself (which generates the aps-environment entitlement)
+	     still has to be added in Xcode — see docs/mobile/CAPACITOR.md for that manual step, since
+	     it can't be done from this Windows checkout. -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

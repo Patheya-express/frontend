@@ -1,7 +1,16 @@
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
-import type { DeliveryAssignmentResponseDto, OrderResponseDto } from '@patheya-express-frontend/api-sdk';
+import type {
+  DeliveryAssignmentResponseDto,
+  OrderResponseDto,
+} from '@patheya-express-frontend/api-sdk';
 import { LogoutCleanupRegistry } from '@patheya-express-frontend/auth';
-import { extractHttpErrorMessage } from '@patheya-express-frontend/core';
+import {
+  MobilePlatformService,
+  extractHttpErrorMessage,
+} from '@patheya-express-frontend/core';
+import { classifyNetworkError } from '@patheya-express-frontend/mobile-networking';
+import { NetworkStatusService } from '@patheya-express-frontend/ui';
+import { ActiveAssignmentCacheService } from '../services/active-assignment-cache.service';
 import { CourierLocationService } from '../services/courier-location.service';
 import { DeliveryAssignmentsService } from '../services/delivery-assignments.service';
 
@@ -12,6 +21,27 @@ export interface AssignmentGroups {
 }
 
 export type ProofType = 'pickup' | 'delivery';
+
+/**
+ * Whether the currently-displayed active assignment (`groups().active`) can be trusted as
+ * current, per M3's stale-data policy:
+ *  - `'fresh'`   — came directly from the most recent successful backend fetch.
+ *  - `'stale'`   — being shown from a local cache restore, or kept on screen after a failed
+ *                  revalidation attempt (M3.7: a failed refresh must never delete useful state,
+ *                  it just can no longer vouch for it).
+ *  - `'offline'` — no active assignment to show, and the device is currently offline — distinct
+ *                  from `'empty'` so the UI can say "can't check right now" rather than
+ *                  "confirmed: nothing active."
+ *  - `'empty'`   — confirmed, while online, that there is no active assignment.
+ *  - `'error'`   — the initial load failed, there is no cached fallback, and the device isn't
+ *                  reporting offline (e.g. a 5xx) — nothing useful can be shown.
+ */
+export type ActiveAssignmentStatus =
+  | 'fresh'
+  | 'stale'
+  | 'offline'
+  | 'empty'
+  | 'error';
 
 /** Drives the Pickup/Delivery OTP dialog. One dialog can be open at a time, for one assignment. */
 export interface OtpDialogState {
@@ -26,11 +56,19 @@ export interface OtpDialogState {
   error: string | null;
 }
 
-const TERMINAL_ORDER_STATUSES: ReadonlyArray<OrderResponseDto['status']> = ['DELIVERED', 'CANCELLED'];
+const TERMINAL_ORDER_STATUSES: ReadonlyArray<OrderResponseDto['status']> = [
+  'DELIVERED',
+  'CANCELLED',
+];
 
 const POLL_INTERVAL_MS = 15_000;
 
-function buildGroups(assignments: DeliveryAssignmentResponseDto[]): AssignmentGroups {
+const OFFLINE_MUTATION_MESSAGE =
+  "You're offline — reconnect to update this delivery.";
+
+function buildGroups(
+  assignments: DeliveryAssignmentResponseDto[],
+): AssignmentGroups {
   const groups: AssignmentGroups = { active: [], available: [], completed: [] };
 
   for (const assignment of assignments) {
@@ -52,6 +90,9 @@ function buildGroups(assignments: DeliveryAssignmentResponseDto[]): AssignmentGr
 export class DeliveryAssignmentsStore {
   private readonly assignmentsService = inject(DeliveryAssignmentsService);
   private readonly courierLocationService = inject(CourierLocationService);
+  private readonly activeAssignmentCache = inject(ActiveAssignmentCacheService);
+  private readonly networkStatus = inject(NetworkStatusService);
+  private readonly mobilePlatform = inject(MobilePlatformService);
 
   private readonly _assignments = signal<DeliveryAssignmentResponseDto[]>([]);
   private readonly _loading = signal(false);
@@ -60,7 +101,16 @@ export class DeliveryAssignmentsStore {
   private readonly _actionError = signal<string | null>(null);
   private readonly _otpDialog = signal<OtpDialogState | null>(null);
 
+  /** `null` until the first fetch attempt resolves one way or another. See `ActiveAssignmentStatus`. */
+  private readonly _activeAssignmentSource = signal<'fresh' | 'cache' | null>(
+    null,
+  );
+
   private pollHandle: ReturnType<typeof setInterval> | null = null;
+  /** Shared by every fetch entry point (poll tick, manual refresh, resume, reconnect) so they
+   *  coalesce onto one in-flight request instead of firing concurrent duplicate GETs — same
+   *  single-flight idiom `authInterceptor` uses for token refresh. */
+  private fetchInFlight: Promise<void> | null = null;
 
   readonly loading = this._loading.asReadonly();
   readonly error = this._error.asReadonly();
@@ -68,13 +118,33 @@ export class DeliveryAssignmentsStore {
   readonly actionError = this._actionError.asReadonly();
   readonly otpDialog = this._otpDialog.asReadonly();
 
-  readonly groups = computed<AssignmentGroups>(() => buildGroups(this._assignments()));
+  readonly groups = computed<AssignmentGroups>(() =>
+    buildGroups(this._assignments()),
+  );
+
+  readonly activeAssignmentStatus = computed<ActiveAssignmentStatus>(() => {
+    const hasActive = this.groups().active.length > 0;
+    const source = this._activeAssignmentSource();
+
+    if (hasActive) {
+      return source === 'fresh' ? 'fresh' : 'stale';
+    }
+    if (this._error()) {
+      return 'error';
+    }
+    return this.networkStatus.isOffline() ? 'offline' : 'empty';
+  });
 
   /** The one order (if any) the customer app is currently able to show a live map for — see
    *  `OrderDetailsStore`/`live-tracking-map.component.ts`, which only render it once the order is
-   *  `OUT_FOR_DELIVERY`. Sending GPS before that point would never reach a UI that displays it. */
+   *  `OUT_FOR_DELIVERY`. Sending GPS before that point would never reach a UI that displays it.
+   *  Intentionally not gated on `activeAssignmentStatus` — a cache-restored active assignment
+   *  that's genuinely `OUT_FOR_DELIVERY` is exactly the case worth resuming GPS for (e.g. the
+   *  partner's phone restarted mid-delivery and just reconnected). */
   private readonly trackableOrderId = computed<string | null>(() => {
-    const trackable = this.groups().active.find((assignment) => assignment.order?.status === 'OUT_FOR_DELIVERY');
+    const trackable = this.groups().active.find(
+      (assignment) => assignment.order?.status === 'OUT_FOR_DELIVERY',
+    );
     return trackable?.order?.id ?? null;
   });
 
@@ -85,7 +155,13 @@ export class DeliveryAssignmentsStore {
   constructor() {
     // Without this, a delivery partner who logs out while this page is mounted keeps polling
     // `getAssignments()` against an invalid session until the component happens to be destroyed.
-    inject(LogoutCleanupRegistry).register(() => this.stopPolling());
+    // The active-assignment cache is scoped per-device, not per-account (see class doc comment on
+    // ActiveAssignmentCacheService) — clearing it on logout keeps a subsequent user of the same
+    // device from seeing a previous partner's cached delivery.
+    inject(LogoutCleanupRegistry).register(() => {
+      this.stopPolling();
+      void this.activeAssignmentCache.clear();
+    });
 
     // Starts/stops sending live GPS as the active assignment enters/leaves OUT_FOR_DELIVERY —
     // AUDIT-016. `CourierLocationService.start` is itself a no-op if already tracking this exact
@@ -98,21 +174,17 @@ export class DeliveryAssignmentsStore {
         void this.courierLocationService.stop();
       }
     });
+
+    // M3.8/M3.9 — app resume and network-reconnect both trigger a *controlled* revalidation
+    // (silent, coalesced via `fetchInFlight`) only when the currently-shown data isn't already
+    // confirmed fresh; mirrors DeliveryDashboardStore's existing onResume/'online' pattern exactly
+    // rather than introducing a second lifecycle mechanism.
+    this.mobilePlatform.onResume(() => this.revalidateIfNotFresh());
+    window.addEventListener('online', () => this.revalidateIfNotFresh());
   }
 
   async loadAssignments(): Promise<void> {
-    this._loading.set(true);
-    this._error.set(null);
-
-    try {
-      const assignments = await this.assignmentsService.getAssignments();
-      this._assignments.set(assignments);
-    } catch {
-      this._error.set('Unable to load your assignments. Please try again.');
-      this._assignments.set([]);
-    } finally {
-      this._loading.set(false);
-    }
+    await this.fetchAssignments({ showLoading: true });
   }
 
   /** Loads immediately, then refreshes in the background on an interval. Safe to call more than once. */
@@ -122,7 +194,10 @@ export class DeliveryAssignmentsStore {
     }
 
     void this.loadAssignments();
-    this.pollHandle = setInterval(() => void this.refreshSilently(), intervalMs);
+    this.pollHandle = setInterval(
+      () => void this.refreshSilently(),
+      intervalMs,
+    );
   }
 
   stopPolling(): void {
@@ -132,14 +207,112 @@ export class DeliveryAssignmentsStore {
     }
   }
 
-  private async refreshSilently(): Promise<void> {
+  private refreshSilently(): Promise<void> {
+    return this.fetchAssignments({ showLoading: false });
+  }
+
+  private revalidateIfNotFresh(): void {
+    if (this._activeAssignmentSource() === 'fresh') {
+      return; // already confirmed current — an extra fetch here would just be noise
+    }
+    void this.refreshSilently();
+  }
+
+  /**
+   * The single path every fetch trigger (poll tick, manual refresh, resume, reconnect) funnels
+   * through — `fetchInFlight` ensures they coalesce onto one outstanding request rather than
+   * firing concurrent duplicate GETs (M3.9). `showLoading` controls only the *foreground*
+   * loading/error UI, matching `loadAssignments()`'s pre-M3 contract exactly; the underlying
+   * fetch-and-cache-and-classify behavior is identical either way.
+   */
+  private fetchAssignments(options: { showLoading: boolean }): Promise<void> {
+    if (this.fetchInFlight) {
+      return this.fetchInFlight;
+    }
+
+    this.fetchInFlight = this.doFetchAssignments(options).finally(() => {
+      this.fetchInFlight = null;
+    });
+    return this.fetchInFlight;
+  }
+
+  private async doFetchAssignments(options: {
+    showLoading: boolean;
+  }): Promise<void> {
+    if (options.showLoading) {
+      this._loading.set(true);
+      this._error.set(null);
+    }
+
     try {
       const assignments = await this.assignmentsService.getAssignments();
       this._assignments.set(assignments);
       this._error.set(null);
-    } catch {
-      // A transient background refresh failure shouldn't blank out an already-loaded
-      // list with an error state; the next successful poll tick recovers silently.
+      this._activeAssignmentSource.set('fresh');
+      await this.syncActiveAssignmentCache(assignments);
+    } catch (error) {
+      await this.handleFetchFailure(error, options.showLoading);
+    } finally {
+      if (options.showLoading) {
+        this._loading.set(false);
+      }
+    }
+  }
+
+  /**
+   * M3.6/M3.7: a failed fetch must never fabricate an error out of a cancellation, and must
+   * preserve whatever useful data is already on screen (in-memory or cache-restored) rather than
+   * blanking it — only a true cold start with nothing cached at all reaches the empty/error case.
+   */
+  private async handleFetchFailure(
+    error: unknown,
+    hadLoadingIndicator: boolean,
+  ): Promise<void> {
+    if (classifyNetworkError(error) === 'canceled') {
+      return; // superseded by a newer request elsewhere — nothing to report
+    }
+
+    if (this._assignments().length > 0) {
+      this._activeAssignmentSource.set('cache');
+      return;
+    }
+
+    // M3.2: a cache read must never crash the application — `OfflineCache` itself already fails
+    // safe, but this doesn't lean on that alone, in case a future/alternate cache implementation
+    // doesn't uphold the same guarantee.
+    const cached = await this.activeAssignmentCache.read().catch(() => null);
+    if (cached) {
+      this._assignments.set([cached.data]);
+      this._activeAssignmentSource.set('cache');
+      return;
+    }
+
+    this._activeAssignmentSource.set(null);
+    // M3.4: offline-with-nothing-cached is its own explicit status (see `activeAssignmentStatus`),
+    // not a generic error — only set the error message when something *other* than connectivity
+    // is why nothing could be shown (a 5xx, an unexpected failure).
+    if (hadLoadingIndicator && !this.networkStatus.isOffline()) {
+      this._error.set('Unable to load your assignments. Please try again.');
+    }
+    // A silent background failure with nothing cached intentionally sets no `_error` — matches
+    // the pre-M3 `refreshSilently` contract: a transient poll failure shouldn't blank the screen
+    // into an error state the next successful tick would just clear again.
+  }
+
+  /**
+   * M3.5's lifecycle rules in one place: written after any successful fetch or mutation that
+   * changes whether an active assignment exists; cleared the moment the backend-confirmed state
+   * has none. Always derives from the caller's own already-authoritative `assignments` snapshot —
+   * never invents a transition the backend hasn't already confirmed.
+   */
+  private async syncActiveAssignmentCache(
+    assignments: DeliveryAssignmentResponseDto[],
+  ): Promise<void> {
+    const active = buildGroups(assignments).active[0];
+    if (active) {
+      await this.activeAssignmentCache.write(active);
+    } else {
+      await this.activeAssignmentCache.clear();
     }
   }
 
@@ -185,6 +358,15 @@ export class DeliveryAssignmentsStore {
       return;
     }
 
+    if (this.networkStatus.isOffline()) {
+      this._otpDialog.set({
+        ...dialog,
+        generating: false,
+        error: OFFLINE_MUTATION_MESSAGE,
+      });
+      return;
+    }
+
     this._otpDialog.set({ ...dialog, generating: true, error: null });
 
     try {
@@ -205,7 +387,10 @@ export class DeliveryAssignmentsStore {
       this._otpDialog.set({
         ...dialog,
         generating: false,
-        error: extractHttpErrorMessage(error, 'Unable to send a new code. Please try again.'),
+        error: extractHttpErrorMessage(
+          error,
+          'Unable to send a new code. Please try again.',
+        ),
       });
     }
   }
@@ -217,15 +402,27 @@ export class DeliveryAssignmentsStore {
       return;
     }
 
+    if (this.networkStatus.isOffline()) {
+      this._otpDialog.set({ ...dialog, error: OFFLINE_MUTATION_MESSAGE });
+      return;
+    }
+
     this._otpDialog.set({ ...dialog, verifying: true, error: null });
 
     try {
       const result =
         dialog.type === 'pickup'
           ? await this.assignmentsService.verifyPickupOtp(dialog.orderId, code)
-          : await this.assignmentsService.verifyDeliveryOtp(dialog.orderId, code);
+          : await this.assignmentsService.verifyDeliveryOtp(
+              dialog.orderId,
+              code,
+            );
 
-      this.replaceAssignmentOrderStatus(dialog.assignmentId, result.orderStatus);
+      this.replaceAssignmentOrderStatus(
+        dialog.assignmentId,
+        result.orderStatus,
+      );
+      await this.syncActiveAssignmentCache(this._assignments());
       this._otpDialog.set(null);
     } catch (error) {
       const current = this._otpDialog();
@@ -235,13 +432,21 @@ export class DeliveryAssignmentsStore {
       this._otpDialog.set({
         ...current,
         verifying: false,
-        error: extractHttpErrorMessage(error, 'Unable to verify this code. Please try again.'),
+        error: extractHttpErrorMessage(
+          error,
+          'Unable to verify this code. Please try again.',
+        ),
       });
     }
   }
 
-  private async openOtpDialog(assignmentId: string, type: ProofType): Promise<void> {
-    const assignment = this._assignments().find((item) => item.id === assignmentId);
+  private async openOtpDialog(
+    assignmentId: string,
+    type: ProofType,
+  ): Promise<void> {
+    const assignment = this._assignments().find(
+      (item) => item.id === assignmentId,
+    );
     if (!assignment?.order) {
       return;
     }
@@ -261,7 +466,10 @@ export class DeliveryAssignmentsStore {
     await this.regenerateOtp();
   }
 
-  private replaceAssignmentOrderStatus(assignmentId: string, status: OrderResponseDto['status']): void {
+  private replaceAssignmentOrderStatus(
+    assignmentId: string,
+    status: OrderResponseDto['status'],
+  ): void {
     this._assignments.update((assignments) =>
       assignments.map((assignment) =>
         assignment.id === assignmentId && assignment.order
@@ -286,14 +494,27 @@ export class DeliveryAssignmentsStore {
    * `processingId`/`actionError` are shared across every transition kind on purpose — only one
    * transition can be in flight for a given assignment at a time, so a single pair of signals
    * covers accept, reject, pickup, and delivery without new per-action state.
+   *
+   * M3.10: this is the *only* mutation path in this store, and offline is checked before any
+   * optimistic change or network call — there is no offline queue, and a mutation attempted while
+   * offline is refused up front rather than attempted-and-rolled-back.
    */
   private async transitionAssignment(
     assignmentId: string,
-    applyOptimistic: (assignment: DeliveryAssignmentResponseDto) => DeliveryAssignmentResponseDto,
+    applyOptimistic: (
+      assignment: DeliveryAssignmentResponseDto,
+    ) => DeliveryAssignmentResponseDto,
     action: (original: DeliveryAssignmentResponseDto) => Promise<void>,
   ): Promise<void> {
-    const original = this._assignments().find((assignment) => assignment.id === assignmentId);
+    const original = this._assignments().find(
+      (assignment) => assignment.id === assignmentId,
+    );
     if (!original) {
+      return;
+    }
+
+    if (this.networkStatus.isOffline()) {
+      this._actionError.set(OFFLINE_MUTATION_MESSAGE);
       return;
     }
 
@@ -303,17 +524,25 @@ export class DeliveryAssignmentsStore {
     try {
       await action(original);
       this._actionError.set(null);
+      await this.syncActiveAssignmentCache(this._assignments());
     } catch {
       this.replaceAssignment(assignmentId, original);
-      this._actionError.set('Unable to update this assignment. Please try again.');
+      this._actionError.set(
+        'Unable to update this assignment. Please try again.',
+      );
     } finally {
       this._processingId.set(null);
     }
   }
 
-  private replaceAssignment(assignmentId: string, replacement: DeliveryAssignmentResponseDto): void {
+  private replaceAssignment(
+    assignmentId: string,
+    replacement: DeliveryAssignmentResponseDto,
+  ): void {
     this._assignments.update((assignments) =>
-      assignments.map((assignment) => (assignment.id === assignmentId ? replacement : assignment)),
+      assignments.map((assignment) =>
+        assignment.id === assignmentId ? replacement : assignment,
+      ),
     );
   }
 }

@@ -9,14 +9,11 @@ import type { AppEnvironment } from '@patheya-express-frontend/core';
 export const environment: AppEnvironment = {
   production: true,
 
-  apiBaseUrl:
-    'https://patheya-express-api-gateway-qa.onrender.com',
+  apiBaseUrl: 'https://patheya-express-api-gateway-qa.onrender.com',
 
-  socketUrl:
-    'https://patheya-express-api-gateway-qa.onrender.com',
+  socketUrl: 'https://patheya-express-api-gateway-qa.onrender.com',
 
-  mediaBaseUrl:
-    'https://patheya-express-api-gateway-qa.onrender.com',
+  mediaBaseUrl: 'https://patheya-express-api-gateway-qa.onrender.com',
 
   razorpayKeyId: 'rzp_test_Sop8avBtckAdw2',
 
@@ -24,4 +21,9 @@ export const environment: AppEnvironment = {
     provider: 'GOOGLE_MAPS',
     googleMapsApiKey: '',
   },
+
+  environmentName: 'staging',
+  releaseVersion: '1.0',
+  // Set to this app's real Sentry DSN before this environment is actually deployed to.
+  sentryDsn: '',
 };

@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import {
   AppShellComponent,
@@ -17,11 +24,15 @@ import {
   MediaUrlService,
   MobilePlatformService,
   PushNotificationsService,
+  resolvePushTapRoute,
 } from '@patheya-express-frontend/core';
 import { NotificationsService } from '@patheya-express-frontend/api-sdk';
 import { CustomerProfileFacade } from '@patheya-express-frontend/customer-profile';
 import { CustomerNotificationsFacade } from '@patheya-express-frontend/customer-notifications';
-import { AddressPickerComponent, AddressesFacade } from '@patheya-express-frontend/addresses';
+import {
+  AddressPickerComponent,
+  AddressesFacade,
+} from '@patheya-express-frontend/addresses';
 import {
   CartCheckoutBarComponent,
   CartConflictDialogComponent,
@@ -50,7 +61,9 @@ export class App {
   private readonly authFacade = inject(AuthFacade);
   private readonly cartFacade = inject(CartFacade);
   private readonly customerProfileFacade = inject(CustomerProfileFacade);
-  private readonly customerNotificationsFacade = inject(CustomerNotificationsFacade);
+  private readonly customerNotificationsFacade = inject(
+    CustomerNotificationsFacade,
+  );
   private readonly mediaUrlService = inject(MediaUrlService);
   private readonly router = inject(Router);
   private readonly dialogService = inject(DialogService);
@@ -64,14 +77,17 @@ export class App {
   protected readonly isNative = this.mobilePlatformService.isNative();
   protected readonly isAuthenticated = this.authFacade.isAuthenticated;
   protected readonly cartItemCount = this.cartFacade.totalItems;
-  protected readonly notificationCount = this.customerNotificationsFacade.unreadCount;
+  protected readonly notificationCount =
+    this.customerNotificationsFacade.unreadCount;
   protected readonly cartOpen = signal(false);
   protected readonly deliveryLocationLabel = signal('Select a location');
 
   protected readonly avatarUrl = computed(() =>
     this.mediaUrlService.resolve(this.customerProfileFacade.avatarUrl()),
   );
-  protected readonly firstName = computed(() => this.customerProfileFacade.profile()?.firstName ?? '');
+  protected readonly firstName = computed(
+    () => this.customerProfileFacade.profile()?.firstName ?? '',
+  );
 
   private addressSheetRef?: OverlayRef;
 
@@ -97,7 +113,9 @@ export class App {
         return;
       }
 
-      this.deliveryLocationLabel.set(selected.customLabel ?? selected.addressLine1);
+      this.deliveryLocationLabel.set(
+        selected.customLabel ?? selected.addressLine1,
+      );
       this.addressSheetRef.close();
       this.addressSheetRef = undefined;
     });
@@ -111,7 +129,9 @@ export class App {
       if (this.authFacade.sessionExpired()) {
         const redirectTo = this.router.url;
         this.authFacade.acknowledgeSessionExpiry();
-        void this.router.navigate(['/auth/login'], { queryParams: { redirectTo } });
+        void this.router.navigate(['/auth/login'], {
+          queryParams: { redirectTo },
+        });
       }
     });
 
@@ -134,12 +154,17 @@ export class App {
         return;
       }
 
-      void this.notificationsService.notificationsControllerRegisterPushToken({ body: { platform, token } });
+      void this.notificationsService.notificationsControllerRegisterPushToken({
+        body: { platform, token },
+      });
     });
 
     // Tapping a push (from background or a killed-app cold launch) routes straight to that
     // notification and marks it read. Payload contract (`data.notificationId`) is documented for
-    // the backend team in the Sprint 5 report; a missing id falls back to the notification list.
+    // the backend team in the Sprint 5 report. Navigation goes through `resolvePushTapRoute` (which
+    // reuses the M1 mobile-security deep-link validator) rather than handing the untrusted payload
+    // id straight to the router — see that function's doc comment for why an invalid/missing id
+    // falls back to the bare notification list instead of refusing to navigate outright.
     effect(() => {
       const tapped = this.pushNotificationsService.tapped();
       if (!tapped) {
@@ -148,12 +173,18 @@ export class App {
 
       this.pushNotificationsService.acknowledgeTap();
 
-      const notificationId = (tapped.data as { notificationId?: string } | null)?.notificationId;
+      const notificationId = (tapped.data as { notificationId?: string } | null)
+        ?.notificationId;
       if (notificationId) {
         void this.customerNotificationsFacade.markAsRead(notificationId);
-        void this.router.navigate(['/notifications', notificationId]);
-      } else {
-        void this.router.navigate(['/notifications']);
+      }
+
+      const routerPath = resolvePushTapRoute(tapped.data, {
+        rootSegment: 'notifications',
+        idField: 'notificationId',
+      });
+      if (routerPath) {
+        void this.router.navigateByUrl(routerPath);
       }
     });
   }
@@ -161,7 +192,8 @@ export class App {
   protected async onLogout(): Promise<void> {
     const confirmed = await confirmDialog(this.dialogService, {
       title: 'Log out?',
-      message: "You'll need to log in again to place orders or view your account.",
+      message:
+        "You'll need to log in again to place orders or view your account.",
       confirmLabel: 'Log out',
       cancelLabel: 'Cancel',
       tone: 'danger',
@@ -205,9 +237,12 @@ export class App {
    */
   protected onLocationPickerClicked(): void {
     if (this.isAuthenticated()) {
-      this.addressSheetRef = this.bottomSheetService.open(AddressPickerComponent, {
-        ariaLabel: 'Choose delivery address',
-      });
+      this.addressSheetRef = this.bottomSheetService.open(
+        AddressPickerComponent,
+        {
+          ariaLabel: 'Choose delivery address',
+        },
+      );
       return;
     }
 
