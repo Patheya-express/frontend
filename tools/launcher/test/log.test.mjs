@@ -101,6 +101,20 @@ describe('failWithGuidance', () => {
     assert.match(lines[4], /Docs:.*example\.com/);
   });
 
+  test('prints diagnostics after Docs when given, and omits it entirely when absent', async () => {
+    const withDiagnostics = await captureConsole(() => {
+      log.failWithGuidance({ rootCause: 'Broke.', docs: 'https://example.com', diagnostics: 'container status: restarting\nlog line one' });
+    });
+    assert.equal(withDiagnostics.lines.length, 3);
+    assert.match(withDiagnostics.lines[2], /container status: restarting/);
+    assert.match(withDiagnostics.lines[2], /log line one/);
+
+    const without = await captureConsole(() => {
+      log.failWithGuidance({ rootCause: 'Broke.' });
+    });
+    assert.equal(without.lines.length, 1);
+  });
+
   test('stack trace only prints when verbose is true', async () => {
     const error = new Error('boom');
 

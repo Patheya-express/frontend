@@ -40,7 +40,7 @@ import { spawn as nodeSpawn } from 'node:child_process';
 import * as log from '../launcher/lib/log.mjs';
 import { repoRoot, resolveApp, resolveEnvironment, APPS } from '../launcher/lib/registry.mjs';
 import { parseDevArgs } from './lib/args.mjs';
-import { ensureEnvFile } from './lib/env-file.mjs';
+import { ensureEnvFile, ensureLocalSecrets } from './lib/env-file.mjs';
 import { extractDatabaseUrl, parseDatabaseUrl, probeTcpPort, buildSchemaCheckCommand, isSchemaPresent } from './lib/db-verify.mjs';
 
 // The backend is always a sibling checkout, never nested in this repo — same convention
@@ -51,6 +51,20 @@ import { extractDatabaseUrl, parseDatabaseUrl, probeTcpPort, buildSchemaCheckCom
 const BACKEND_REPO = join(repoRoot, '..', 'patheya-express-platform');
 const BACKEND_ENV_EXAMPLE = join(BACKEND_REPO, 'apps', 'api-gateway', '.env.example');
 const BACKEND_ENV_FILE = join(BACKEND_REPO, 'apps', 'api-gateway', '.env');
+// The Docker-managed api-gateway container (the one and only backend process — see
+// tools/launcher/lib/detect-backend.mjs's startSiblingBackend()) reads its JWT secrets from THIS
+// file via docker-compose.yml's ${JWT_ACCESS_SECRET}/${JWT_REFRESH_SECRET} substitution — it never
+// reads apps/api-gateway/.env at all (that file isn't part of the container image; see
+// .dockerignore). Distinct from BACKEND_ENV_FILE above: that one is for host-side tools (Prisma
+// CLI, a native `start:dev`), this one is for `docker compose`. Named `.env.compose` (not the
+// auto-discovered `.env`) specifically so nothing accidentally relies on Compose's implicit
+// same-directory lookup — every compose invocation this repo's tooling makes passes `--env-file`
+// for this path explicitly (see startSiblingBackend()), which is what actually fixed the THIRD
+// FRESH-MACHINE FAILURE (this file not existing meant Compose fell back to docker-compose.yml's
+// own placeholder JWT defaults, which the backend's env.validation.ts rejects at boot).
+const DOCKER_COMPOSE_ENV_EXAMPLE = join(BACKEND_REPO, 'infrastructure', 'docker', '.env.compose.example');
+const DOCKER_COMPOSE_ENV_FILE = join(BACKEND_REPO, 'infrastructure', 'docker', '.env.compose');
+const DOCKER_COMPOSE_SECRET_KEYS = ['JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET'];
 const DOCKER_ENGINE_TIMEOUT_MS = 90_000;
 const DOCKER_ENGINE_POLL_MS = 2000;
 
@@ -67,8 +81,9 @@ Usage: node tools/dev/bootstrap.mjs [app] [options]
 
 Options:
   --setup                First-time only: install frontend+backend dependencies, scaffold
-                          apps/api-gateway/.env if missing, and run backend Prisma migrations
-                          and the development database seed.
+                          apps/api-gateway/.env and infrastructure/docker/.env.compose (generating
+                          local JWT secrets, never printed) if missing, generate the Prisma Client,
+                          and run backend migrations and the development database seed.
   --backend-only          Start/verify infrastructure and exit; equivalent to "app=none".
   --skip-infrastructure   Never touch Docker; only validate tools and hand off to the app.
   --verbose               Full error output and DEBUG/TRACE logs.
@@ -255,12 +270,103 @@ function ensureBackendEnvFile() {
   const status = ensureEnvFile(BACKEND_ENV_EXAMPLE, BACKEND_ENV_FILE);
   if (status === 'example-missing') {
     log.warn('Backend apps/api-gateway/.env.example not found — skipping .env scaffold.');
-  } else if (status === 'already-exists') {
+    return;
+  }
+  if (status === 'already-exists') {
     log.ok('Backend apps/api-gateway/.env already exists (left untouched).');
   } else {
     log.ok('Created backend apps/api-gateway/.env from .env.example.');
     log.detail('Default values match docker-compose.yml (Postgres/Redis/Kafka on localhost). Fill in Razorpay/SMTP/Cloudinary only if you need those flows locally.');
   }
+
+  // .env.example ships literal placeholder JWT secrets ("replace-with-a-long-random-value") — only
+  // inert here because the Docker-managed api-gateway never reads this file (see
+  // DOCKER_COMPOSE_ENV_FILE's doc comment above), but a developer following docs/infrastructure/
+  // docker.md's documented "prefer running natively (faster inner loop)" path with `pnpm --filter
+  // api-gateway start:dev` would hit the exact same placeholder-rejected-at-boot failure this
+  // fixes for the Docker path. Generating a real secret here too closes that latent gap for free,
+  // via the same tested, idempotent helper — never overwrites a value that isn't a placeholder.
+  const secretResult = ensureLocalSecrets(BACKEND_ENV_FILE, DOCKER_COMPOSE_SECRET_KEYS);
+  if (secretResult.generated.length > 0) {
+    log.ok(`Generated local development secrets in apps/api-gateway/.env: ${secretResult.generated.join(', ')} (values never printed).`);
+  }
+}
+
+/**
+ * First-time only (--setup). Fixes the THIRD FRESH-MACHINE FAILURE: the Docker-managed api-gateway
+ * container reads infrastructure/docker/.env.compose (via startSiblingBackend()'s explicit
+ * `--env-file`), which doesn't exist on a fresh clone — only the committed, itself-gitignored
+ * `.env.compose.example` template does. Without this file, Compose falls back to
+ * docker-compose.yml's own hardcoded JWT placeholder defaults, and the backend's env.validation.ts
+ * rejects those at boot in every environment, so the container crash-loops before this script's
+ * health poll ever sees anything else.
+ *
+ * Scaffolds the file (ensureEnvFile — copy-if-missing, never overwrites a real one) and then
+ * generates real local secrets for any placeholder/missing key (ensureLocalSecrets — idempotent,
+ * never rotates an already-valid secret). Fatal if the example itself is missing: unlike a
+ * developer's own `.env.compose` (which not existing yet is the normal, expected fresh-clone
+ * state this function fixes), a missing `.env.compose.example` means the checkout itself is
+ * incomplete — no default this script could invent would be safe to fall back to.
+ */
+function ensureDockerComposeEnvFile() {
+  const status = ensureEnvFile(DOCKER_COMPOSE_ENV_EXAMPLE, DOCKER_COMPOSE_ENV_FILE);
+  if (status === 'example-missing') {
+    return {
+      ok: false,
+      rootCause: `${DOCKER_COMPOSE_ENV_EXAMPLE} not found.`,
+      suggestedFix: 'Confirm the backend (patheya-express-platform) checkout is complete and up to date, then re-run.',
+    };
+  }
+  if (status === 'created') {
+    log.ok('Docker environment created (infrastructure/docker/.env.compose).');
+  } else {
+    log.ok('Docker environment already configured (infrastructure/docker/.env.compose).');
+  }
+
+  const secretResult = ensureLocalSecrets(DOCKER_COMPOSE_ENV_FILE, DOCKER_COMPOSE_SECRET_KEYS);
+  if (secretResult.generated.length > 0) {
+    log.ok(`Local development secrets generated (${secretResult.generated.join(', ')} — values never printed).`);
+  } else {
+    log.detail('Existing local development secrets preserved.');
+  }
+  return { ok: true };
+}
+
+/**
+ * First-time only (--setup) — the first backend-database step of all, called from the "Preparing
+ * local development configuration" phase, before Docker infrastructure ever starts. It needs
+ * nothing but the checked-out schema.prisma (no database, no Docker), so there's no reason to wait
+ * for either: this is called immediately after local config/secrets are ensured, not after
+ * migrations or backend health as in an earlier version of this flow.
+ *
+ * Fixes the FIFTH FRESH-MACHINE FAILURE: neither `prisma` nor `@prisma/client` ships a postinstall
+ * hook that regenerates the client automatically (verified directly against this workspace's
+ * installed packages — both packages' own `scripts` are empty of any `postinstall`), so a fresh
+ * `pnpm install` alone leaves `@prisma/client` as whatever generic stub happened to be published,
+ * not one generated against this checkout's schema — hence errors like `Module '"@prisma/client"'
+ * has no exported member 'UserRole'` the first time anything (the seed script, in practice)
+ * imports it.
+ *
+ * Uses the backend's own `db:generate` script (`prisma generate`) — the same command its README
+ * documents, not a second Prisma workflow. Fatal on failure: migrations, the seed script, and
+ * (later) any backend process either import the generated client directly or depend on it
+ * transitively, and its own container image is built separately (see the root Dockerfile's own
+ * `prisma generate` build step) — this call exists purely for host-side tools, but is just as
+ * required for them as the image's own generate step is for the container.
+ */
+async function runBackendGenerate(runInherit) {
+  log.section('Backend Prisma Client generation');
+  log.detail('Running `db:generate` (prisma generate) so the checked-out schema.prisma and the generated @prisma/client stay in sync.');
+  const result = await runInherit('pnpm', ['--filter', 'api-gateway', 'run', 'db:generate'], { cwd: BACKEND_REPO });
+  if (result.code !== 0) {
+    return {
+      ok: false,
+      rootCause: 'Backend `prisma generate` failed.',
+      suggestedFix: `Run it manually once fixed: pnpm --filter api-gateway run db:generate  (from ${BACKEND_REPO})`,
+    };
+  }
+  log.ok('Backend Prisma Client generated.');
+  return { ok: true };
 }
 
 /** First-time only (--setup), and only after the backend is confirmed healthy — i.e. Postgres is
@@ -465,8 +571,26 @@ async function main() {
     return;
   }
 
-  if (args.setup && backendPresent) {
+  if (args.setup && backendPresent && !args.skipInfrastructure) {
+    log.section('Preparing local development configuration');
     ensureBackendEnvFile();
+    const composeEnvResult = ensureDockerComposeEnvFile();
+    if (!composeEnvResult.ok) {
+      log.failWithGuidance({ ...composeEnvResult, verbose: args.verbose });
+      process.exitCode = 1;
+      return;
+    }
+
+    // Prisma Client generation happens here — before Docker infrastructure ever starts, not after
+    // (see runBackendGenerate()'s own doc comment for why the ordering matters and what it fixes).
+    // It needs nothing but the schema file, so gating it on Docker/backend health would only make a
+    // broken schema fail slower for no benefit.
+    const generateResult = await runBackendGenerate(runInherit);
+    if (!generateResult.ok) {
+      log.failWithGuidance({ ...generateResult, verbose: args.verbose });
+      process.exitCode = 1;
+      return;
+    }
   }
 
   if (!args.skipInfrastructure) {

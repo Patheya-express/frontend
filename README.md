@@ -671,13 +671,24 @@ Enable Corepack if required:
 
 corepack enable
 
-Then restart PowerShell.
+Then open a new terminal (an already-open one won't pick this up).
 
 On Windows, `corepack enable` can fail with an EPERM error when Node.js is installed under
 `C:\Program Files\nodejs` and your shell isn't elevated — this was a real issue hit while building
-this repo's developer tooling (see `tools/dev/DEVELOPMENT.md`'s Bootstrap v5 migration notes). If
-you hit it, install pnpm directly instead: `npm install -g pnpm@11.5.3` (matching this repo's
-`packageManager` field), rather than running PowerShell as Administrator just to enable Corepack.
+this repo's developer tooling (see `tools/dev/DEVELOPMENT.md`'s Bootstrap v5 migration notes and
+its "System prerequisites" section for the full walkthrough). Two ways to get past it, in order of
+preference:
+
+1. Run `corepack enable` once in a single elevated ("Run as Administrator") PowerShell, then close
+   that window and go back to a normal terminal for everything else — this is a one-time,
+   machine-wide fix, not something you repeat.
+2. If you'd rather not open an elevated terminal at all: install pnpm directly instead —
+   `npm install -g pnpm@11.5.3` (matching this repo's `packageManager` field).
+
+Separately, if PowerShell refuses to run `npm.ps1`/`corepack.ps1` at all with an execution-policy
+error, use the `.cmd` shim instead — `npm.cmd`/`corepack.cmd` in place of `npm`/`corepack` — rather
+than changing the machine's execution policy; the `.cmd` form isn't a PowerShell script and isn't
+subject to that policy.
 
 nx not found
 

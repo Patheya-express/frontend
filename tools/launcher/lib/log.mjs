@@ -115,7 +115,7 @@ export function detail(message) {
  * callers pass only what's relevant. `error` (the raw exception/stack) is never shown unless
  * `verbose` is true — no raw exception should reach the user by default.
  */
-export function failWithGuidance({ rootCause, suggestedFix, nextAction, docs, retryHint, error, verbose }) {
+export function failWithGuidance({ rootCause, suggestedFix, nextAction, docs, retryHint, diagnostics, error, verbose }) {
   fail(rootCause);
   if (suggestedFix) {
     write('error', `  ${bold('Fix:')} ${suggestedFix}`);
@@ -128,6 +128,13 @@ export function failWithGuidance({ rootCause, suggestedFix, nextAction, docs, re
   }
   if (docs) {
     write('error', `  ${bold('Docs:')} ${dim(docs)}`);
+  }
+  // Short, targeted evidence (e.g. a crash-looping container's status and last few log lines) —
+  // never a raw exception dump, which stays gated behind `verbose` below. See
+  // tools/launcher/lib/detect-backend.mjs's collectApiGatewayDiagnostics()/formatDiagnosticsBlock()
+  // for the one current producer of this field.
+  if (diagnostics) {
+    write('error', `\n${dim(diagnostics)}`);
   }
   if ((verbose ?? verboseEnabled) && error) {
     write('error', `\n${dim(error.stack || String(error))}`);

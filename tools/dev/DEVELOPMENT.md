@@ -13,6 +13,63 @@ script and not the other. Everything it did is reimplemented here as one cross-p
 script plus documentation, both versioned in this repo. See "Bootstrap v5 migration" at the bottom
 for exactly what moved where.
 
+## 0. System prerequisites (the one thing this tooling genuinely cannot automate)
+
+Everything from here down assumes `pnpm run setup` can actually execute — and `pnpm` itself is the
+one unavoidable bootstrap boundary: if `pnpm` isn't on PATH yet, no command that starts with `pnpm`
+can run at all, this one included. Getting from a bare Windows machine to "`pnpm run setup` works"
+is exactly four steps:
+
+1. **Install Node.js 24.x** — https://nodejs.org (the LTS/current installer). Node ships Corepack
+   (pnpm's version manager) built in; you don't install pnpm separately.
+2. **Open a new terminal.** PowerShell/Command Prompt only pick up a PATH change (Node's install
+   added itself to PATH) in windows opened *after* the installer finished — an already-open terminal
+   still won't find `node`/`corepack`.
+3. Verify: `node --version` should print `v24.x.x`.
+4. **Enable Corepack, then verify pnpm:**
+   ```powershell
+   corepack enable
+   pnpm --version
+   ```
+   This is the one step that can fail in a way worth knowing about ahead of time:
+
+   **`corepack enable` fails with `EPERM: operation not permitted, open 'C:\Program Files\nodejs\yarn'`**
+   — Node is installed under `C:\Program Files\nodejs`, and a non-elevated terminal can't write
+   there. Fix: open **one** elevated terminal, run Corepack there, then go back to a normal
+   terminal for everything else — Corepack's own change (a few shim files under `Program Files`)
+   is a one-time, machine-wide setup step, not something that needs elevation every time:
+   ```powershell
+   # In an elevated ("Run as Administrator") PowerShell:
+   corepack enable
+   # Close that window. Back in a normal terminal:
+   pnpm --version
+   ```
+   Never weaken PowerShell's execution policy machine-wide to work around this — it isn't the
+   actual problem (the actual problem is a file permission, not a blocked script) and it's a much
+   larger, harder-to-undo change than opening one elevated terminal once.
+
+   **PowerShell blocks `npm.ps1`/`corepack.ps1` with an execution-policy error** (a different
+   symptom than the EPERM above — this one happens when PowerShell's execution policy refuses to
+   run *any* `.ps1` script, including the shims npm/Corepack install) — run the `.cmd` shim
+   instead: `npm.cmd` / `corepack.cmd` in place of `npm`/`corepack`. The `.cmd` form isn't a
+   PowerShell script and isn't subject to the execution policy at all, so this avoids ever having
+   to change the policy (globally or otherwise).
+
+   **Still stuck, or `corepack enable` isn't an option on this machine?** Install pnpm directly
+   instead — this is an accepted, already-documented fallback, not a workaround of last resort:
+   `npm install -g pnpm@11.5.3` (matching this repo's `packageManager` field). See root
+   `README.md`'s Troubleshooting section for the same guidance in context.
+
+Once `pnpm --version` prints something, every remaining prerequisite (Git, Docker Desktop) is
+checked *for you* by `pnpm run setup` itself (Step 1 below reports exactly what's missing, with a
+link to install it) — there's nothing else to manually verify first.
+
+**Do not run `pnpm install` yourself before `pnpm run setup`.** It isn't wrong to (pnpm installs
+are idempotent — a second one just reports "Already up to date" in under a second), but it's
+unnecessary: `pnpm run setup`'s own first step installs both this repo's and the backend's
+dependencies as the one authoritative install path. Running it manually first just means you see
+the same install happen twice, which reads as a bug the first time you notice it — it isn't one.
+
 ## Repository relationship
 
 Two repositories, cloned as siblings:
@@ -37,12 +94,28 @@ relative to wherever `frontend` itself is checked out, so this works under
 | Full-stack onboarding orchestration | `frontend/tools/dev/` (this directory) | Coordinating the two repos for a new developer: tool checks, dependency install, starting Docker Compose, waiting for backend health, then handing off to the frontend launcher. Owns *sequencing*, not backend internals. |
 | Frontend environment validation, backend **health detection**, app/platform startup | `frontend/tools/launcher/` | Everything from "is the backend already healthy" onward — see its own `README.md`. `tools/dev/bootstrap.mjs` calls straight into this rather than re-checking health itself. |
 | Angular apps, Capacitor, frontend tests | `frontend/apps/*`, `frontend/libs/*` | Unrelated to developer tooling — untouched by any of this. |
+| Local environment/secret file utilities (dependency-free) | `frontend/tools/dev/lib/env-file.mjs` | `ensureEnvFile`/`ensureLocalSecrets`/`generateSecret`/`isPlaceholderValue` — pure file-system helpers, owned by neither of the two directories below on their own; **consumed by both** (see next paragraph). |
 
 `tools/dev/bootstrap.mjs` is deliberately thin: it never re-implements health parsing, tool
 checks, or app selection — it imports and calls the launcher's own modules
 (`detectBackend`, `buildToolChecks`, `log`, `exec`) for all of that. There is exactly one
 implementation of "what does a healthy backend response look like" in this whole system:
 `tools/launcher/lib/detect-backend.mjs`.
+
+**The dependency graph between these two directories is not strictly one-directional.** The
+sequencing/health-check relationship above (`tools/dev` calls into `tools/launcher`) is the primary
+one, but `tools/launcher/lib/detect-backend.mjs` also imports `tools/dev/lib/env-file.mjs` — because
+`detectBackend()`'s own `startSiblingBackend()` is the one and only place that actually runs `docker
+compose up`, and that command needs a real, non-placeholder `infrastructure/docker/.env.compose` to
+succeed regardless of which entry point triggered it. A developer who runs `pnpm customer:web`
+directly, having never run `pnpm run setup` at all, still needs that guarantee. Rather than
+duplicating the scaffold-and-generate-secrets logic into `tools/launcher` (or promoting it to a
+brand-new shared package neither directory currently has a second use for), `env-file.mjs` is kept
+as what it already was — a small, dependency-free, side-effect-scoped leaf module with no knowledge
+of either directory's own concerns — and imported directly by whichever of the two needs it. Neither
+directory's actual *responsibility* changes: `tools/dev` still owns first-time setup sequencing
+end-to-end, and `tools/launcher` still owns backend detection and startup on its own — the only
+thing genuinely shared is this one small, pure, local-config utility.
 
 ## Docker architecture
 
@@ -71,6 +144,53 @@ because that raced the container for the same port in an earlier version of this
 produced `EADDRINUSE :::3000`. If you intentionally want api-gateway running natively on the host
 instead of in a container (faster inner-loop iteration on backend code), exclude it from Compose
 yourself and pass `--skip-infrastructure` — see "Backend-only" below.
+
+### Local secrets (JWT)
+
+The Docker-managed `api-gateway` container reads its `JWT_ACCESS_SECRET`/`JWT_REFRESH_SECRET` from
+`patheya-express-platform/infrastructure/docker/.env.compose` — via `docker-compose.yml`'s
+`${JWT_ACCESS_SECRET}`/`${JWT_REFRESH_SECRET}` substitution, and every `docker compose up` this
+tooling runs passes `--env-file infrastructure/docker/.env.compose` explicitly (see
+`tools/launcher/lib/detect-backend.mjs`'s `startSiblingBackend()`) — never relying on Compose's own
+same-directory `.env` auto-discovery, since the file is deliberately not named `.env`. This is a
+completely separate file from `apps/api-gateway/.env` (host-side tools only); see "Environment
+configuration" below for both.
+
+Neither file exists on a fresh clone — only their committed, itself-gitignored `.env*.example`
+templates do — and both templates ship literal placeholder secrets
+(`replace-with-a-long-random-value` / `dev-access-secret-change-me`) that the backend's own
+`env.validation.ts` rejects at boot in *every* environment, including development. Without this
+step, the container crash-loops on `"JWT_ACCESS_SECRET" still contains an unedited placeholder
+value` before ever reaching a state this tooling's health check could report anything useful about.
+
+`pnpm run setup` (and, independently, the frontend launcher's own auto-start — see
+`startSiblingBackend()`) fixes this automatically:
+
+- Scaffolds each `.env*` file from its `.example` template if missing — a plain file copy, never
+  overwriting a file that already exists.
+- Generates a real, cryptographically random secret (48 bytes, base64url) for any secret key that's
+  missing, empty, or still one of the known placeholder strings — **idempotent**: an already-valid
+  secret from a previous run, or one you set yourself, is never regenerated or rotated.
+- **Never prints, logs, or returns the generated value anywhere** — only which keys were touched
+  (e.g. "Local development secrets generated (JWT_ACCESS_SECRET, JWT_REFRESH_SECRET)"). If you need
+  the actual value (e.g. to decode a token by hand), read the file yourself:
+  `infrastructure/docker/.env.compose`.
+
+This is implemented once, in `tools/dev/lib/env-file.mjs` (`ensureLocalSecrets`/`generateSecret`/
+`isPlaceholderValue`) — both `tools/dev/bootstrap.mjs` and `tools/launcher/lib/detect-backend.mjs`
+call the same functions, so a developer who never runs `pnpm run setup` at all (just `pnpm
+customer:web` straight after cloning) gets the identical guarantee the moment the launcher tries to
+auto-start the backend.
+
+**If `docker compose up` itself fails** (a missing `--env-file` target, Docker Desktop not actually
+ready, a build error), `startSiblingBackend()` checks its exit code directly and reports the failure
+immediately — never logging a false "Started `docker compose up -d`..." success message, and never
+waiting out the health-poll timeout for a backend that was never actually started. **If Compose
+succeeds but the api-gateway container still won't come up**, `detectBackend()`'s health poll
+detects a genuine crash-loop (Docker reports the container status as `restarting`) within a few
+seconds — well before its full startup timeout — and attaches the container's status plus its last
+~40 log lines to the failure message. Either way, any `JWT_ACCESS_SECRET`/`JWT_REFRESH_SECRET` value
+appearing in that attached output is redacted before it reaches the terminal.
 
 ### Ports
 
@@ -146,17 +266,42 @@ pnpm run setup
    each repo's pinned version (see "pnpm version policy" below).
 2. Validates Git/Node/pnpm/Nx/Docker are present (web-scope tools only — see "Mobile" below) — now
    safe to check, since dependencies were just confirmed installed in step 1.
-3. Scaffolds `patheya-express-platform/apps/api-gateway/.env` from its own `.env.example` if one
-   doesn't already exist (never overwrites a real one). Its defaults already match Compose's
-   Postgres/Redis/Kafka ports — including `DATABASE_URL` pointing at `localhost:15432`, Compose's
-   host-published Postgres port (see "Why 15432, not 5432?" above) — so this alone is enough for
-   local development; fill in Razorpay/SMTP/Cloudinary values yourself only if you need those
-   specific flows.
-4. Starts Docker Desktop if it isn't running yet, then `docker compose up -d` (Postgres, Redis,
-   Kafka, Zookeeper, api-gateway).
-5. Waits for `GET /api/v1/health` to report `{success: true, data: {status: "ok", ...}}` — via the
-   frontend launcher's own `detectBackend()`, not a second implementation.
-6. Runs backend database migrations (`pnpm --filter api-gateway run db:migrate`, i.e. `prisma
+3. **Preparing local development configuration.** Scaffolds two separate, gitignored local config
+   files — neither exists on a fresh clone, only their committed `.example` templates do — and
+   never overwrites either if it's already there:
+   - `patheya-express-platform/apps/api-gateway/.env` (from `.env.example`) — for host-side tools
+     (Prisma CLI, a native `start:dev`). Its defaults already match Compose's Postgres/Redis/Kafka
+     ports, including `DATABASE_URL` pointing at `localhost:15432` (see "Why 15432, not 5432?").
+   - `patheya-express-platform/infrastructure/docker/.env.compose` (from `.env.compose.example`) —
+     what the **Docker-managed api-gateway container itself** actually reads (see "Docker
+     architecture" and "Local secrets" below).
+
+   Both files ship placeholder JWT secrets (`replace-with-a-long-random-value` /
+   `dev-access-secret-change-me`) that the backend's own startup validation rejects outright, in
+   *every* environment — so immediately after scaffolding, this step also generates a real,
+   cryptographically random `JWT_ACCESS_SECRET`/`JWT_REFRESH_SECRET` for each file, replacing only
+   the placeholder (never a value you or a previous run already set for real) and never printing
+   the generated value anywhere. See "Local secrets (JWT)" below for the full contract.
+4. **Backend Prisma Client generation** (`pnpm --filter api-gateway run db:generate`, i.e. `prisma
+   generate`) — needs only the checked-out `schema.prisma`, not a reachable database, so this runs
+   before Docker/Postgres is even started. Neither `prisma` nor `@prisma/client` runs this
+   automatically as part of `pnpm install` (no `postinstall` hook exists in either package), so a
+   fresh clone's `@prisma/client` is otherwise a generic, pre-generated stub that doesn't match this
+   checkout's schema at all — the direct cause of errors like `Module '"@prisma/client"' has no
+   exported member 'UserRole'` the first time anything (in practice, the seed script below) imports
+   it. Fatal on failure: everything from here on either imports the generated client directly or
+   depends on it transitively.
+5. Starts Docker Desktop if it isn't running yet, then `docker compose up -d` (Postgres, Redis,
+   Kafka, Zookeeper, api-gateway) — using `--env-file infrastructure/docker/.env.compose` explicitly
+   (never relying on Compose's own same-directory `.env` auto-discovery, since this file is
+   deliberately not named `.env` — see "Local secrets" below).
+6. Waits for `GET /api/v1/health` to report `{success: true, data: {status: "ok", ...}}` — via the
+   frontend launcher's own `detectBackend()`, not a second implementation. Bounded and
+   deterministic: if the api-gateway container starts crash-looping instead of becoming healthy
+   (Docker reports that as container status `restarting`), this fails fast — a few seconds, not the
+   full timeout — with the container's actual status and its last ~40 log lines attached, so you
+   don't have to go find `docker logs` yourself. See "Backend fails to become healthy" below.
+7. Runs backend database migrations (`pnpm --filter api-gateway run db:migrate`, i.e. `prisma
    migrate dev` — never `migrate reset` or `db push`) — first-time only, never on daily startup (an
    unmigrated database still reports "healthy," since the health check is a raw connectivity probe,
    not a schema check). Runs with your terminal attached, so if Prisma ever needs to ask a
@@ -168,7 +313,7 @@ pnpm run setup
    above for the incident this catches). Unlike a migration command failure, this verification
    failing **stops setup** with a clear diagnosis rather than continuing to a frontend launch that
    would just fail registration with `public.users does not exist`.
-7. Runs the backend's development database seed (`pnpm --filter api-gateway run db:seed`) —
+8. Runs the backend's development database seed (`pnpm --filter api-gateway run db:seed`) —
    first-time only, same non-fatal contract as migrations (a failure warns and tells you the
    manual command rather than blocking setup). Populates development-only baseline data: seeded
    role accounts, restaurants/menus, delivery partners, orders, coupons, offers, and FAQs — so a
@@ -176,7 +321,7 @@ pnpm run setup
    and idempotent (safe to re-run); never real credentials or production data — see
    `patheya-express-platform/apps/api-gateway/README.md`'s "Database seed" section for the full
    seeded account list.
-8. Starts the Customer App via the frontend launcher.
+9. Starts the Customer App via the frontend launcher.
 
 Only failures print guidance and stop the flow — nothing fails silently. Verified against an actual
 zero-`node_modules` fresh clone in a scratch directory (not just this repeated on an
@@ -257,12 +402,22 @@ pnpm delivery:android
 - **Frontend**: `apps/<app>/src/environments/environment*.ts` — not templated/scaffolded by this
   tooling (no secrets live there beyond already-checked-in dev defaults like the Razorpay test key)
   and unaffected by `tools/dev/`.
-- **Backend**: `patheya-express-platform/apps/api-gateway/.env`, scaffolded from `.env.example` by
-  `pnpm run setup` (step 3 above) if missing. Never committed (already gitignored in that repo);
-  never printed by any script here. Its checked-in `.env.example` defaults already match
-  `docker-compose.yml`'s Postgres/Redis/Kafka defaults, so a bare copy is sufficient to migrate and
-  develop locally — real values (Razorpay, SMTP, Cloudinary) are only needed for those specific
-  flows and are never invented by this tooling.
+- **Backend, host-side tools** (Prisma CLI, a native `start:dev`):
+  `patheya-express-platform/apps/api-gateway/.env`, scaffolded from `.env.example` by `pnpm run
+  setup` (step 3 above) if missing.
+- **Backend, the Docker-managed api-gateway container itself**:
+  `patheya-express-platform/infrastructure/docker/.env.compose` — a *different* file, scaffolded
+  from `.env.compose.example`, also by step 3 above. See "Local secrets (JWT)" above for exactly
+  why these are two separate files and what each is for.
+
+  Both: never committed (already gitignored in that repo — `.env*` is the ignore pattern, with an
+  explicit `!.env.example`/`!**/.env.compose.example` exception for the checked-in templates only);
+  never printed by any script here, generated secrets included. Every other value in both templates
+  already matches `docker-compose.yml`'s Postgres/Redis/Kafka defaults, so the scaffold-plus-
+  generate-secrets step above is sufficient to migrate and develop locally on its own — real values
+  (Razorpay, SMTP, Cloudinary) are only needed for those specific flows and are never invented by
+  this tooling: if you need one of those, the relevant feature will tell you exactly which
+  environment variable it's missing when you first exercise it, not before.
 
 ## pnpm version policy
 
@@ -331,8 +486,44 @@ diagnostic-only nice-to-have — the message falls back to naming the port and p
 `curl <url>/api/v1/health` to inspect it yourself. For 4200-4203: another `nx serve` (yours or a
 teammate's, if sharing a machine) is likely already running that app.
 
+**"JWT_ACCESS_SECRET still contains an unedited placeholder value"** (in `docker logs
+patheya-express-api-gateway`, or as a crash-loop diagnostic attached to a "did not become healthy"
+failure) — `pnpm run setup`/the launcher's auto-start generate a real secret into
+`infrastructure/docker/.env.compose` automatically (see "Local secrets (JWT)" above), so seeing
+this means that step didn't run or was bypassed — most often because Docker Compose was invoked by
+hand without `--env-file infrastructure/docker/.env.compose`. Fix: re-run `pnpm run setup` (or
+`pnpm run dev`), or run `docker compose -f infrastructure/docker/docker-compose.yml --env-file
+infrastructure/docker/.env.compose up -d` yourself from `patheya-express-platform`.
+
+**"Docker Compose failed to start the local backend stack"** — `docker compose up -d` itself exited
+non-zero (a missing `--env-file` target, Docker Desktop not actually running despite the engine
+check passing, a build error, etc.) — distinct from the container-crash-loop case below: here,
+`docker compose up` never even succeeded, so no containers were necessarily created at all. Reported
+immediately (well under a second), never after waiting out the health-poll timeout, with the
+command's own output attached (any `JWT_ACCESS_SECRET`/`JWT_REFRESH_SECRET` value redacted from
+that output automatically). If the message specifically says `infrastructure/docker/.env.compose`
+does not exist, that means the checkout is missing its own `.env.compose.example` template (this
+tooling scaffolds `.env.compose` from that template automatically; if the template itself isn't
+there, the checkout is incomplete) — confirm the backend clone completed successfully and re-run.
+
+**"The api-gateway container is crash-looping"** — Compose itself succeeded (containers were
+created and started), but `detectBackend()`'s health poll then noticed the container status is
+`restarting` (Docker's own signal that it started, exited, and is being auto-restarted by `restart:
+unless-stopped`) several times in a row, and stopped waiting out the full timeout for a container
+that isn't coming back on its own. The attached diagnostic (container status + last ~40 log lines)
+usually names the actual rejected value directly; the full log is `docker compose -f
+infrastructure/docker/docker-compose.yml logs api-gateway` from `patheya-express-platform`.
+
 **Dependency installation failure** — Re-run `pnpm run setup` after fixing the underlying error
 shown in the `pnpm install` output; both repos' installs are idempotent and safe to retry.
+
+**"Module '@prisma/client' has no exported member '...'" / a Prisma enum member is `undefined` at
+runtime** — The generated Prisma Client is out of sync with the checked-out `schema.prisma`.
+`pnpm run setup` runs `pnpm --filter api-gateway run db:generate` explicitly for exactly this reason
+(neither `prisma` nor `@prisma/client` regenerates it automatically on `pnpm install` — see step 4
+above) and treats its failure as fatal; if you still hit this (e.g. after manually running the seed
+script, or switching branches with a schema change), re-run it yourself:
+`pnpm --filter api-gateway run db:generate` from `patheya-express-platform`.
 
 **Wrong Node/pnpm version** — Each repo pins its own version (`frontend/package.json`'s
 `packageManager` field; the backend's `devEngines.packageManager`) — see "pnpm version policy"
@@ -378,6 +569,26 @@ pnpm run test:launcher   # tools/launcher/'s tests (health parsing, tool checks,
 port-probing logic in isolation (no Docker required); the verification's actual `docker compose
 exec psql` call is exercised by running `pnpm run setup` for real, same as the rest of this file's
 Docker-dependent behavior.
+
+`tools/dev/test/env-file.test.mjs` covers the local-secrets generation contract in full, without
+Docker or either backend file: placeholder detection (`isPlaceholderValue`), secret generation
+(`generateSecret` — length, character set, never colliding), single-key read/write
+(`readEnvVar`/`setEnvVar` — never touching unrelated lines), and the end-to-end idempotent behavior
+(`ensureLocalSecrets` — generates once for a placeholder/missing key, preserves an already-valid
+one forever after, two consecutive calls produce byte-identical output on the second). `tools/dev/
+test/bootstrap.test.mjs` covers the wiring around it at the source level: the compose env-file step
+and Prisma Client generation both run before the "Step 2 — Local infrastructure (Docker Compose)"
+section even starts (checked against the Step 2 section header and the `ensureDockerEngineRunning`/
+`detectBackend` call sites directly, not merely "before db:migrate" — the actual FIFTH
+FRESH-MACHINE FAILURE regression this guards against is generate running only *after* Docker/backend
+health, not merely after db:migrate), both are fatal on failure, and a generated secret's value is
+never passed to a `log.*` call. `tools/launcher/test/detect-backend.test.mjs` covers
+`buildComposeUpArgs()` (the exact `--env-file`/`-f` argv `docker compose up` is invoked with — the
+regression test for the THIRD FRESH-MACHINE FAILURE), `formatDiagnosticsBlock()` (the crash-loop
+diagnostic renderer), and `redactSecrets`/`isMissingEnvFileError`/`formatComposeFailureDiagnostics`
+(the Compose-exit-code-checking path — real, non-mocked inputs including the literal stderr text a
+real `docker compose --env-file <missing>` invocation was verified to produce) directly, without
+needing a real Docker container to crash-loop or a real Docker daemon at all.
 
 ## Bootstrap v5 migration
 

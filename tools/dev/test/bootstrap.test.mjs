@@ -157,6 +157,81 @@ describe('bootstrap.mjs safety properties (source-level)', () => {
     );
   });
 
+  test('[A] Prisma Client generation runs before Docker infrastructure starts (Step 2), not merely before migrations', () => {
+    assert.match(codeOnly, /runBackendGenerate\(/, 'expected an explicit Prisma Client generation step');
+
+    const generateCallIndex = codeOnly.indexOf('await runBackendGenerate(runInherit)');
+    const dockerEngineCallIndex = codeOnly.indexOf('await ensureDockerEngineRunning(runCapture)');
+    const step2Index = codeOnly.indexOf("log.section('Step 2");
+    const detectBackendCallIndex = codeOnly.indexOf('await detectBackend({');
+    const migrateCallIndex = codeOnly.indexOf('await runBackendMigrations(runInherit)');
+
+    assert.ok(
+      generateCallIndex !== -1 && dockerEngineCallIndex !== -1 && step2Index !== -1 && detectBackendCallIndex !== -1,
+      'expected to find runBackendGenerate, ensureDockerEngineRunning, the Step 2 section header, and detectBackend all present',
+    );
+
+    // This is the actual regression this test guards against: an earlier version of this flow
+    // called runBackendGenerate() only *after* detectBackend() had already confirmed the backend
+    // healthy — meaning a broken schema failed only after waiting through the full Docker
+    // engine-start + Compose-up + health-poll sequence, and contradicted this function's own doc
+    // comment. Asserting position relative to Step 2's own section header and the Docker engine /
+    // detectBackend calls (not just "before migrate", which was already true even in the buggy
+    // version) is what actually catches that regression.
+    assert.ok(generateCallIndex < step2Index, 'db:generate must run before the "Step 2 — Local infrastructure" section starts');
+    assert.ok(generateCallIndex < dockerEngineCallIndex, 'db:generate must run before ensureDockerEngineRunning() — it needs no Docker at all');
+    assert.ok(generateCallIndex < detectBackendCallIndex, 'db:generate must run before detectBackend() — it needs no reachable backend at all');
+    assert.ok(generateCallIndex < migrateCallIndex, 'db:generate must also run before db:migrate — migrations/seed both depend on a client generated against the current schema');
+  });
+
+  test('[B] a Prisma Client generation failure is fatal and returns before Docker infrastructure ever starts', () => {
+    const generateCallIndex = codeOnly.indexOf('await runBackendGenerate(runInherit)');
+    const step2Index = codeOnly.indexOf("log.section('Step 2");
+    assert.ok(generateCallIndex !== -1 && step2Index !== -1 && generateCallIndex < step2Index);
+
+    // Unlike a migration/seed failure (non-fatal by design), a failed `prisma generate` must stop
+    // setup entirely: everything downstream either imports the generated client directly (the seed
+    // script) or depends on it transitively, and continuing would just surface a much more
+    // confusing error. The fatal check's own `return;` sits textually before Step 2's section
+    // header, in the same top-level function body (main()), which is what actually guarantees
+    // Step 2's code (ensureDockerEngineRunning, detectBackend, `docker compose up`) never executes
+    // at all when generate fails — a plain "is this fatal" check on the function in isolation
+    // wouldn't prove that guarantee holds at the call site.
+    const generateSection = codeOnly.slice(generateCallIndex, step2Index);
+    assert.match(generateSection, /if\s*\(!generateResult\.ok\)/);
+    assert.match(generateSection, /process\.exitCode\s*=\s*1/);
+    assert.match(generateSection, /return;/);
+  });
+
+  test('runBackendMigrations\' doc comment immediately precedes its own function, not runBackendGenerate\'s', () => {
+    // Regression guard for a real defect: an earlier version of this file inserted
+    // runBackendGenerate() (comment and all) *between* runBackendMigrations' pre-existing doc
+    // comment and the function it actually describes, so a top-to-bottom reader would have read
+    // "only after the backend is confirmed healthy... runs `prisma migrate dev`..." directly above
+    // `async function runBackendGenerate`, not `runBackendMigrations`. Using the full (comments
+    // included) `source`, not `codeOnly`, since the whole point is checking comment placement.
+    const migrationsDocIndex = source.indexOf('only after the backend is confirmed healthy');
+    const migrationsFnIndex = source.indexOf('async function runBackendMigrations');
+    const generateFnIndex = source.indexOf('async function runBackendGenerate');
+    assert.ok(migrationsDocIndex !== -1 && migrationsFnIndex !== -1 && generateFnIndex !== -1);
+
+    // runBackendGenerate must be fully declared (comment and body) *before* runBackendMigrations'
+    // own doc comment starts — i.e. nothing sits between that comment and its function.
+    assert.ok(generateFnIndex < migrationsDocIndex, 'runBackendGenerate should be declared before runBackendMigrations\' doc comment, not spliced in between it and the function');
+    assert.ok(migrationsDocIndex < migrationsFnIndex, 'the "only after the backend is confirmed healthy" doc comment must precede runBackendMigrations');
+
+    const between = source.slice(migrationsDocIndex, migrationsFnIndex);
+    assert.doesNotMatch(between, /\/\*\*|function\s+\w+/, 'nothing (no other comment, no other function) may sit between this doc comment and runBackendMigrations itself');
+  });
+
+  test('db:generate uses the backend\'s existing canonical Prisma command, not a second workflow', () => {
+    assert.match(
+      codeOnly,
+      /runInherit\('pnpm', \['--filter', 'api-gateway', 'run', 'db:generate'\]/,
+      'expected runBackendGenerate to invoke the existing `pnpm --filter api-gateway run db:generate` script',
+    );
+  });
+
   test('db:seed reuses the backend\'s existing seed script, not a new seed implementation', () => {
     assert.match(
       codeOnly,
@@ -178,6 +253,38 @@ describe('bootstrap.mjs safety properties (source-level)', () => {
       /process\.exitCode/,
       'a seed failure must not set a failing exit code — same non-fatal contract as runBackendMigrations',
     );
+  });
+});
+
+describe('Docker Compose local configuration (THIRD FRESH-MACHINE FAILURE)', () => {
+  test('scaffolds infrastructure/docker/.env.compose via the tested ensureEnvFile helper, not a direct file copy', () => {
+    assert.match(codeOnly, /ensureDockerComposeEnvFile/, 'expected a dedicated function that ensures infrastructure/docker/.env.compose exists');
+    const fnStart = codeOnly.indexOf('function ensureDockerComposeEnvFile');
+    assert.ok(fnStart !== -1);
+    const fnEnd = codeOnly.indexOf('\n}', fnStart) + 2;
+    const fnBody = codeOnly.slice(fnStart, fnEnd);
+    assert.match(fnBody, /ensureEnvFile\(/);
+    assert.doesNotMatch(fnBody, /copyFileSync\(/);
+  });
+
+  test('generates local JWT secrets via the tested ensureLocalSecrets helper, and never logs a secret value', () => {
+    assert.match(codeOnly, /ensureLocalSecrets\(/, 'expected bootstrap.mjs to call the shared secret-generation helper');
+    // The only thing ever logged about a generated/preserved secret is its KEY name (JWT_ACCESS_SECRET /
+    // JWT_REFRESH_SECRET) or a fixed "(values never printed)" acknowledgement — never the return value of
+    // generateSecret() itself, and never anything read out of the env file's contents.
+    assert.doesNotMatch(codeOnly, /log\.(ok|info|detail|warn)\([^)]*generateSecret\(/, 'a generated secret value must never be passed to a log call');
+    assert.match(codeOnly, /values never printed/i);
+  });
+
+  test('the compose env-file step runs before Docker/backend startup (Step 2), and is fatal if the example template is missing', () => {
+    const composeEnvCallIndex = codeOnly.indexOf('= ensureDockerComposeEnvFile();');
+    const step2Index = codeOnly.indexOf("log.section('Step 2");
+    assert.ok(composeEnvCallIndex !== -1 && step2Index !== -1);
+    assert.ok(composeEnvCallIndex < step2Index, 'infrastructure/docker/.env.compose must be prepared before Docker Compose is ever invoked');
+
+    const callSiteSection = codeOnly.slice(composeEnvCallIndex, composeEnvCallIndex + 300);
+    assert.match(callSiteSection, /if\s*\(!composeEnvResult\.ok\)/);
+    assert.match(callSiteSection, /process\.exitCode\s*=\s*1/);
   });
 });
 
