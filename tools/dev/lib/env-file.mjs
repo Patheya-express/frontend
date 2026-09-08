@@ -68,6 +68,36 @@ export function generateSecret(byteLength = 48) {
   return randomBytes(byteLength).toString('base64url');
 }
 
+/**
+ * Splits dotenv-format text into lines on `\n` only, stripping (and remembering) each line's own
+ * optional trailing `\r` individually. This is the key fix for the FOURTH FRESH-MACHINE FAILURE:
+ * a naive multiline regex (`^...$` with the `m` flag) is not CRLF-safe in JS — `^`/`$` treat a
+ * bare `\r` as its own line terminator, so on a CRLF file (exactly what `git clone` on Windows
+ * produces for this repo's sibling backend checkout, which has no `.gitattributes` forcing LF —
+ * unlike this repo's own, see this repo's own `.gitattributes`), `^` for the target key could
+ * match *inside* the preceding line's terminator (right after its `\r`, before its `\n`), and a
+ * trailing `\s*` in the old pattern would then silently swallow that real `\n` into the match.
+ * `String#replace` then deleted it along with the matched text, merging the previous line's
+ * content directly onto the replacement with no newline between them — which both destroyed the
+ * key being replaced as its own parseable `KEY=value` line (folding it into the *previous* key's
+ * value instead) and corrupted that previous key's value. Verified against this repo's actual
+ * checked-out `.env.compose.example` (LOG_TO_FILE immediately precedes JWT_ACCESS_SECRET there):
+ * this exact bug reproduced BOTH real fresh-machine symptoms at once — JWT_ACCESS_SECRET/
+ * JWT_REFRESH_SECRET vanishing as distinct keys (so Docker Compose's `${JWT_ACCESS_SECRET:-dev-
+ * access-secret-change-me}` fell back to its own hardcoded placeholder default) and LOG_TO_FILE's
+ * value becoming a garbled multi-line blob that failed Joi's `.boolean()` check. Processing
+ * line-by-line (each line's own `^`/`$` are the string's actual start/end, never a regex line-
+ * terminator quirk) and re-attaching each line's own original `\r` (or lack of one) makes both
+ * readEnvVar and setEnvVar correct on LF, CRLF, and even mixed-line-ending files without ever
+ * reformatting a line this code didn't touch.
+ */
+function splitPreservingLineEndings(contents) {
+  return contents.split('\n').map((rawLine) => {
+    const hasCarriageReturn = rawLine.endsWith('\r');
+    return { text: hasCarriageReturn ? rawLine.slice(0, -1) : rawLine, hasCarriageReturn };
+  });
+}
+
 /** Reads a single `KEY=value` line's value from dotenv-format text, tolerating an optionally
  *  quoted value — the same lightweight, non-general-purpose approach as db-verify.mjs's
  *  extractDatabaseUrl, generalized to any key. Returns `undefined` (not `null`) when the key is
@@ -75,20 +105,39 @@ export function generateSecret(byteLength = 48) {
  *  treats a falsy value as "needs a real value"). */
 export function readEnvVar(contents, key) {
   const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const match = contents.match(new RegExp(`^\\s*${escaped}\\s*=\\s*"?([^"\\r\\n]*?)"?\\s*$`, 'm'));
-  return match ? match[1] : undefined;
+  const pattern = new RegExp(`^\\s*${escaped}\\s*=\\s*"?([^"]*?)"?\\s*$`);
+  for (const { text } of splitPreservingLineEndings(contents)) {
+    const match = text.match(pattern);
+    if (match) {
+      return match[1];
+    }
+  }
+  return undefined;
 }
 
 /** Sets `KEY=value` in dotenv-format text — replacing an existing `KEY=...` line in place, or
  *  appending a new one if the key isn't present yet. Every other line (comments, blank lines,
- *  every other variable) is preserved byte-for-byte; this never reformats or reorders the file. */
+ *  every other variable) is preserved byte-for-byte, including each line's own original `\r\n` vs
+ *  `\n` ending; this never reformats or reorders the file. */
 export function setEnvVar(contents, key, value) {
   const escaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const linePattern = new RegExp(`^\\s*${escaped}\\s*=.*$`, 'm');
+  const pattern = new RegExp(`^\\s*${escaped}\\s*=`);
+  const lines = splitPreservingLineEndings(contents);
   const newLine = `${key}=${value}`;
-  if (linePattern.test(contents)) {
-    return contents.replace(linePattern, newLine);
+
+  let found = false;
+  const updated = lines.map(({ text, hasCarriageReturn }) => {
+    if (!found && pattern.test(text)) {
+      found = true;
+      return { text: newLine, hasCarriageReturn };
+    }
+    return { text, hasCarriageReturn };
+  });
+
+  if (found) {
+    return updated.map(({ text, hasCarriageReturn }) => text + (hasCarriageReturn ? '\r' : '')).join('\n');
   }
+
   const separator = contents === '' || contents.endsWith('\n') ? '' : '\n';
   return `${contents}${separator}${newLine}\n`;
 }

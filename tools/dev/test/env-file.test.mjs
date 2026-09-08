@@ -116,6 +116,46 @@ describe('readEnvVar / setEnvVar', () => {
     const after = setEnvVar('A=1\n', 'FOO', 'new');
     assert.equal(after, 'A=1\nFOO=new\n');
   });
+
+  // Regression coverage for the FOURTH FRESH-MACHINE FAILURE: on a `git clone` checked out with
+  // CRLF line endings (the backend repo has no `.gitattributes` forcing LF, so this happens
+  // whenever the developer's global `core.autocrlf` is `true` — a common Windows default), the old
+  // multiline-regex implementation of setEnvVar mis-anchored `^`/`$` around a bare `\r` and let a
+  // trailing `\s*` swallow the PRECEDING line's real `\n`, merging that line onto the replacement
+  // with no separator. This both deleted the target key as its own parseable line (folding it into
+  // the previous key's value) and corrupted that previous key's value. See env-file.mjs's own doc
+  // comment on splitPreservingLineEndings() for the full mechanism.
+  describe('CRLF safety (regression: fresh Windows clone corrupting adjacent lines)', () => {
+    test('setEnvVar replaces a CRLF-terminated line without merging it into the preceding line', () => {
+      const before = 'A=1\r\nFOO=old\r\nB=2\r\n';
+      const after = setEnvVar(before, 'FOO', 'new');
+      assert.equal(after, 'A=1\r\nFOO=new\r\nB=2\r\n');
+    });
+
+    test('readEnvVar reads a CRLF-terminated value without swallowing the trailing \\r', () => {
+      assert.equal(readEnvVar('A=1\r\nFOO=bar\r\nB=2\r\n', 'FOO'), 'bar');
+    });
+
+    test('replacing one key in a CRLF file leaves every other line — including the one immediately before it — byte-for-byte intact', () => {
+      // Mirrors the real infrastructure/docker/.env.compose.example layout, where LOG_TO_FILE
+      // immediately precedes JWT_ACCESS_SECRET — the exact adjacency that turned one corrupted
+      // replacement into two simultaneous fresh-machine failures (a mangled LOG_TO_FILE and a
+      // vanished JWT_ACCESS_SECRET).
+      const before = 'NODE_ENV=development\r\nLOG_TO_FILE=true\r\nJWT_ACCESS_SECRET=dev-access-secret-change-me\r\nSTORAGE_DRIVER=local\r\n';
+      const after = setEnvVar(before, 'JWT_ACCESS_SECRET', 'REPLACED-VALUE');
+
+      assert.equal(readEnvVar(after, 'LOG_TO_FILE'), 'true', 'the preceding line must be untouched');
+      assert.equal(readEnvVar(after, 'JWT_ACCESS_SECRET'), 'REPLACED-VALUE');
+      assert.equal(readEnvVar(after, 'STORAGE_DRIVER'), 'local', 'the following line must be untouched');
+      assert.equal(after.split('\n').length, before.split('\n').length, 'line count must be preserved — no lines silently merged');
+    });
+
+    test('mixed LF/CRLF line endings in the same file are each preserved independently', () => {
+      const before = 'A=1\nFOO=old\r\nB=2\n';
+      const after = setEnvVar(before, 'FOO', 'new');
+      assert.equal(after, 'A=1\nFOO=new\r\nB=2\n');
+    });
+  });
 });
 
 describe('ensureLocalSecrets', () => {
