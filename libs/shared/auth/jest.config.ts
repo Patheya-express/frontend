@@ -1,9 +1,6 @@
 import type { Config } from 'jest';
 import { readFileSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
+import { join } from 'path';
 
 // Workspace path aliases (@patheya-express-frontend/*) are resolved here directly from
 // tsconfig.base.json rather than hardcoded, so this config stays correct if paths change.
