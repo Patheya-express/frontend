@@ -4,6 +4,7 @@ import type { RecentSearchDto, SearchSuggestionDto, TrendingSearchDto } from '@p
 import {
   EmptyStateComponent,
   ErrorStateComponent,
+  LinkButtonComponent,
   ListStaggerDirective,
   MOBILE_LIST_ITEM_TRANSITION,
   NetworkStatusService,
@@ -29,6 +30,7 @@ import { SearchSuggestionsService } from '../../services/search-suggestions.serv
     SearchInputComponent,
     PaginationComponent,
     ListStaggerDirective,
+    LinkButtonComponent,
   ],
   templateUrl: './restaurant-list.component.html',
   styleUrl: './restaurant-list.component.scss',

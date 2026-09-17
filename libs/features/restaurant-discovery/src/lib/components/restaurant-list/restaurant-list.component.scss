@@ -147,20 +147,6 @@ h1 {
   width: 120px;
 }
 
-.restaurant-discovery-clear-filters {
-  background: none;
-  border: none;
-  color: var(--color-primary);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  padding: 0;
-  white-space: nowrap;
-
-  &:hover {
-    text-decoration: underline;
-  }
-}
 
 .restaurant-grid {
   display: grid;

@@ -29,19 +29,6 @@
   font-size: var(--font-size-sm);
 }
 
-.offer-clear-filters {
-  background: none;
-  border: none;
-  color: var(--color-primary);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  padding: 0;
-
-  &:hover {
-    text-decoration: underline;
-  }
-}
 
 .offer-list-grid {
   display: grid;

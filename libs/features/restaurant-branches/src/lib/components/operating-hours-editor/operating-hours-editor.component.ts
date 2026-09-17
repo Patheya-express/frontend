@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import type { OperatingHourResponseDto, UpsertOperatingHourDto } from '@patheya-express-frontend/api-sdk';
+import { PrimaryButtonComponent } from '@patheya-express-frontend/ui';
 
 interface ShiftRow {
   opensAt: string;
@@ -35,7 +36,7 @@ function buildEmptyWeek(): DaySchedule[] {
 @Component({
   selector: 'lib-operating-hours-editor',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, PrimaryButtonComponent],
   templateUrl: './operating-hours-editor.component.html',
   styleUrl: './operating-hours-editor.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

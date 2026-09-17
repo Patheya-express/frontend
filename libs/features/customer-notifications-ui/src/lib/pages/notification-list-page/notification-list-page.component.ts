@@ -3,7 +3,14 @@ import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import type { NotificationResponseDto } from '@patheya-express-frontend/api-sdk';
 import { CustomerNotificationsFacade } from '@patheya-express-frontend/customer-notifications';
-import { EmptyStateComponent, ErrorStateComponent, PaginationComponent, SearchInputComponent, SkeletonComponent } from '@patheya-express-frontend/ui';
+import {
+  EmptyStateComponent,
+  ErrorStateComponent,
+  LinkButtonComponent,
+  PaginationComponent,
+  SearchInputComponent,
+  SkeletonComponent,
+} from '@patheya-express-frontend/ui';
 
 type NotificationType = NotificationResponseDto['type'];
 
@@ -49,7 +56,15 @@ function resolveNotificationTarget(notification: NotificationResponseDto): DeepL
 @Component({
   selector: 'lib-notification-list-page',
   standalone: true,
-  imports: [DatePipe, SkeletonComponent, EmptyStateComponent, ErrorStateComponent, SearchInputComponent, PaginationComponent],
+  imports: [
+    DatePipe,
+    SkeletonComponent,
+    EmptyStateComponent,
+    ErrorStateComponent,
+    SearchInputComponent,
+    PaginationComponent,
+    LinkButtonComponent,
+  ],
   templateUrl: './notification-list-page.component.html',
   styleUrl: './notification-list-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
