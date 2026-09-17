@@ -21,11 +21,19 @@ export class ConfirmDialogComponent {
   // every existing call site is completely unaffected by this (still the same property binding).
   readonly open = input(false);
   @Input() title = 'Are you sure?';
+  /** Plain text only, rendered as-is (no HTML) — every existing call site passes a string.
+   *  A consumer that genuinely needs richer body content (e.g. a file-upload widget, an OTP
+   *  input) projects it into the `[dialogContent]` slot instead, rendered between this message
+   *  and the action row; `message` and the slot can be used independently or together. */
   @Input() message?: string;
   @Input() confirmLabel = 'Confirm';
   @Input() cancelLabel = 'Cancel';
   /** Disables both actions while a confirmed action is still in flight, to prevent duplicate submissions. */
   @Input() busy = false;
+  /** Disables only the confirm action, independent of `busy` — for a consumer whose confirm step
+   *  has its own precondition (e.g. "no file selected yet") that cancel is unaffected by. Defaults
+   *  to `false`, matching every existing call site's current behavior (confirm follows `busy` only). */
+  @Input() confirmDisabled = false;
   @Input() tone: 'default' | 'danger' = 'default';
 
   @Output() confirmed = new EventEmitter<void>();
@@ -77,7 +85,7 @@ export class ConfirmDialogComponent {
   }
 
   protected onConfirm(): void {
-    if (this.busy) {
+    if (this.busy || this.confirmDisabled) {
       return;
     }
     this.confirmed.emit();

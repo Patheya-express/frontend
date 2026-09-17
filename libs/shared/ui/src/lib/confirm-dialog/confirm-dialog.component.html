@@ -17,6 +17,7 @@
       @if (message) {
         <p class="confirm-dialog-message">{{ message }}</p>
       }
+      <ng-content select="[dialogContent]" />
       <div class="confirm-dialog-actions">
         <button type="button" class="confirm-dialog-cancel" [disabled]="busy" (click)="onCancel()">
           {{ cancelLabel }}
@@ -25,7 +26,7 @@
           type="button"
           class="confirm-dialog-confirm"
           [class.is-danger]="tone === 'danger'"
-          [disabled]="busy"
+          [disabled]="busy || confirmDisabled"
           (click)="onConfirm()"
         >
           {{ confirmLabel }}
