@@ -95,9 +95,9 @@
         <input id="onboard-license-number" type="text" formControlName="licenseNumber" />
       </div>
 
-      <button type="submit" class="form-submit" [disabled]="submitting()">
+      <lib-primary-button type="submit" class="form-submit" [disabled]="submitting()" [loading]="submitting()">
         {{ submitting() ? 'Submitting…' : 'Join as Delivery Partner' }}
-      </button>
+      </lib-primary-button>
     </form>
 
     <span auth-card-footer>Already a courier? <a routerLink="/auth/login">Log in</a></span>

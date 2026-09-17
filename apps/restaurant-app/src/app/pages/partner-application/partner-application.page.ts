@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { AuthCardComponent, AuthLayoutComponent } from '@patheya-express-frontend/ui';
+import { AuthCardComponent, AuthLayoutComponent, PrimaryButtonComponent } from '@patheya-express-frontend/ui';
 import { AuthFacade } from '@patheya-express-frontend/auth';
 import { PartnerApplicationService } from './partner-application.service';
 
@@ -16,7 +16,7 @@ function slugify(value: string): string {
 @Component({
   selector: 'app-partner-application-page',
   standalone: true,
-  imports: [AuthLayoutComponent, AuthCardComponent, RouterLink, ReactiveFormsModule],
+  imports: [AuthLayoutComponent, AuthCardComponent, RouterLink, ReactiveFormsModule, PrimaryButtonComponent],
   templateUrl: './partner-application.page.html',
   styleUrl: './partner-application.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { AuthCardComponent, AuthLayoutComponent } from '@patheya-express-frontend/ui';
+import { AuthCardComponent, AuthLayoutComponent, PrimaryButtonComponent } from '@patheya-express-frontend/ui';
 import { AuthFacade } from '@patheya-express-frontend/auth';
 import { PartnerOnboardingService } from './partner-onboarding.service';
 
@@ -10,7 +10,7 @@ const VEHICLE_TYPES = ['BIKE', 'SCOOTER', 'BICYCLE', 'CAR'] as const;
 @Component({
   selector: 'app-partner-onboarding-page',
   standalone: true,
-  imports: [AuthLayoutComponent, AuthCardComponent, RouterLink, ReactiveFormsModule],
+  imports: [AuthLayoutComponent, AuthCardComponent, RouterLink, ReactiveFormsModule, PrimaryButtonComponent],
   templateUrl: './partner-onboarding.page.html',
   styleUrl: './partner-onboarding.page.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

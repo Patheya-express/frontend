@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { PrimaryButtonComponent } from '../buttons/primary-button.component';
 
 export interface ForgotPasswordFormValue {
   email: string;
@@ -8,7 +9,7 @@ export interface ForgotPasswordFormValue {
 @Component({
   selector: 'lib-forgot-password-form',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, PrimaryButtonComponent],
   templateUrl: './forgot-password-form.component.html',
   styleUrl: './forgot-password-form.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

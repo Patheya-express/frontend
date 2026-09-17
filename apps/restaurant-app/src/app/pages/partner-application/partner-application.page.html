@@ -86,9 +86,9 @@
         <input id="apply-phone" type="tel" autocomplete="tel" formControlName="phone" />
       </div>
 
-      <button type="submit" class="form-submit" [disabled]="submitting()">
+      <lib-primary-button type="submit" class="form-submit" [disabled]="submitting()" [loading]="submitting()">
         {{ submitting() ? 'Submitting…' : 'Apply as Restaurant Partner' }}
-      </button>
+      </lib-primary-button>
     </form>
 
     <span auth-card-footer>Already a partner? <a routerLink="/auth/login">Log in</a></span>

@@ -81,24 +81,5 @@ input[type='text'] {
 }
 
 .form-submit {
-  min-height: var(--touch-target-comfortable, 48px);
   margin-top: var(--space-2);
-  border: none;
-  background: var(--color-primary);
-  color: var(--color-text-on-primary);
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-semibold);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
-  cursor: pointer;
-  transition: background var(--transition-fast);
-
-  &:hover:not(:disabled) {
-    background: var(--color-primary-hover);
-  }
-
-  &:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
 }
