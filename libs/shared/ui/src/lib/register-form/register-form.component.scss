@@ -42,7 +42,9 @@ input[type='text'] {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: var(--space-2) var(--space-3);
-  font-size: var(--font-size-base);
+  // Floored at 16px, not just --font-size-base (15px) — anything smaller makes iOS Safari (and
+  // some Android WebViews) zoom the viewport in on focus.
+  font-size: max(16px, var(--font-size-base));
   color: var(--color-text);
   background: var(--color-surface);
   transition: border-color var(--transition-fast);

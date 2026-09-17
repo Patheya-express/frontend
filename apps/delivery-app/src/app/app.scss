@@ -21,7 +21,7 @@
   height: 1.75rem;
   border-radius: 50%;
   background: var(--color-primary, #1f6feb);
-  color: #fff;
+  color: var(--color-text-on-primary);
   font-size: 0.75rem;
   font-weight: 600;
 }

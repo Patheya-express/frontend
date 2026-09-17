@@ -1,13 +1,19 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, effect, input, signal } from '@angular/core';
+import { AutoFocusDirective } from '../directives/auto-focus.directive';
+import { FocusTrapDirective } from '../directives/focus-trap.directive';
 import { MOBILE_MODAL_TRANSITION } from '../animations/modal.animation';
 import { MOBILE_MOTION_DURATIONS_MS } from '../tokens/motion.tokens';
 
 @Component({
   selector: 'lib-confirm-dialog',
   standalone: true,
+  imports: [AutoFocusDirective, FocusTrapDirective],
   templateUrl: './confirm-dialog.component.html',
   styleUrl: './confirm-dialog.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:keydown.escape)': 'onEscape()',
+  },
 })
 export class ConfirmDialogComponent {
   // Signal input, not a plain @Input() — the leave-animation effect() below needs to react to
@@ -58,6 +64,13 @@ export class ConfirmDialogComponent {
 
   protected onCancel(): void {
     if (this.busy) {
+      return;
+    }
+    this.cancelled.emit();
+  }
+
+  protected onEscape(): void {
+    if (!this.open() || this.busy) {
       return;
     }
     this.cancelled.emit();

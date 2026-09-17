@@ -108,7 +108,10 @@
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-4) var(--space-5);
+  // Bottom-anchored on mobile (see .sheet-panel above) — pad out for the device's home
+  // indicator/gesture bar so the Add to Cart button never sits under it. `env()` resolves to 0px
+  // on desktop/web, so this is a no-op there.
+  padding: var(--space-4) var(--space-5) calc(var(--space-4) + var(--safe-area-bottom));
   border-top: 1px solid var(--color-border);
 }
 
@@ -152,8 +155,10 @@
   font-weight: var(--font-weight-semibold);
   cursor: pointer;
 
-  &:hover:not(:disabled) {
-    background: var(--color-primary-hover);
+  @media (hover: hover) and (pointer: fine) {
+    &:hover:not(:disabled) {
+      background: var(--color-primary-hover);
+    }
   }
 
   &:disabled {

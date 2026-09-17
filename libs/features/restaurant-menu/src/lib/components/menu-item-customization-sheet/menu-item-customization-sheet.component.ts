@@ -12,13 +12,18 @@ import {
 import type { MenuItemResponseDto } from '@patheya-express-frontend/api-sdk';
 import { CartFacade } from '@patheya-express-frontend/cart';
 import { HapticsService } from '@patheya-express-frontend/core';
+import { AutoFocusDirective, FocusTrapDirective } from '@patheya-express-frontend/ui';
 
 @Component({
   selector: 'lib-menu-item-customization-sheet',
   standalone: true,
+  imports: [AutoFocusDirective, FocusTrapDirective],
   templateUrl: './menu-item-customization-sheet.component.html',
   styleUrl: './menu-item-customization-sheet.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:keydown.escape)': 'close()',
+  },
 })
 export class MenuItemCustomizationSheetComponent implements OnInit {
   @Input({ required: true }) item!: MenuItemResponseDto;

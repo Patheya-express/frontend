@@ -1,6 +1,7 @@
 import { NgComponentOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { AutoFocusDirective } from '../../directives/auto-focus.directive';
+import { FocusTrapDirective } from '../../directives/focus-trap.directive';
 import { ModalService } from '../../services/modal.service';
 import { MOBILE_MODAL_TRANSITION } from '../../animations/modal.animation';
 
@@ -14,7 +15,7 @@ import { MOBILE_MODAL_TRANSITION } from '../../animations/modal.animation';
 @Component({
   selector: 'lib-modal-host',
   standalone: true,
-  imports: [NgComponentOutlet, AutoFocusDirective],
+  imports: [NgComponentOutlet, AutoFocusDirective, FocusTrapDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(document:keydown.escape)': 'onEscape()',
@@ -35,6 +36,7 @@ import { MOBILE_MODAL_TRANSITION } from '../../animations/modal.animation';
         aria-modal="true"
         tabindex="-1"
         [mobileAutoFocus]="true"
+        libFocusTrap
         [attr.aria-label]="entry.config.ariaLabel ?? null"
       >
         <ng-container

@@ -68,6 +68,7 @@ export * from './lib/services/network-status.service';
 
 // Directives
 export * from './lib/directives/auto-focus.directive';
+export * from './lib/directives/focus-trap.directive';
 export * from './lib/directives/ripple.directive';
 export * from './lib/directives/long-press.directive';
 export * from './lib/directives/swipe.directive';

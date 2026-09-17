@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { AutoFocusDirective } from '../directives/auto-focus.directive';
+import { FocusTrapDirective } from '../directives/focus-trap.directive';
 import { SwipeDirective, type MobileSwipeEvent } from '../directives/swipe.directive';
 
 /**
@@ -17,7 +18,7 @@ import { SwipeDirective, type MobileSwipeEvent } from '../directives/swipe.direc
 @Component({
   selector: 'lib-bottom-sheet',
   standalone: true,
-  imports: [SwipeDirective, AutoFocusDirective],
+  imports: [SwipeDirective, AutoFocusDirective, FocusTrapDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     role: 'dialog',
@@ -32,6 +33,7 @@ import { SwipeDirective, type MobileSwipeEvent } from '../directives/swipe.direc
       (swiped)="onSwipe($event)"
       tabindex="-1"
       [mobileAutoFocus]="true"
+      libFocusTrap
     >
       @if (showHandle()) {
         <div class="mobile-bottom-sheet__handle" aria-hidden="true"></div>

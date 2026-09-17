@@ -1,6 +1,14 @@
 <button type="button" class="sheet-backdrop" aria-label="Close" (click)="close()"></button>
 
-<div class="sheet-panel" role="dialog" aria-modal="true" [attr.aria-label]="item.name">
+<div
+  class="sheet-panel"
+  role="dialog"
+  aria-modal="true"
+  tabindex="-1"
+  [mobileAutoFocus]="true"
+  libFocusTrap
+  [attr.aria-label]="item.name"
+>
   <header class="sheet-header">
     <h2>{{ item.name }}</h2>
     <button type="button" class="sheet-close" aria-label="Close" (click)="close()">✕</button>

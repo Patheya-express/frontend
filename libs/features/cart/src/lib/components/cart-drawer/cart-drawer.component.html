@@ -1,7 +1,15 @@
 @if (open) {
   <button type="button" class="drawer-backdrop" aria-label="Close cart" (click)="close()"></button>
 
-  <aside class="drawer-panel" role="dialog" aria-modal="true" aria-label="Cart">
+  <aside
+    class="drawer-panel"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Cart"
+    tabindex="-1"
+    [mobileAutoFocus]="true"
+    libFocusTrap
+  >
     <header class="drawer-header">
       <h2>Your Cart</h2>
       <button type="button" class="drawer-close" aria-label="Close cart" (click)="close()">✕</button>

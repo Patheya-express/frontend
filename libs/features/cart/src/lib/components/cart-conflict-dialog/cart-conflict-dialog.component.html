@@ -1,7 +1,15 @@
 @if (pendingConflict(); as conflict) {
   <button type="button" class="dialog-backdrop" aria-label="Keep current cart" (click)="cancel()"></button>
 
-  <div class="dialog-panel" role="alertdialog" aria-modal="true" aria-labelledby="cart-conflict-title">
+  <div
+    class="dialog-panel"
+    role="alertdialog"
+    aria-modal="true"
+    aria-labelledby="cart-conflict-title"
+    tabindex="-1"
+    [mobileAutoFocus]="true"
+    libFocusTrap
+  >
     <h2 id="cart-conflict-title">Start a new order?</h2>
     <p>
       Your cart has items from <strong>{{ currentRestaurantName() }}</strong>. Adding an item from

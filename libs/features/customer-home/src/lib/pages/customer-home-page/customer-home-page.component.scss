@@ -4,28 +4,11 @@
 // `variant="neo-glass"` input instead — see search-input.component.scss / status-chip.component.scss.
 @use '../../../../../../shared/ui/src/lib/neo-glass/neo-glass.mixins' as neo;
 
-:host {
-  // Warms this page's own background layer — cream instead of the app-wide cool neutral — via a
-  // scoped custom-property override, light mode only (guarded below). Every --neo-*/--glass-*
-  // token in theme.scss is *derived* from --color-background with color-mix(), resolved live at
-  // point of use rather than frozen at :root, so this single override warms the search pill,
-  // chips, and cards rendered inside this page too — without touching the shared theme file or
-  // affecting any other page.
-  --color-background: #faf5ef;
-}
-
-// Mirrors theme.scss's own two dark-mode activation conditions (explicit attribute, or OS
-// preference with no explicit override) so this page's warm override never fights dark mode —
-// it defers entirely back to the app's real dark palette instead.
-:host-context([data-theme='dark']) {
-  --color-background: #121214;
-}
-
-@media (prefers-color-scheme: dark) {
-  :host-context(:root:not([data-theme='light'])) {
-    --color-background: #121214;
-  }
-}
+// Previously warmed this page's own background to a cream tone via a scoped --color-background
+// override (Rustic Charm's warm identity). That override is removed under the Burgundy/Glacier/
+// Black/Silver/Chocolate palette: the brief for this migration calls for a predominantly clean,
+// cool, neutral surface (Silver) app-wide, so this page now inherits the shared
+// --color-background like every other page instead of carrying its own tint.
 
 .customer-home-page {
   display: flex;

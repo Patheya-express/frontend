@@ -7,6 +7,9 @@
       class="confirm-dialog"
       role="alertdialog"
       aria-modal="true"
+      tabindex="-1"
+      [mobileAutoFocus]="true"
+      libFocusTrap
       [attr.aria-label]="title"
       [class]="open() ? transition.enter : transition.leave"
     >

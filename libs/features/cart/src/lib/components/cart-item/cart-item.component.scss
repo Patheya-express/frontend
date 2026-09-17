@@ -80,8 +80,10 @@ h4 {
   cursor: pointer;
   border-radius: var(--radius-sm);
 
-  &:hover {
-    background: var(--color-primary-soft);
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      background: var(--color-primary-soft);
+    }
   }
 }
 
@@ -113,7 +115,9 @@ h4 {
   padding: var(--space-2);
   margin: calc(var(--space-2) * -1);
 
-  &:hover {
-    text-decoration: underline;
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      text-decoration: underline;
+    }
   }
 }
