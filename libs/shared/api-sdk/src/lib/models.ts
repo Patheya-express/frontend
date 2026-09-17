@@ -85,6 +85,7 @@ export type { DeliveryPartnerResponseDto } from './models/delivery-partner-respo
 export type { DeliveryProfileResponseDto } from './models/delivery-profile-response-dto';
 export type { DeliveryVerificationResponseDto } from './models/delivery-verification-response-dto';
 export type { DispatchActionResponseDto } from './models/dispatch-action-response-dto';
+export type { DispatchDebugInfoResponseDto } from './models/dispatch-debug-info-response-dto';
 export type { DocumentResponseDto } from './models/document-response-dto';
 export type { DocumentVersionResponseDto } from './models/document-version-response-dto';
 export type { ExpiringDeliveryDocumentDto } from './models/expiring-delivery-document-dto';
@@ -95,6 +96,7 @@ export type { FavoriteToggleResponseDto } from './models/favorite-toggle-respons
 export type { ForceCompleteOrderDto } from './models/force-complete-order-dto';
 export type { ForgotPasswordDto } from './models/forgot-password-dto';
 export type { GlobalSearchResponseDto } from './models/global-search-response-dto';
+export type { GoAvailableDto } from './models/go-available-dto';
 export type { HealthMemoryUsageDto } from './models/health-memory-usage-dto';
 export type { HealthResponseDto } from './models/health-response-dto';
 export type { HolidayResponseDto } from './models/holiday-response-dto';
@@ -104,6 +106,8 @@ export type { LoginDto } from './models/login-dto';
 export type { LogoutResponseDto } from './models/logout-response-dto';
 export type { LogSearchDto } from './models/log-search-dto';
 export type { MarkAllReadResponseDto } from './models/mark-all-read-response-dto';
+export type { MarkOnlineDto } from './models/mark-online-dto';
+export type { MarkRestaurantArrivalDto } from './models/mark-restaurant-arrival-dto';
 export type { MediaResponseDto } from './models/media-response-dto';
 export type { MenuAddonOptionResponseDto } from './models/menu-addon-option-response-dto';
 export type { MenuAddonResponseDto } from './models/menu-addon-response-dto';
@@ -152,6 +156,7 @@ export type { PricingBreakdownEntryResponseDto } from './models/pricing-breakdow
 export type { PricingResultResponseDto } from './models/pricing-result-response-dto';
 export type { ProofOtpGeneratedResponseDto } from './models/proof-otp-generated-response-dto';
 export type { ProofOtpStatusResponseDto } from './models/proof-otp-status-response-dto';
+export type { ProofPhotoResponseDto } from './models/proof-photo-response-dto';
 export type { PushTokenResponseDto } from './models/push-token-response-dto';
 export type { RatingBreakdownEntryDto } from './models/rating-breakdown-entry-dto';
 export type { RatingSummaryResponseDto } from './models/rating-summary-response-dto';
@@ -181,6 +186,7 @@ export type { ReportSummaryEntryResponseDto } from './models/report-summary-entr
 export type { RequestDeliveryOnboardingChangesDto } from './models/request-delivery-onboarding-changes-dto';
 export type { RequestOnboardingChangesDto } from './models/request-onboarding-changes-dto';
 export type { ResetPasswordDto } from './models/reset-password-dto';
+export type { RestaurantArrivalResponseDto } from './models/restaurant-arrival-response-dto';
 export type { RestaurantBranchSummaryDto } from './models/restaurant-branch-summary-dto';
 export type { RestaurantCuisineSummaryDto } from './models/restaurant-cuisine-summary-dto';
 export type { RestaurantDashboardResponseDto } from './models/restaurant-dashboard-response-dto';

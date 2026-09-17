@@ -43,6 +43,10 @@
         </section>
       }
 
+      @if (showPickupEvidence()) {
+        <lib-pickup-evidence-card />
+      }
+
       @if (orderValue.deliveryPartner; as partner) {
         <section class="order-tracking-section">
           <h2>Delivery partner</h2>
@@ -94,10 +98,25 @@
           </span>
         </div>
 
-        @if (orderValue.paymentMode === 'ONLINE' && orderValue.paymentStatus !== 'PAID') {
-          <button type="button" class="retry-payment-btn" [disabled]="retryingPayment()" (click)="retryPayment()">
-            {{ retryingPayment() ? 'Processing…' : 'Complete Payment' }}
-          </button>
+        @if (isPayable() && orderValue.paymentStatus !== 'PAID') {
+          <div class="order-tracking-payment-actions">
+            <button type="button" class="retry-payment-btn" [disabled]="retryingPayment()" (click)="retryPayment()">
+              {{ retryingPayment()
+                ? 'Processing…'
+                : orderValue.paymentMode === 'COD' ? 'Complete Payment' : 'Retry Payment' }}
+            </button>
+
+            @if (orderValue.paymentMode === 'ONLINE' && orderValue.status === 'PENDING') {
+              <button
+                type="button"
+                class="switch-to-cod-btn"
+                [disabled]="switchingToCod()"
+                (click)="continueWithCod()"
+              >
+                {{ switchingToCod() ? 'Switching…' : 'Continue with COD' }}
+              </button>
+            }
+          </div>
         }
 
         @if (orderValue.discountAmount > 0) {

@@ -9,7 +9,7 @@ import { OnboardingWizardFeatureService } from '../services/onboarding-wizard.se
  * reachable (dashboard/orders/menu/etc.) once onboarding is APPROVED — see OnboardingModule on
  * the backend, which is the only place that flips Restaurant.status in response to onboarding.
  */
-function resolveDestination(onboarding: OnboardingResponseDto, restaurant: RestaurantResponseDto): string {
+export function resolveDestination(onboarding: OnboardingResponseDto, restaurant: RestaurantResponseDto): string {
   if (restaurant.status === 'SUSPENDED') {
     return '/onboarding/suspended';
   }

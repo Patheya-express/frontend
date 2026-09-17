@@ -1,11 +1,16 @@
 import { TestBed } from '@angular/core/testing';
 import type { DeliveryPartnerResponseDto } from '@patheya-express-frontend/api-sdk';
 import { LogoutCleanupRegistry } from '@patheya-express-frontend/auth';
-import { MobilePlatformService } from '@patheya-express-frontend/core';
+import {
+  GeolocationService,
+  MobilePlatformService,
+} from '@patheya-express-frontend/core';
 import { DeliveryDashboardStore } from './delivery-dashboard.store';
 import { DeliveryDashboardService } from '../services/delivery-dashboard.service';
 
 const HEARTBEAT_MS = 60_000;
+
+const FIX = { coords: { latitude: 12.9716, longitude: 77.5946 } } as const;
 
 function buildPartner(
   overrides: Partial<DeliveryPartnerResponseDto> = {},
@@ -32,6 +37,10 @@ describe('DeliveryDashboardStore — Presence Heartbeat Hardening', () => {
     goOffline: jest.Mock;
     pingOnline: jest.Mock;
   };
+  let geolocationService: {
+    ensurePermission: jest.Mock;
+    getCurrentPosition: jest.Mock;
+  };
   let resumeCallback: (() => void) | undefined;
   let mobilePlatform: { isNative: jest.Mock; onResume: jest.Mock };
   let logoutRegistry: LogoutCleanupRegistry;
@@ -55,6 +64,14 @@ describe('DeliveryDashboardStore — Presence Heartbeat Hardening', () => {
       pingOnline: jest.fn().mockResolvedValue(undefined),
     };
 
+    // Default: permission granted, a real fix available — matches the common case so the
+    // pre-existing heartbeat-timing tests above don't need to know location exists at all.
+    // Tests that care about location specifically override these per-case below.
+    geolocationService = {
+      ensurePermission: jest.fn().mockResolvedValue(true),
+      getCurrentPosition: jest.fn().mockResolvedValue(FIX),
+    };
+
     mobilePlatform = {
       isNative: jest.fn().mockReturnValue(true),
       onResume: jest.fn((callback: () => void) => {
@@ -66,6 +83,7 @@ describe('DeliveryDashboardStore — Presence Heartbeat Hardening', () => {
       providers: [
         { provide: DeliveryDashboardService, useValue: dashboardService },
         { provide: MobilePlatformService, useValue: mobilePlatform },
+        { provide: GeolocationService, useValue: geolocationService },
       ],
     });
 
@@ -78,9 +96,13 @@ describe('DeliveryDashboardStore — Presence Heartbeat Hardening', () => {
     TestBed.resetTestingModule();
   });
 
+  // Location adds a few extra microtask hops (ensurePermission -> getCurrentPosition -> the
+  // underlying service call) ahead of every goOnline()/pingOnline() call now, so this flushes
+  // more ticks than a single await pair would cover.
   async function flush(): Promise<void> {
-    await Promise.resolve();
-    await Promise.resolve();
+    for (let i = 0; i < 8; i += 1) {
+      await Promise.resolve();
+    }
   }
 
   it('Go Online starts the heartbeat — pings after one interval, none before', async () => {
@@ -239,5 +261,129 @@ describe('DeliveryDashboardStore — Presence Heartbeat Hardening', () => {
     await flush();
 
     expect(dashboardService.pingOnline).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('DeliveryDashboardStore — always-on presence location (2026-09-16 follow-up)', () => {
+  let dashboardService: {
+    getPartner: jest.Mock;
+    getAssignedOrders: jest.Mock;
+    getMyAssignments: jest.Mock;
+    goOnline: jest.Mock;
+    goOffline: jest.Mock;
+    pingOnline: jest.Mock;
+  };
+  let geolocationService: {
+    ensurePermission: jest.Mock;
+    getCurrentPosition: jest.Mock;
+  };
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+
+    dashboardService = {
+      getPartner: jest
+        .fn()
+        .mockResolvedValue(buildPartner({ status: 'OFFLINE' })),
+      getAssignedOrders: jest.fn().mockResolvedValue([]),
+      getMyAssignments: jest.fn().mockResolvedValue([]),
+      goOnline: jest
+        .fn()
+        .mockResolvedValue(buildPartner({ status: 'AVAILABLE' })),
+      goOffline: jest
+        .fn()
+        .mockResolvedValue(buildPartner({ status: 'OFFLINE' })),
+      pingOnline: jest.fn().mockResolvedValue(undefined),
+    };
+
+    geolocationService = {
+      ensurePermission: jest.fn().mockResolvedValue(true),
+      getCurrentPosition: jest.fn().mockResolvedValue(FIX),
+    };
+
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: DeliveryDashboardService, useValue: dashboardService },
+        {
+          provide: MobilePlatformService,
+          useValue: { isNative: jest.fn(), onResume: jest.fn() },
+        },
+        { provide: GeolocationService, useValue: geolocationService },
+      ],
+    });
+  });
+
+  afterEach(() => {
+    jest.clearAllTimers();
+    jest.useRealTimers();
+    TestBed.resetTestingModule();
+  });
+
+  async function flush(): Promise<void> {
+    for (let i = 0; i < 8; i += 1) {
+      await Promise.resolve();
+    }
+  }
+
+  it('goOnline() fetches a fix and passes it through to dashboardService.goOnline', async () => {
+    const store = TestBed.inject(DeliveryDashboardStore);
+
+    await store.goOnline();
+
+    expect(geolocationService.ensurePermission).toHaveBeenCalledTimes(1);
+    expect(geolocationService.getCurrentPosition).toHaveBeenCalledTimes(1);
+    expect(dashboardService.goOnline).toHaveBeenCalledWith({
+      latitude: 12.9716,
+      longitude: 77.5946,
+    });
+  });
+
+  it('every heartbeat tick fetches a fresh fix and passes it through to pingOnline', async () => {
+    const store = TestBed.inject(DeliveryDashboardStore);
+    await store.goOnline();
+    geolocationService.getCurrentPosition.mockClear();
+
+    jest.advanceTimersByTime(HEARTBEAT_MS);
+    await flush();
+
+    expect(geolocationService.getCurrentPosition).toHaveBeenCalledTimes(1);
+    expect(dashboardService.pingOnline).toHaveBeenCalledWith({
+      latitude: 12.9716,
+      longitude: 77.5946,
+    });
+  });
+
+  it('going online still succeeds with no location when permission is denied — never blocks on it', async () => {
+    geolocationService.ensurePermission.mockResolvedValue(false);
+    const store = TestBed.inject(DeliveryDashboardStore);
+
+    await store.goOnline();
+
+    expect(geolocationService.getCurrentPosition).not.toHaveBeenCalled();
+    expect(dashboardService.goOnline).toHaveBeenCalledWith(undefined);
+    expect(store.isOnline()).toBe(true);
+  });
+
+  it('going online still succeeds with no location when getCurrentPosition resolves null', async () => {
+    geolocationService.getCurrentPosition.mockResolvedValue(null);
+    const store = TestBed.inject(DeliveryDashboardStore);
+
+    await store.goOnline();
+
+    expect(dashboardService.goOnline).toHaveBeenCalledWith(undefined);
+    expect(store.isOnline()).toBe(true);
+  });
+
+  it('a heartbeat still succeeds with no location when the fix throws — never fails the tick', async () => {
+    const store = TestBed.inject(DeliveryDashboardStore);
+    await store.goOnline();
+    geolocationService.getCurrentPosition.mockRejectedValue(
+      new Error('GPS unavailable'),
+    );
+
+    jest.advanceTimersByTime(HEARTBEAT_MS);
+    await flush();
+
+    expect(dashboardService.pingOnline).toHaveBeenCalledWith(undefined);
   });
 });

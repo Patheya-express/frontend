@@ -7,6 +7,7 @@ const STATUS_LABELS: Record<DeliveryAssignmentResponseDto['status'], string> = {
   ACCEPTED: 'Accepted',
   REJECTED: 'Rejected',
   EXPIRED: 'Expired',
+  COMPLETED: 'Completed',
 };
 
 const STATUS_TONES: Record<DeliveryAssignmentResponseDto['status'], string> = {
@@ -15,6 +16,7 @@ const STATUS_TONES: Record<DeliveryAssignmentResponseDto['status'], string> = {
   ACCEPTED: 'success',
   REJECTED: 'error',
   EXPIRED: 'neutral',
+  COMPLETED: 'neutral',
 };
 
 /**

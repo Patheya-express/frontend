@@ -50,10 +50,22 @@ export class DeliveryDashboardService {
     return unwrap(response);
   }
 
-  async goOnline(): Promise<DeliveryPartnerResponseDto> {
+  /**
+   * Always-on presence heartbeat (2026-09-16 follow-up) — `location`, when available, is passed
+   * through to both calls so a rider's current position is on file from the very first moment
+   * they go online, not just from whenever the first heartbeat happens to land (see
+   * pingOnline()'s own doc comment for why the heartbeat keeps refreshing it afterward).
+   */
+  async goOnline(
+    location?: { latitude: number; longitude: number },
+  ): Promise<DeliveryPartnerResponseDto> {
     const [partnerResponse] = await Promise.all([
-      this.deliveryService.deliveryControllerGoAvailable(),
-      this.presenceService.presenceControllerMarkOnline(),
+      this.deliveryService.deliveryControllerGoAvailable(
+        location ? { body: location } : undefined,
+      ),
+      this.presenceService.presenceControllerMarkOnline(
+        location ? { body: location } : undefined,
+      ),
     ]);
     this.currentPartner.invalidate();
     return unwrap(partnerResponse);
@@ -73,8 +85,19 @@ export class DeliveryDashboardService {
    * the Redis presence TTL, unlike goOnline() above: `deliveryControllerGoAvailable()` (the
    * durable DB status flip) only needs to happen once, on the initial toggle, not every interval
    * tick.
+   *
+   * Always-on presence heartbeat (2026-09-16 follow-up) — `location`, when available, rides
+   * along on this same already-periodic call so `DeliveryPartner.currentLatitude/currentLongitude`
+   * never goes more than one heartbeat interval stale while the rider is online — this is what
+   * makes location "always accessible unless offline or logged out" true, since the heartbeat
+   * itself already only runs during that exact window (see DeliveryDashboardStore).
    */
-  pingOnline(): Promise<void> {
-    return this.presenceService.presenceControllerMarkOnline().then(() => undefined);
+  pingOnline(location?: {
+    latitude: number;
+    longitude: number;
+  }): Promise<void> {
+    return this.presenceService
+      .presenceControllerMarkOnline(location ? { body: location } : undefined)
+      .then(() => undefined);
   }
 }

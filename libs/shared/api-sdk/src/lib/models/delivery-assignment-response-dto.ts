@@ -3,6 +3,11 @@
 
 import { AssignmentOrderSummaryDto } from '../models/assignment-order-summary-dto';
 export interface DeliveryAssignmentResponseDto {
+
+  /**
+   * Set once the rider is confirmed (100m geofence, see ProofService.markRestaurantArrival) to be at the restaurant pickup location.
+   */
+  arrivedAtRestaurantAt?: string;
   assignedAt: string;
   createdAt: string;
   deliveryPartnerId: string;
@@ -11,6 +16,6 @@ export interface DeliveryAssignmentResponseDto {
   order?: AssignmentOrderSummaryDto;
   orderId: string;
   respondedAt?: string;
-  status: 'PENDING' | 'ASSIGNED' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED';
+  status: 'PENDING' | 'ASSIGNED' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'COMPLETED';
   updatedAt: string;
 }

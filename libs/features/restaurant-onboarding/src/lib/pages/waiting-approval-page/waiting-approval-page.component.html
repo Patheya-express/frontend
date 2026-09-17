@@ -1,6 +1,8 @@
 <div class="waiting-page">
   @if (facade.initializing()) {
     <lib-skeleton [count]="4" />
+  } @else if (facade.error()) {
+    <lib-error-state [message]="facade.error()!" (retry)="retry()" />
   } @else if (facade.onboarding(); as onboarding) {
     @if (onboarding.status === 'REJECTED') {
       <div class="waiting-card waiting-card--rejected">

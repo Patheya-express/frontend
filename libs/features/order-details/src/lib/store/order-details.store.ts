@@ -1,16 +1,29 @@
 import { Injectable, effect, inject, signal } from '@angular/core';
-import type { OrderLocationResponseDto, OrderResponseDto } from '@patheya-express-frontend/api-sdk';
+import type {
+  OrderLocationResponseDto,
+  OrderResponseDto,
+  ProofPhotoResponseDto,
+} from '@patheya-express-frontend/api-sdk';
 import { LogoutCleanupRegistry } from '@patheya-express-frontend/auth';
 import { RealtimeSocketService } from '@patheya-express-frontend/core';
+import { TERMINAL_ORDER_STATUSES } from '../constants/order-status.constants';
 import { OrderDetailsService } from '../services/order-details.service';
 
-const TERMINAL_ORDER_STATUSES: ReadonlyArray<OrderResponseDto['status']> = ['DELIVERED', 'CANCELLED'];
 const POLL_INTERVAL_MS = 15_000;
 
 interface OrderStatusChangedPayload {
   orderId: string;
   status: OrderResponseDto['status'];
   updatedAt: string;
+}
+
+interface PickupPhotoUploadedPayload {
+  orderId: string;
+}
+
+interface ArrivedAtRestaurantPayload {
+  orderId: string;
+  arrivedAt: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -23,17 +36,26 @@ export class OrderDetailsStore {
   private readonly _loading = signal(false);
   private readonly _error = signal<string | null>(null);
   private readonly _location = signal<OrderLocationResponseDto | null>(null);
+  /** Reference/evidence only — see ProofService.uploadPickupPhoto's doc comment. The customer can
+   *  see it, but nothing in this store gates on the customer approving it (2026-09-16 revision
+   *  removed that step; the photo no longer blocks the delivery OTP). */
+  private readonly _pickupPhoto = signal<ProofPhotoResponseDto | null>(null);
+  private readonly _arrivedAtRestaurantAt = signal<string | null>(null);
 
   private pollHandle: ReturnType<typeof setInterval> | null = null;
   private orderId = '';
   private unsubscribeStatus: (() => void) | null = null;
   private unsubscribeLocation: (() => void) | null = null;
+  private unsubscribePickupPhoto: (() => void) | null = null;
+  private unsubscribeArrived: (() => void) | null = null;
 
   readonly order = this._order.asReadonly();
   readonly restaurantName = this._restaurantName.asReadonly();
   readonly loading = this._loading.asReadonly();
   readonly error = this._error.asReadonly();
   readonly location = this._location.asReadonly();
+  readonly pickupPhoto = this._pickupPhoto.asReadonly();
+  readonly arrivedAtRestaurantAt = this._arrivedAtRestaurantAt.asReadonly();
   /** True once the realtime socket is connected — the page can rely on push updates instead of polling. */
   readonly realtimeConnected = this.realtimeSocketService.connected;
 
@@ -70,6 +92,7 @@ export class OrderDetailsStore {
       this._order.set(details.order);
       this._restaurantName.set(details.restaurantName);
       await this.refreshLocationIfTrackable(details.order);
+      await this.refreshPickupEvidenceIfTrackable(details.order);
     } catch {
       this._error.set('Unable to load this order. It may not exist or you may not have access to it.');
       this._order.set(null);
@@ -94,8 +117,12 @@ export class OrderDetailsStore {
     this.stopPolling();
     this.unsubscribeStatus?.();
     this.unsubscribeLocation?.();
+    this.unsubscribePickupPhoto?.();
+    this.unsubscribeArrived?.();
     this.unsubscribeStatus = null;
     this.unsubscribeLocation = null;
+    this.unsubscribePickupPhoto = null;
+    this.unsubscribeArrived = null;
     this.orderId = '';
   }
 
@@ -121,6 +148,26 @@ export class OrderDetailsStore {
         this._location.set(payload);
       },
     );
+
+    this.unsubscribePickupPhoto =
+      this.realtimeSocketService.on<PickupPhotoUploadedPayload>(
+        'pickup.photo.uploaded',
+        (payload) => {
+          if (payload.orderId === orderId) {
+            void this.refreshPickupPhoto(orderId);
+          }
+        },
+      );
+
+    this.unsubscribeArrived =
+      this.realtimeSocketService.on<ArrivedAtRestaurantPayload>(
+        'delivery.arrived_at_restaurant',
+        (payload) => {
+          if (payload.orderId === orderId) {
+            this._arrivedAtRestaurantAt.set(payload.arrivedAt);
+          }
+        },
+      );
   }
 
   private startPollingInterval(): void {
@@ -152,6 +199,7 @@ export class OrderDetailsStore {
       this._restaurantName.set(details.restaurantName);
       this._error.set(null);
       await this.refreshLocationIfTrackable(details.order);
+      await this.refreshPickupEvidenceIfTrackable(details.order);
     } catch {
       // A transient background refresh failure shouldn't blank out an already-loaded order;
       // the next successful poll tick recovers silently.
@@ -169,6 +217,51 @@ export class OrderDetailsStore {
       this._location.set(location);
     } catch {
       // A failed location fetch shouldn't break the rest of the order-details page.
+    }
+  }
+
+  /**
+   * Arrival can happen anytime the assignment is accepted and the order is READY_FOR_PICKUP
+   * (before the photo/pickup even completes), so this fetches from READY_FOR_PICKUP onward —
+   * one stage earlier than the pickup photo, which only exists once the rider has actually
+   * uploaded it. Kept fetchable through DELIVERED so a customer revisiting a completed order's
+   * page still sees the evidence they saw live.
+   */
+  private async refreshPickupEvidenceIfTrackable(
+    order: OrderResponseDto,
+  ): Promise<void> {
+    const trackable =
+      order.status === 'READY_FOR_PICKUP' ||
+      order.status === 'OUT_FOR_DELIVERY' ||
+      order.status === 'DELIVERED';
+
+    if (!trackable) {
+      this._pickupPhoto.set(null);
+      this._arrivedAtRestaurantAt.set(null);
+      return;
+    }
+
+    await Promise.all([
+      this.refreshPickupPhoto(order.id),
+      this.refreshArrivalStatus(order.id),
+    ]);
+  }
+
+  private async refreshPickupPhoto(orderId: string): Promise<void> {
+    try {
+      const photo = await this.orderDetailsService.getPickupPhoto(orderId);
+      this._pickupPhoto.set(photo);
+    } catch {
+      // Not uploaded yet (or not visible to this caller) — leave whatever was already shown.
+    }
+  }
+
+  private async refreshArrivalStatus(orderId: string): Promise<void> {
+    try {
+      const status = await this.orderDetailsService.getArrivalStatus(orderId);
+      this._arrivedAtRestaurantAt.set(status.arrivedAtRestaurantAt ?? null);
+    } catch {
+      // Leave whatever was already shown — the realtime event is the primary channel.
     }
   }
 }

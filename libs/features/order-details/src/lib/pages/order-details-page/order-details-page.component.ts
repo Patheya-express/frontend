@@ -12,6 +12,7 @@ import { CouponFacade } from '@patheya-express-frontend/coupons';
 import { OrderDetailsFacade } from '../../facades/order-details.facade';
 import { OrderStatusTimelineComponent } from '../../components/order-status-timeline/order-status-timeline.component';
 import { LiveTrackingMapComponent } from '../../components/live-tracking-map/live-tracking-map.component';
+import { PickupEvidenceCardComponent } from '../../components/pickup-evidence-card/pickup-evidence-card.component';
 
 @Component({
   selector: 'lib-order-details-page',
@@ -23,6 +24,7 @@ import { LiveTrackingMapComponent } from '../../components/live-tracking-map/liv
     OrderStatusBadgeComponent,
     OrderStatusTimelineComponent,
     LiveTrackingMapComponent,
+    PickupEvidenceCardComponent,
   ],
   templateUrl: './order-details-page.component.html',
   styleUrl: './order-details-page.component.scss',
@@ -41,6 +43,28 @@ export class OrderDetailsPageComponent implements OnInit, OnDestroy {
   protected readonly location = this.facade.location;
   protected readonly realtimeConnected = this.facade.realtimeConnected;
   protected readonly retryingPayment = signal(false);
+  protected readonly switchingToCod = signal(false);
+
+  /**
+   * Payment eligibility (payment/order lifecycle Rule "Payment Eligibility") — mirrors
+   * PAYABLE_ORDER_STATUSES in the backend's PaymentsService.createPayment, which is the actual
+   * enforcement point; this only controls whether the button is shown, never whether payment is
+   * allowed. DELIVERED/CANCELLED are deliberately excluded — there is nothing left to pay
+   * for/against once an order reaches either.
+   */
+  protected readonly isPayable = computed(() => {
+    const order = this.order();
+    if (!order) {
+      return false;
+    }
+    return (
+      order.status === 'PENDING' ||
+      order.status === 'CONFIRMED' ||
+      order.status === 'PREPARING' ||
+      order.status === 'READY_FOR_PICKUP' ||
+      order.status === 'OUT_FOR_DELIVERY'
+    );
+  });
 
   protected readonly destinationPoint = computed<MapPoint | null>(() => {
     const order = this.order();
@@ -57,6 +81,18 @@ export class OrderDetailsPageComponent implements OnInit, OnDestroy {
   protected readonly showLiveMap = computed(() => {
     const order = this.order();
     return !!order && order.status === 'OUT_FOR_DELIVERY' && !!this.destinationPoint();
+  });
+
+  /** Pickup evidence (arrival note + reference photo) only makes sense once the rider has
+   *  actually reached the restaurant — matches
+   *  OrderDetailsStore.refreshPickupEvidenceIfTrackable's own gate. */
+  protected readonly showPickupEvidence = computed(() => {
+    const order = this.order();
+    return (
+      order?.status === 'READY_FOR_PICKUP' ||
+      order?.status === 'OUT_FOR_DELIVERY' ||
+      order?.status === 'DELIVERED'
+    );
   });
 
   /**
@@ -124,5 +160,16 @@ export class OrderDetailsPageComponent implements OnInit, OnDestroy {
     this.retryingPayment.set(true);
     await this.facade.retryPayment(this.orderId);
     this.retryingPayment.set(false);
+  }
+
+  /** Payment/order lifecycle Rule 4 ("Continue with COD"). */
+  protected async continueWithCod(): Promise<void> {
+    if (!this.orderId) {
+      return;
+    }
+
+    this.switchingToCod.set(true);
+    await this.facade.continueWithCod(this.orderId);
+    this.switchingToCod.set(false);
   }
 }

@@ -1,0 +1,163 @@
+// Floating chrome — squarely in the Neo-Glass zone (see neo-glass.mixins.scss's scope comment,
+// which explicitly lists "floating cart"/"bottom navigation"; this is the same category of
+// surface). Exactly one consumer (the app shell renders it once, globally — see app.html), same as
+// CartCheckoutBarComponent, so the mixin is applied directly rather than gated behind a variant input.
+@use '../../../../../../shared/ui/src/lib/neo-glass/neo-glass.mixins' as neo;
+
+.live-orders-tracker {
+  position: fixed;
+  left: 50%;
+  bottom: var(--space-5);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  width: min(340px, calc(100vw - var(--space-6)));
+  max-width: calc(100vw - var(--space-6));
+  z-index: 80;
+
+  // Native Android/iOS shell: clear AppShellComponent's fixed bottom tab bar
+  // (--touch-target-large + --safe-area-bottom, matching its own height) plus the usual --space-5
+  // resting offset — exactly CartCheckoutBarComponent's own native offset formula.
+  &.live-orders-tracker--native {
+    bottom: calc(var(--touch-target-large) + var(--safe-area-bottom) + var(--space-5));
+  }
+
+  // CartCheckoutBarComponent floats in this same slot when the cart has items (e.g. still adding
+  // to a new order while an earlier one is in flight) — stack above it instead of overlapping it,
+  // using its approximate height (one --touch-target-large row) plus its own resting gap.
+  &.live-orders-tracker--above-cart-bar {
+    bottom: calc(var(--space-5) + var(--touch-target-large) + var(--space-3));
+
+    &.live-orders-tracker--native {
+      bottom: calc(
+        var(--touch-target-large) + var(--safe-area-bottom) + var(--space-5) + var(--touch-target-large) +
+          var(--space-3)
+      );
+    }
+  }
+}
+
+// The single collapsed bar — icon, restaurant name + status (primary line), status message
+// (secondary line), chevron. One order at a time; swiping (via [mobileSwipe], see the component)
+// or the dots below switch which order this shows.
+.live-orders-tracker__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: var(--touch-target-comfortable);
+  padding: var(--space-2) var(--space-4);
+  color: var(--color-text);
+  text-decoration: none;
+
+  // Lets a vertical drag that starts on the bar still scroll the page underneath normally; only
+  // horizontal panning is claimed by the swipe directive/CSS (nothing to horizontally scroll here
+  // — it never resolves to a browser pan either way, but this keeps the browser from ever trying).
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+
+  @include neo.glass-surface(strong);
+  border-radius: var(--radius-full);
+  box-shadow: var(--neo-elevation-floating);
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+}
+
+.live-orders-tracker__icon {
+  flex-shrink: 0;
+  font-size: var(--font-size-lg);
+  line-height: 1;
+}
+
+.live-orders-tracker__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+// Restaurant name (left, truncates first) + status badge (right, never shrinks — see the
+// long-restaurant-name requirement: the badge and chevron must stay fully visible regardless of
+// how long the name is).
+.live-orders-tracker__primary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-width: 0;
+
+  // The badge must never be squeezed by a long restaurant name — the name truncates instead (see
+  // .live-orders-tracker__restaurant).
+  lib-order-status-badge {
+    flex-shrink: 0;
+  }
+}
+
+.live-orders-tracker__restaurant {
+  min-width: 0;
+  flex: 1 1 auto;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.live-orders-tracker__message {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.live-orders-tracker__chevron {
+  flex-shrink: 0;
+  font-size: var(--font-size-lg);
+  color: var(--color-text-subtle);
+}
+
+// Pagination dots — same visual language as the existing generic CarouselComponent's indicators
+// (carousel.component.scss): 8px dot, muted at rest, primary + scaled when active, tap target
+// padded out to --touch-target-min via a transparent hit-area rather than inflating the dot itself.
+.live-orders-tracker__dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.live-orders-tracker__dot {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+  cursor: pointer;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: calc((var(--touch-target-min, 44px) - 8px) / -2);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  &--active {
+    background: var(--color-primary);
+    transform: scale(1.25);
+  }
+}

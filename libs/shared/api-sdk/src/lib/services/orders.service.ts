@@ -46,6 +46,8 @@ import { ordersControllerRefundOrder } from '../fn/orders/orders-controller-refu
 import { OrdersControllerRefundOrder$Params } from '../fn/orders/orders-controller-refund-order';
 import { ordersControllerRejectOrder } from '../fn/orders/orders-controller-reject-order';
 import { OrdersControllerRejectOrder$Params } from '../fn/orders/orders-controller-reject-order';
+import { ordersControllerSwitchToCod } from '../fn/orders/orders-controller-switch-to-cod';
+import { OrdersControllerSwitchToCod$Params } from '../fn/orders/orders-controller-switch-to-cod';
 import { ordersControllerUpdateOrderStatus } from '../fn/orders/orders-controller-update-order-status';
 import { OrdersControllerUpdateOrderStatus$Params } from '../fn/orders/orders-controller-update-order-status';
 import { OrderStatusHistoryResponseDto } from '../models/order-status-history-response-dto';
@@ -386,6 +388,39 @@ export class OrdersService extends BaseService {
    */
   ordersControllerRejectOrder(params: OrdersControllerRejectOrder$Params, context?: HttpContext): Promise<OrderResponseDto> {
     const resp = this.ordersControllerRejectOrder$Response(params, context);
+    return resp.then((r: StrictHttpResponse<OrderResponseDto>): OrderResponseDto => r.body);
+  }
+
+  /** Path part for operation `ordersControllerSwitchToCod()` */
+  static readonly OrdersControllerSwitchToCodPath = '/api/v1/orders/{id}/switch-to-cod';
+
+  /**
+   * Switch an unpaid ONLINE order to COD.
+   *
+   * Payment/order lifecycle Rule 4 ("Continue with COD"). Only the order's own customer (or an admin) may call this, and only while the order is still PENDING and not already paid — the existing order is reused, never duplicated.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `ordersControllerSwitchToCod()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  ordersControllerSwitchToCod$Response(params: OrdersControllerSwitchToCod$Params, context?: HttpContext): Promise<StrictHttpResponse<OrderResponseDto>> {
+    const obs = ordersControllerSwitchToCod(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Switch an unpaid ONLINE order to COD.
+   *
+   * Payment/order lifecycle Rule 4 ("Continue with COD"). Only the order's own customer (or an admin) may call this, and only while the order is still PENDING and not already paid — the existing order is reused, never duplicated.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `ordersControllerSwitchToCod$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  ordersControllerSwitchToCod(params: OrdersControllerSwitchToCod$Params, context?: HttpContext): Promise<OrderResponseDto> {
+    const resp = this.ordersControllerSwitchToCod$Response(params, context);
     return resp.then((r: StrictHttpResponse<OrderResponseDto>): OrderResponseDto => r.body);
   }
 

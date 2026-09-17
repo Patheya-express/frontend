@@ -56,7 +56,7 @@
           type="button"
           class="assignment-card-action"
           [class.is-danger]="action.tone === 'danger'"
-          [disabled]="isProcessing"
+          [disabled]="isProcessing || action.disabled"
           (click)="action.run()"
         >
           {{ action.label }}

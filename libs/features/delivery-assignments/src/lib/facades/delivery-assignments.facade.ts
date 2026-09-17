@@ -12,6 +12,7 @@ export class DeliveryAssignmentsFacade {
   readonly processingId = this.store.processingId;
   readonly actionError = this.store.actionError;
   readonly otpDialog = this.store.otpDialog;
+  readonly pickupPhotoDialog = this.store.pickupPhotoDialog;
   readonly locationStatus = this.store.locationStatus;
 
   /** Starts the assignment list loading and begins background polling. Call once on page init. */
@@ -58,5 +59,25 @@ export class DeliveryAssignmentsFacade {
 
   dismissActionError(): void {
     this.store.dismissActionError();
+  }
+
+  openPickupPhotoDialog(assignmentId: string): void {
+    this.store.openPickupPhotoDialog(assignmentId);
+  }
+
+  closePickupPhotoDialog(): void {
+    this.store.closePickupPhotoDialog();
+  }
+
+  selectPickupPhoto(file: File): void {
+    this.store.selectPickupPhoto(file);
+  }
+
+  submitPickupPhoto(): Promise<void> {
+    return this.store.submitPickupPhoto();
+  }
+
+  markRestaurantArrival(assignmentId: string): Promise<void> {
+    return this.store.markRestaurantArrival(assignmentId);
   }
 }

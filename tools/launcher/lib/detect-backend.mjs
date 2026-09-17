@@ -17,6 +17,12 @@ const HEALTH_PATH = '/api/v1/health';
 const HEALTH_TIMEOUT_MS = 4000;
 const START_POLL_TIMEOUT_MS = 60_000;
 const START_POLL_INTERVAL_MS = 2000;
+// Shared by detectBackend()'s own api-gateway poll loop and ensureWorkerRunning()'s worker poll
+// below — a container that's merely `created` (still blocked on postgres/redis's own `depends_on:
+// condition: service_healthy`) is completely normal during a slow first-time image pull/health
+// check and must never be mistaken for a crash; only `restarting`, observed this many consecutive
+// polls in a row, means Docker's own `restart: unless-stopped` policy is actually cycling it.
+const CRASH_LOOP_THRESHOLD = 3;
 
 // The backend lives in a sibling repo (patheya-express-platform), never in this one — see
 // infrastructure/docs/local-development-guide.md. Auto-start is only attempted when that sibling
@@ -28,11 +34,25 @@ const COMPOSE_FILE_REL = 'infrastructure/docker/docker-compose.yml';
 const COMPOSE_ENV_FILE_REL = 'infrastructure/docker/.env.compose';
 const COMPOSE_ENV_EXAMPLE = join(SIBLING_BACKEND_REPO, 'infrastructure', 'docker', '.env.compose.example');
 const COMPOSE_ENV_FILE = join(SIBLING_BACKEND_REPO, 'infrastructure', 'docker', COMPOSE_ENV_FILE_REL.split('/').pop());
-const COMPOSE_SECRET_KEYS = ['JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET'];
+// Kept in sync by hand with tools/dev/bootstrap.mjs's own DOCKER_COMPOSE_SECRET_KEYS — see that
+// file's comment for why BANK_ACCOUNT_ENCRYPTION_KEY is provisioned on the same idempotent,
+// never-rotated terms as the JWT keys even though it isn't boot-required.
+const COMPOSE_SECRET_KEYS = ['JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET', 'BANK_ACCOUNT_ENCRYPTION_KEY'];
 // Fixed by docker-compose.yml's `container_name:` — safe to address directly with plain `docker
 // inspect`/`docker logs` (not `docker compose ...`) regardless of this process's cwd or whether a
 // Compose project context is available, which matters for the crash-loop diagnostics below.
 const API_GATEWAY_CONTAINER = 'patheya-express-api-gateway';
+// Same fixed-container_name reasoning as API_GATEWAY_CONTAINER — the opt-in `--profile worker`
+// service ensureWorkerRunning() below starts.
+const WORKER_CONTAINER = 'patheya-express-worker';
+// The worker publishes no host port (see docker-compose.yml's own comment on the `worker` service:
+// "not published on any port") — there is no HTTP health endpoint this process can poll the way
+// checkHealth() polls api-gateway's. pollWorkerContainerStable() below confirms it via
+// `docker inspect` instead, and needs this many consecutive polls, all cleanly "running", before
+// treating it as confirmed rather than a container that will flip straight back to "restarting" a
+// moment later (the exact RazorpayProvider-env incident this startup step exists to catch).
+const WORKER_STABLE_CONFIRMATIONS = 2;
+const WORKER_STATUS_POLL_TIMEOUT_MS = 20_000;
 
 /**
  * Hits the real backend health endpoint (GET /api/v1/health). Every response from the API gateway
@@ -146,8 +166,8 @@ export async function describeUnexpectedOccupant(apiBaseUrl) {
   return owner ? `Port ${port} is occupied by: ${owner}.` : `Port ${port} appears occupied, but the owning process could not be identified automatically.`;
 }
 
-/** Ensures infrastructure/docker/.env.compose exists and holds real (non-placeholder) JWT secrets
- *  before `docker compose up` ever runs — see this file's top-of-file doc comment on the import for
+/** Ensures infrastructure/docker/.env.compose exists and holds real (non-placeholder) secrets
+ *  (JWT + BANK_ACCOUNT_ENCRYPTION_KEY, see COMPOSE_SECRET_KEYS) before `docker compose up` ever runs — see this file's top-of-file doc comment on the import for
  *  why this lives here rather than only in tools/dev/bootstrap.mjs. Returns the same status
  *  ensureEnvFile() does ('created' / 'already-exists' / 'example-missing') purely for logging; the
  *  secret-generation step itself is a no-op (not even a write) once the file already holds valid
@@ -176,7 +196,7 @@ export function redactSecrets(text) {
 }
 
 /** Keeps only the last `maxLines` lines of `text` — the same "enough to act on, not a full dump"
- *  cap collectApiGatewayDiagnostics() applies via `docker logs --tail`, applied here client-side
+ *  cap collectContainerDiagnostics() applies via `docker logs --tail`, applied here client-side
  *  since Docker Compose's own CLI has no equivalent flag for its own stderr/stdout. */
 function truncateTail(text, maxLines) {
   const lines = text.split('\n');
@@ -213,6 +233,21 @@ export function buildComposeUpArgs() {
 }
 
 /**
+ * Pure argv builder for starting the existing standalone BullMQ worker — same compose file, same
+ * --env-file (so the worker gets the identical RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET/
+ * RAZORPAY_WEBHOOK_SECRET/JWT/BANK_ACCOUNT_ENCRYPTION_KEY values buildComposeUpArgs()'s api-gateway
+ * already reads from the one infrastructure/docker/.env.compose file — nothing is duplicated),
+ * split out for the same reason buildComposeUpArgs() is: a plain data assertion in a test, not
+ * something only exercisable by mocking cross-spawn. `--profile worker` is required — the `worker`
+ * service declares `profiles: ["worker"]` in docker-compose.yml, so without this flag Compose
+ * silently skips it entirely (not an error) — and the trailing `worker` service-name filter means
+ * this never also (re)starts/recreates postgres/redis/kafka/zookeeper/api-gateway.
+ */
+export function buildComposeWorkerUpArgs() {
+  return ['compose', '--env-file', COMPOSE_ENV_FILE_REL, '-f', COMPOSE_FILE_REL, '--profile', 'worker', 'up', '-d', 'worker'];
+}
+
+/**
  * Starts the local backend stack via `docker compose up -d` and reports whether that command
  * itself actually succeeded — distinct from, and checked before, whether the backend then becomes
  * *healthy* (detectBackend()'s own poll loop, right after this returns). Compose can fail
@@ -234,7 +269,7 @@ async function startSiblingBackend({ verbose }) {
   if (envStatus === 'example-missing') {
     log.warn(`${COMPOSE_ENV_FILE_REL}.example not found — starting Docker Compose with its built-in placeholder defaults only (this will likely fail Nest's config validation).`);
   } else if (envStatus === 'created') {
-    log.info(`Created ${COMPOSE_ENV_FILE_REL} with freshly generated local JWT secrets (values never printed).`);
+    log.info(`Created ${COMPOSE_ENV_FILE_REL} with freshly generated local secrets (values never printed).`);
   }
 
   // `docker compose up -d` (no service filter) starts the whole stack, api-gateway included —
@@ -286,24 +321,26 @@ async function startSiblingBackend({ verbose }) {
 }
 
 /**
- * Best-effort container diagnostics for the one case a bare "did not become healthy within Ns"
- * message isn't enough to act on: the api-gateway container itself crash-looping (rejected config,
- * a code error at boot, etc.) rather than merely being slow to start. Deliberately loose/best-effort
- * — `docker inspect`/`docker logs` failing here (Docker CLI missing, container never created at
- * all) must never throw or block the real failure message from reaching the developer, so every
- * field is nullable and both callers already handle that. Log output is capped at the last 40
- * lines so a chatty boot sequence can't flood the terminal — enough to act on, not a full dump (see
- * DEVELOPMENT.md's "no thousands of lines of logs" requirement).
+ * Best-effort container diagnostics for the one case a bare "did not become healthy/stable within
+ * Ns" message isn't enough to act on: the container itself crash-looping (rejected config, a code
+ * error at boot, etc.) rather than merely being slow to start. Shared by detectBackend()'s own
+ * api-gateway poll loop and ensureWorkerRunning()'s worker poll below — same container, same
+ * `docker inspect`/`docker logs` shape, just a different `containerName`. Deliberately
+ * loose/best-effort — `docker inspect`/`docker logs` failing here (Docker CLI missing, container
+ * never created at all) must never throw or block the real failure message from reaching the
+ * developer, so every field is nullable and every caller already handles that. Log output is capped
+ * at the last 40 lines so a chatty boot sequence can't flood the terminal — enough to act on, not a
+ * full dump (see DEVELOPMENT.md's "no thousands of lines of logs" requirement).
  */
-async function collectApiGatewayDiagnostics() {
-  const status = await runCapture('docker', ['inspect', '--format', '{{.State.Status}}', API_GATEWAY_CONTAINER]);
-  const logs = await runCapture('docker', ['logs', '--tail', '40', API_GATEWAY_CONTAINER]);
+async function collectContainerDiagnostics(containerName) {
+  const status = await runCapture('docker', ['inspect', '--format', '{{.State.Status}}', containerName]);
+  const logs = await runCapture('docker', ['logs', '--tail', '40', containerName]);
   const containerStatus = status.code === 0 ? status.stdout.trim() : null;
   const rawLogs = (logs.stdout || logs.stderr || '').trim();
   return { containerStatus, recentLogs: rawLogs ? redactSecrets(rawLogs) : null };
 }
 
-/** Renders collectApiGatewayDiagnostics()'s result as the single multi-line string
+/** Renders collectContainerDiagnostics()'s result as the single multi-line string
  *  log.failWithGuidance's `diagnostics` field expects — `null` when there's nothing to show (e.g.
  *  the container was never created, or Docker itself isn't reachable), so callers can pass the
  *  result straight through without an extra presence check. */
@@ -416,15 +453,11 @@ export async function detectBackend({ app, environment, envName, verbose, noBack
   }
 
   // Bounded and deterministic on both ends: the outer `while` never waits past
-  // START_POLL_TIMEOUT_MS regardless of what's happening, and this counter lets a genuine
-  // crash-loop (the container repeatedly exiting and being restarted by `restart: unless-stopped`
-  // — Docker reports that transient state as "restarting") fail fast well before that deadline
-  // instead of silently waiting out the full timeout for a container that will never come up.
-  // Deliberately keyed on the literal "restarting" status, not "not running" in general: a
-  // container that's merely `created` (still blocked on postgres/redis's own `depends_on:
-  // condition: service_healthy`) is completely normal during a slow first-time image pull/health
-  // check and must never be mistaken for a crash.
-  const CRASH_LOOP_THRESHOLD = 3;
+  // START_POLL_TIMEOUT_MS regardless of what's happening, and this counter (CRASH_LOOP_THRESHOLD,
+  // module-level and shared with ensureWorkerRunning()'s own poll below) lets a genuine crash-loop
+  // (the container repeatedly exiting and being restarted by `restart: unless-stopped` — Docker
+  // reports that transient state as "restarting") fail fast well before that deadline instead of
+  // silently waiting out the full timeout for a container that will never come up.
   let consecutiveRestarting = 0;
   let lastDiagnostics = null;
 
@@ -438,7 +471,7 @@ export async function detectBackend({ app, environment, envName, verbose, noBack
       return { ok: true, apiBaseUrl, data: result.data };
     }
 
-    lastDiagnostics = await collectApiGatewayDiagnostics();
+    lastDiagnostics = await collectContainerDiagnostics(API_GATEWAY_CONTAINER);
     consecutiveRestarting = lastDiagnostics.containerStatus === 'restarting' ? consecutiveRestarting + 1 : 0;
     if (consecutiveRestarting >= CRASH_LOOP_THRESHOLD) {
       return {
@@ -460,4 +493,136 @@ export async function detectBackend({ app, environment, envName, verbose, noBack
     retryHint: 'Re-run this command once the backend logs show it started successfully.',
     diagnostics: formatDiagnosticsBlock(lastDiagnostics),
   };
+}
+
+/**
+ * Confirms the worker container has reached a stable "running" state after `docker compose ...
+ * up -d worker` returns, rather than trusting that command's own exit code alone — `up -d` returns
+ * successfully the moment the container is *created and told to start*, before Docker's own
+ * healthcheck/restart machinery has had a chance to observe whether the process inside it actually
+ * stays up (this is exactly how the RazorpayProvider-missing-env incident this step exists to catch
+ * would otherwise go unnoticed: `docker compose up -d` exits 0, and the container crash-loops
+ * moments later). No published port exists to poll over HTTP (see docker-compose.yml's own comment
+ * on the `worker` service) — `docker inspect`'s container status is the smallest existing Docker
+ * readiness primitive available, the same one detectBackend()'s own api-gateway poll loop above
+ * already uses for its crash-loop detection.
+ *
+ * Requires WORKER_STABLE_CONFIRMATIONS consecutive "running" reads (not just one) before declaring
+ * success, so a container that crashes moments after its first "running" read is still caught on
+ * the very next poll rather than being reported as started.
+ */
+async function pollWorkerContainerStable() {
+  const deadline = Date.now() + WORKER_STATUS_POLL_TIMEOUT_MS;
+  let consecutiveRestarting = 0;
+  let consecutiveRunning = 0;
+  let lastDiagnostics = null;
+
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, START_POLL_INTERVAL_MS));
+    const inspect = await runCapture('docker', ['inspect', '--format', '{{.State.Status}}', WORKER_CONTAINER]);
+    const status = inspect.code === 0 ? inspect.stdout.trim() : null;
+
+    if (status === 'running') {
+      consecutiveRestarting = 0;
+      consecutiveRunning += 1;
+      if (consecutiveRunning >= WORKER_STABLE_CONFIRMATIONS) {
+        return { stable: true, diagnostics: null };
+      }
+      continue;
+    }
+
+    consecutiveRunning = 0;
+    if (status === 'restarting') {
+      consecutiveRestarting += 1;
+      lastDiagnostics = await collectContainerDiagnostics(WORKER_CONTAINER);
+      if (consecutiveRestarting >= CRASH_LOOP_THRESHOLD) {
+        return { stable: false, diagnostics: lastDiagnostics };
+      }
+    } else {
+      consecutiveRestarting = 0;
+    }
+  }
+
+  return { stable: false, diagnostics: lastDiagnostics ?? (await collectContainerDiagnostics(WORKER_CONTAINER)) };
+}
+
+/**
+ * Starts (or confirms already running) the existing standalone BullMQ worker — the opt-in
+ * `--profile worker` service in docker-compose.yml (its own comment: "not published on any port...
+ * Opt-in: `docker compose --profile worker up`"). Reuses everything startSiblingBackend() above
+ * already established for api-gateway rather than duplicating it: the same compose file, the same
+ * --env-file (so the worker gets the identical RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET/
+ * RAZORPAY_WEBHOOK_SECRET/JWT/BANK_ACCOUNT_ENCRYPTION_KEY values, from the one
+ * infrastructure/docker/.env.compose file both services already read via ensureComposeEnvFile()),
+ * and the same runCapture-then-inspect-exit-code discipline. `docker compose ... up -d worker` is
+ * itself idempotent (create-if-missing, start-if-stopped, no-op if already running — ordinary
+ * Compose behavior, nothing added here) and already blocks on postgres/redis's own `depends_on:
+ * condition: service_healthy` before returning, so no manual wait/sleep is needed for
+ * infrastructure readiness — Docker Compose's own mechanism already is one.
+ *
+ * Called unconditionally alongside detectBackend() (not gated on `--setup`): a locally-running
+ * backend that can't actually dispatch delivery assignments — because the one process that
+ * consumes the `dispatch` BullMQ queue was never started — is not a working backend, on `pnpm run
+ * setup` or on daily `pnpm run dev` alike.
+ */
+export async function ensureWorkerRunning({ verbose } = {}) {
+  log.section('Step — BullMQ worker (dispatch/notifications/payments/search/tickets queues)');
+
+  if (!existsSync(SIBLING_BACKEND_REPO)) {
+    return {
+      ok: false,
+      rootCause: `Cannot start the BullMQ worker: sibling repo (patheya-express-platform) not found at ${SIBLING_BACKEND_REPO}.`,
+      suggestedFix: 'Clone patheya-express-platform as a sibling of this repo.',
+    };
+  }
+
+  const envStatus = ensureComposeEnvFile();
+  if (envStatus === 'example-missing') {
+    log.warn(`${COMPOSE_ENV_FILE_REL}.example not found — starting the worker with docker-compose.yml's built-in placeholder defaults only (this will likely fail Nest's config validation).`);
+  }
+
+  const composeUp = await runCapture('docker', buildComposeWorkerUpArgs(), { cwd: SIBLING_BACKEND_REPO });
+
+  if (verbose && (composeUp.stdout || composeUp.stderr)) {
+    log.trace(`docker compose --profile worker up -d worker output:\n${redactSecrets(composeUp.stdout + composeUp.stderr)}`);
+  }
+
+  if (composeUp.error?.code === 'ENOENT') {
+    return {
+      ok: false,
+      rootCause: 'Docker CLI not found on PATH.',
+      suggestedFix: 'Install Docker Desktop: https://docs.docker.com/get-docker/',
+    };
+  }
+
+  if (composeUp.code !== 0) {
+    const missingEnvFile = envStatus === 'example-missing' || isMissingEnvFileError(composeUp);
+    return {
+      ok: false,
+      rootCause: missingEnvFile
+        ? `Worker startup failed because ${COMPOSE_ENV_FILE_REL} does not exist.`
+        : `Docker Compose failed to start the worker (\`docker compose --profile worker up -d worker\` exited with code ${composeUp.code}).`,
+      suggestedFix: missingEnvFile
+        ? `Confirm the backend checkout is complete (${COMPOSE_ENV_FILE_REL}.example should exist) and re-run.`
+        : `Run it yourself to see the full error: docker compose --env-file ${COMPOSE_ENV_FILE_REL} -f ${COMPOSE_FILE_REL} --profile worker up -d worker  (from ${SIBLING_BACKEND_REPO})`,
+      diagnostics: formatComposeFailureDiagnostics(composeUp),
+    };
+  }
+
+  log.detail('Confirming the worker container is running and not crash-looping…');
+  const { stable, diagnostics } = await pollWorkerContainerStable();
+
+  if (!stable) {
+    return {
+      ok: false,
+      rootCause: `The worker container (${WORKER_CONTAINER}) did not reach a stable "running" state — it is crash-looping or failed to start.`,
+      suggestedFix: `Check ${COMPOSE_ENV_FILE_REL} for a value the worker's startup validation rejects (the same class of issue RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET/RAZORPAY_WEBHOOK_SECRET already fix — see docker-compose.yml's own comment on the worker service).`,
+      nextAction: `Full log: docker compose -f ${COMPOSE_FILE_REL} --profile worker logs worker  (from ${SIBLING_BACKEND_REPO})`,
+      retryHint: 'Re-run this command once the underlying config problem is fixed.',
+      diagnostics: formatDiagnosticsBlock(diagnostics ?? {}),
+    };
+  }
+
+  log.ok('BullMQ worker running.');
+  return { ok: true };
 }

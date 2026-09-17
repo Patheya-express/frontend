@@ -52,8 +52,8 @@ const BACKEND_REPO = join(repoRoot, '..', 'patheya-express-platform');
 const BACKEND_ENV_EXAMPLE = join(BACKEND_REPO, 'apps', 'api-gateway', '.env.example');
 const BACKEND_ENV_FILE = join(BACKEND_REPO, 'apps', 'api-gateway', '.env');
 // The Docker-managed api-gateway container (the one and only backend process — see
-// tools/launcher/lib/detect-backend.mjs's startSiblingBackend()) reads its JWT secrets from THIS
-// file via docker-compose.yml's ${JWT_ACCESS_SECRET}/${JWT_REFRESH_SECRET} substitution — it never
+// tools/launcher/lib/detect-backend.mjs's startSiblingBackend()) reads its local secrets (JWT +
+// BANK_ACCOUNT_ENCRYPTION_KEY) from THIS file via docker-compose.yml's `${VAR}` substitution — it never
 // reads apps/api-gateway/.env at all (that file isn't part of the container image; see
 // .dockerignore). Distinct from BACKEND_ENV_FILE above: that one is for host-side tools (Prisma
 // CLI, a native `start:dev`), this one is for `docker compose`. Named `.env.compose` (not the
@@ -64,7 +64,12 @@ const BACKEND_ENV_FILE = join(BACKEND_REPO, 'apps', 'api-gateway', '.env');
 // own placeholder JWT defaults, which the backend's env.validation.ts rejects at boot).
 const DOCKER_COMPOSE_ENV_EXAMPLE = join(BACKEND_REPO, 'infrastructure', 'docker', '.env.compose.example');
 const DOCKER_COMPOSE_ENV_FILE = join(BACKEND_REPO, 'infrastructure', 'docker', '.env.compose');
-const DOCKER_COMPOSE_SECRET_KEYS = ['JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET'];
+// BANK_ACCOUNT_ENCRYPTION_KEY isn't boot-required the way the JWT keys are (env.validation.ts only
+// enforces it in production) — but it's provisioned here on exactly the same terms: generated once
+// if missing/placeholder, never rotated afterwards (see crypto.util.ts — changing this key after
+// restaurant bank-account rows exist would make them permanently undecryptable), so the restaurant
+// bank-account save/read endpoints work locally without a separate manual step.
+const DOCKER_COMPOSE_SECRET_KEYS = ['JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET', 'BANK_ACCOUNT_ENCRYPTION_KEY'];
 const DOCKER_ENGINE_TIMEOUT_MS = 90_000;
 const DOCKER_ENGINE_POLL_MS = 2000;
 
@@ -82,10 +87,14 @@ Usage: node tools/dev/bootstrap.mjs [app] [options]
 Options:
   --setup                First-time only: install frontend+backend dependencies, scaffold
                           apps/api-gateway/.env and infrastructure/docker/.env.compose (generating
-                          local JWT secrets, never printed) if missing, generate the Prisma Client,
+                          local secrets — JWT + BANK_ACCOUNT_ENCRYPTION_KEY, never printed) if
+                          missing, generate the Prisma Client,
                           and run backend migrations and the development database seed.
   --backend-only          Start/verify infrastructure and exit; equivalent to "app=none".
-  --skip-infrastructure   Never touch Docker; only validate tools and hand off to the app.
+                          Infrastructure includes the standalone BullMQ worker (--profile worker) —
+                          no separate manual "docker compose --profile worker up" step is needed.
+  --skip-infrastructure   Never touch Docker (including the BullMQ worker); only validate tools and
+                          hand off to the app.
   --verbose               Full error output and DEBUG/TRACE logs.
 
 Canonical commands (see DEVELOPMENT.md):
@@ -279,13 +288,16 @@ function ensureBackendEnvFile() {
     log.detail('Default values match docker-compose.yml (Postgres/Redis/Kafka on localhost). Fill in Razorpay/SMTP/Cloudinary only if you need those flows locally.');
   }
 
-  // .env.example ships literal placeholder JWT secrets ("replace-with-a-long-random-value") — only
-  // inert here because the Docker-managed api-gateway never reads this file (see
-  // DOCKER_COMPOSE_ENV_FILE's doc comment above), but a developer following docs/infrastructure/
-  // docker.md's documented "prefer running natively (faster inner loop)" path with `pnpm --filter
-  // api-gateway start:dev` would hit the exact same placeholder-rejected-at-boot failure this
-  // fixes for the Docker path. Generating a real secret here too closes that latent gap for free,
-  // via the same tested, idempotent helper — never overwrites a value that isn't a placeholder.
+  // .env.example ships literal placeholder secrets (JWT_ACCESS_SECRET/JWT_REFRESH_SECRET=
+  // "replace-with-a-long-random-value", BANK_ACCOUNT_ENCRYPTION_KEY the same) — only inert here
+  // because the Docker-managed api-gateway never reads this file (see DOCKER_COMPOSE_ENV_FILE's
+  // doc comment above), but a developer following docs/infrastructure/docker.md's documented
+  // "prefer running natively (faster inner loop)" path with `pnpm --filter api-gateway start:dev`
+  // would hit the exact same placeholder-rejected-at-boot failure this fixes for the Docker path
+  // (JWT — required in every environment) or the same "cannot encrypt bank account data" failure
+  // this whole change fixes (BANK_ACCOUNT_ENCRYPTION_KEY — required only once actually used).
+  // Generating real secrets here too closes both latent gaps for free, via the same tested,
+  // idempotent helper — never overwrites a value that isn't a placeholder.
   const secretResult = ensureLocalSecrets(BACKEND_ENV_FILE, DOCKER_COMPOSE_SECRET_KEYS);
   if (secretResult.generated.length > 0) {
     log.ok(`Generated local development secrets in apps/api-gateway/.env: ${secretResult.generated.join(', ')} (values never printed).`);
@@ -547,7 +559,7 @@ async function main() {
   // and only place in this file a dependency-backed module is loaded, and it happens exactly once. ---
   const { runCapture, runInherit } = await import('../launcher/lib/exec.mjs');
   const { buildToolChecks, runChecks } = await import('../launcher/lib/validate-environment.mjs');
-  const { detectBackend } = await import('../launcher/lib/detect-backend.mjs');
+  const { detectBackend, ensureWorkerRunning } = await import('../launcher/lib/detect-backend.mjs');
 
   if (args.setup) {
     await reportPnpmVersions({ backendPresent });
@@ -618,6 +630,20 @@ async function main() {
 
     if (!backendResult.ok) {
       log.failWithGuidance({ ...backendResult, verbose: args.verbose });
+      process.exitCode = 1;
+      return;
+    }
+
+    // Same existing docker-compose.yml/.env.compose orchestration detectBackend() just used above
+    // for api-gateway — the standalone BullMQ worker (the `--profile worker` service; see
+    // ensureWorkerRunning()'s own doc comment) is the one process that actually consumes the
+    // `dispatch`/`notifications`/`payments`/`search`/`tickets` queues. Unconditional (not gated on
+    // `args.setup`) for the same reason detectBackend() itself isn't: a backend a developer can
+    // reach but that silently never processes a background job isn't a working backend, on first
+    // setup or on daily `pnpm run dev` alike.
+    const workerResult = await ensureWorkerRunning({ verbose: args.verbose });
+    if (!workerResult.ok) {
+      log.failWithGuidance({ ...workerResult, verbose: args.verbose });
       process.exitCode = 1;
       return;
     }

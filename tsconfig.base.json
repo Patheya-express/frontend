@@ -79,6 +79,9 @@
       "@patheya-express-frontend/order-details": [
         "./libs/features/order-details/src/index.ts"
       ],
+      "@patheya-express-frontend/live-orders": [
+        "./libs/features/live-orders/src/index.ts"
+      ],
       "@patheya-express-frontend/customer-profile": [
         "./libs/features/customer-profile/src/index.ts"
       ],

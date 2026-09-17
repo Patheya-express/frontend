@@ -7,9 +7,16 @@ import { AssignmentStatusBadgeComponent } from '../assignment-status-badge/assig
 import { AssignmentItemsComponent } from '../assignment-items/assignment-items.component';
 
 interface AssignmentAction {
-  key: 'accept' | 'reject' | 'confirmPickup' | 'confirmDelivery';
+  key:
+    | 'accept'
+    | 'reject'
+    | 'markArrival'
+    | 'takePickupPhoto'
+    | 'confirmPickup'
+    | 'confirmDelivery';
   label: string;
   tone: 'primary' | 'danger';
+  disabled?: boolean;
   run: () => void;
 }
 
@@ -63,6 +70,12 @@ export class AssignmentCardComponent {
   /** Accepted, but the order hasn't left the restaurant yet — this is the pickup window. */
   protected get isAwaitingPickup(): boolean {
     return this.assignment.status === 'ACCEPTED' && this.order?.status === 'READY_FOR_PICKUP';
+  }
+
+  /** Client-side display only — the actual 100m geofence check is backend-authoritative (see
+   *  ProofService.markRestaurantArrival); this just decides which pickup-window action to show. */
+  protected get hasArrivedAtRestaurant(): boolean {
+    return !!this.assignment.arrivedAtRestaurantAt;
   }
 
   /** Accepted, picked up, on the way — this is the delivery window. */
@@ -125,6 +138,28 @@ export class AssignmentCardComponent {
     }
 
     if (this.isAwaitingPickup) {
+      if (!this.hasArrivedAtRestaurant) {
+        return [
+          {
+            key: 'markArrival',
+            label: this.isProcessing ? 'Checking your location…' : "I've Arrived",
+            tone: 'primary',
+            run: () => this.markArrival(),
+          },
+        ];
+      }
+
+      if (!this.order?.pickupPhotoUploaded) {
+        return [
+          {
+            key: 'takePickupPhoto',
+            label: 'Take Photo',
+            tone: 'primary',
+            run: () => this.takePickupPhoto(),
+          },
+        ];
+      }
+
       return [
         {
           key: 'confirmPickup',
@@ -136,6 +171,9 @@ export class AssignmentCardComponent {
     }
 
     if (this.isAwaitingDelivery) {
+      // 2026-09-16 business-workflow revision — customer parcel confirmation was removed from the
+      // workflow; the delivery OTP is no longer blocked on anything beyond pickup having
+      // completed (which isAwaitingDelivery itself already implies).
       return [
         {
           key: 'confirmDelivery',
@@ -170,6 +208,17 @@ export class AssignmentCardComponent {
 
   protected cancelReject(): void {
     this.rejectDialogOpen = false;
+  }
+
+  protected markArrival(): void {
+    if (this.isProcessing) {
+      return;
+    }
+    void this.facade.markRestaurantArrival(this.assignment.id);
+  }
+
+  protected takePickupPhoto(): void {
+    this.facade.openPickupPhotoDialog(this.assignment.id);
   }
 
   protected confirmPickup(): void {

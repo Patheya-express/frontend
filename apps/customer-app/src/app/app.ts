@@ -39,6 +39,10 @@ import {
   CartDrawerComponent,
   CartFacade,
 } from '@patheya-express-frontend/cart';
+import {
+  LiveOrdersFacade,
+  LiveOrdersFloatingTrackerComponent,
+} from '@patheya-express-frontend/live-orders';
 
 @Component({
   standalone: true,
@@ -48,6 +52,7 @@ import {
     CartDrawerComponent,
     CartConflictDialogComponent,
     CartCheckoutBarComponent,
+    LiveOrdersFloatingTrackerComponent,
     DialogHostComponent,
     ToastHostComponent,
     OfflineBannerComponent,
@@ -60,6 +65,7 @@ import {
 export class App {
   private readonly authFacade = inject(AuthFacade);
   private readonly cartFacade = inject(CartFacade);
+  private readonly liveOrdersFacade = inject(LiveOrdersFacade);
   private readonly customerProfileFacade = inject(CustomerProfileFacade);
   private readonly customerNotificationsFacade = inject(
     CustomerNotificationsFacade,
@@ -99,6 +105,7 @@ export class App {
         void this.cartFacade.restore();
         void this.customerProfileFacade.ensureProfileLoaded();
         void this.customerNotificationsFacade.loadUnreadCount();
+        this.liveOrdersFacade.initialize();
       }
     });
 

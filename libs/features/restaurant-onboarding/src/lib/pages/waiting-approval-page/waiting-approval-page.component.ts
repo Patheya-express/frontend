@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { SkeletonComponent } from '@patheya-express-frontend/ui';
+import { ErrorStateComponent, SkeletonComponent } from '@patheya-express-frontend/ui';
 import { OnboardingWizardFacade } from '../../facades/onboarding-wizard.facade';
 
 /**
@@ -12,7 +12,7 @@ import { OnboardingWizardFacade } from '../../facades/onboarding-wizard.facade';
 @Component({
   selector: 'lib-waiting-approval-page',
   standalone: true,
-  imports: [DatePipe, SkeletonComponent],
+  imports: [DatePipe, SkeletonComponent, ErrorStateComponent],
   templateUrl: './waiting-approval-page.component.html',
   styleUrl: './waiting-approval-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

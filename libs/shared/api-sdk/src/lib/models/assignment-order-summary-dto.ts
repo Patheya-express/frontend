@@ -16,6 +16,11 @@ export interface AssignmentOrderSummaryDto {
   longitude?: number;
   notes?: string;
   orderNumber: string;
+
+  /**
+   * Whether the mandatory pickup-parcel photo has been uploaded for this order (DeliveryProofPhoto). Required before OUT_FOR_DELIVERY.
+   */
+  pickupPhotoUploaded: boolean;
   restaurant?: AssignmentRestaurantSummaryDto;
   status: 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'READY_FOR_PICKUP' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'CANCELLED';
   totalAmount: number;

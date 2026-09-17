@@ -1,8 +1,9 @@
 import { signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import type { DeliveryAssignmentResponseDto } from '@patheya-express-frontend/api-sdk';
 import { LogoutCleanupRegistry } from '@patheya-express-frontend/auth';
-import { MobilePlatformService } from '@patheya-express-frontend/core';
+import { GeolocationService, MobilePlatformService } from '@patheya-express-frontend/core';
 import { NetworkStatusService } from '@patheya-express-frontend/ui';
 import type { CacheReadResult } from '@patheya-express-frontend/mobile-offline';
 import { DeliveryAssignmentsStore } from './delivery-assignments.store';
@@ -29,6 +30,7 @@ function buildAssignment(
       totalAmount: 500,
       items: [],
       status: 'OUT_FOR_DELIVERY',
+      pickupPhotoUploaded: false,
     },
     ...overrides,
   };
@@ -43,11 +45,14 @@ describe('DeliveryAssignmentsStore — M3 offline resilience', () => {
     verifyPickupOtp: jest.Mock;
     generateDeliveryOtp: jest.Mock;
     verifyDeliveryOtp: jest.Mock;
+    uploadPickupPhoto: jest.Mock;
+    markRestaurantArrival: jest.Mock;
   };
   let cache: { read: jest.Mock; write: jest.Mock; clear: jest.Mock };
   let networkStatus: { isOffline: jest.Mock; isOnline: jest.Mock };
   let resumeCallback: (() => void) | undefined;
   let mobilePlatform: { isNative: jest.Mock; onResume: jest.Mock };
+  let geolocationService: { ensurePermission: jest.Mock; getCurrentPosition: jest.Mock };
   let logoutRegistry: LogoutCleanupRegistry;
 
   function cachedResult(
@@ -74,6 +79,15 @@ describe('DeliveryAssignmentsStore — M3 offline resilience', () => {
       verifyPickupOtp: jest.fn(),
       generateDeliveryOtp: jest.fn(),
       verifyDeliveryOtp: jest.fn(),
+      uploadPickupPhoto: jest.fn(),
+      markRestaurantArrival: jest.fn(),
+    };
+
+    geolocationService = {
+      ensurePermission: jest.fn().mockResolvedValue(true),
+      getCurrentPosition: jest
+        .fn()
+        .mockResolvedValue({ coords: { latitude: 12.9716, longitude: 77.5946 } }),
     };
 
     cache = {
@@ -108,6 +122,7 @@ describe('DeliveryAssignmentsStore — M3 offline resilience', () => {
             stop: jest.fn().mockResolvedValue(undefined),
           },
         },
+        { provide: GeolocationService, useValue: geolocationService },
       ],
     });
 
@@ -381,6 +396,196 @@ describe('DeliveryAssignmentsStore — M3 offline resilience', () => {
       await flush();
 
       expect(assignmentsService.acceptAssignment).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('pickup-photo dialog', () => {
+    beforeEach(() => {
+      URL.createObjectURL = jest.fn().mockReturnValue('blob:mock-preview');
+      URL.revokeObjectURL = jest.fn();
+    });
+
+    function buildFile(): File {
+      return new File(['fake'], 'parcel.jpg', { type: 'image/jpeg' });
+    }
+
+    it('does nothing if the assignment has no order', async () => {
+      const store = TestBed.inject(DeliveryAssignmentsStore);
+      store.openPickupPhotoDialog('does-not-exist');
+
+      expect(store.pickupPhotoDialog()).toBeNull();
+    });
+
+    it('opens with the assignment/order ids and no file yet', async () => {
+      assignmentsService.getAssignments.mockResolvedValue([buildAssignment()]);
+      const store = TestBed.inject(DeliveryAssignmentsStore);
+      await store.loadAssignments();
+
+      store.openPickupPhotoDialog('assignment-1');
+
+      expect(store.pickupPhotoDialog()).toMatchObject({
+        assignmentId: 'assignment-1',
+        orderId: 'order-1',
+        file: null,
+        uploading: false,
+        error: null,
+      });
+    });
+
+    it('selecting a file sets a local preview without calling the backend', async () => {
+      assignmentsService.getAssignments.mockResolvedValue([buildAssignment()]);
+      const store = TestBed.inject(DeliveryAssignmentsStore);
+      await store.loadAssignments();
+      store.openPickupPhotoDialog('assignment-1');
+
+      const file = buildFile();
+      store.selectPickupPhoto(file);
+
+      expect(store.pickupPhotoDialog()?.file).toBe(file);
+      expect(store.pickupPhotoDialog()?.previewUrl).toBe('blob:mock-preview');
+      expect(assignmentsService.uploadPickupPhoto).not.toHaveBeenCalled();
+    });
+
+    it('submitting refuses while offline, without calling the backend', async () => {
+      assignmentsService.getAssignments.mockResolvedValue([buildAssignment()]);
+      const store = TestBed.inject(DeliveryAssignmentsStore);
+      await store.loadAssignments();
+      store.openPickupPhotoDialog('assignment-1');
+      store.selectPickupPhoto(buildFile());
+
+      networkStatus.isOffline.mockReturnValue(true);
+      await store.submitPickupPhoto();
+
+      expect(assignmentsService.uploadPickupPhoto).not.toHaveBeenCalled();
+      expect(store.pickupPhotoDialog()?.error).toMatch(/offline/i);
+    });
+
+    it('on success, marks the order pickupPhotoUploaded and closes the dialog', async () => {
+      assignmentsService.getAssignments.mockResolvedValue([buildAssignment()]);
+      assignmentsService.uploadPickupPhoto.mockResolvedValue({ id: 'photo-1' });
+      const store = TestBed.inject(DeliveryAssignmentsStore);
+      await store.loadAssignments();
+      store.openPickupPhotoDialog('assignment-1');
+      store.selectPickupPhoto(buildFile());
+
+      await store.submitPickupPhoto();
+
+      expect(assignmentsService.uploadPickupPhoto).toHaveBeenCalledWith(
+        'order-1',
+        expect.any(File),
+      );
+      expect(store.pickupPhotoDialog()).toBeNull();
+      expect(
+        store.groups().active.find((a) => a.id === 'assignment-1')?.order
+          ?.pickupPhotoUploaded,
+      ).toBe(true);
+    });
+
+    it('on failure, keeps the dialog open with an error and does not mark the order', async () => {
+      assignmentsService.getAssignments.mockResolvedValue([buildAssignment()]);
+      assignmentsService.uploadPickupPhoto.mockRejectedValue(new Error('boom'));
+      const store = TestBed.inject(DeliveryAssignmentsStore);
+      await store.loadAssignments();
+      store.openPickupPhotoDialog('assignment-1');
+      store.selectPickupPhoto(buildFile());
+
+      await store.submitPickupPhoto();
+
+      expect(store.pickupPhotoDialog()?.uploading).toBe(false);
+      expect(store.pickupPhotoDialog()?.error).toBeTruthy();
+      expect(
+        store.groups().active.find((a) => a.id === 'assignment-1')?.order
+          ?.pickupPhotoUploaded,
+      ).toBe(false);
+    });
+
+    it('closing revokes the preview object URL', async () => {
+      assignmentsService.getAssignments.mockResolvedValue([buildAssignment()]);
+      const store = TestBed.inject(DeliveryAssignmentsStore);
+      await store.loadAssignments();
+      store.openPickupPhotoDialog('assignment-1');
+      store.selectPickupPhoto(buildFile());
+
+      store.closePickupPhotoDialog();
+
+      expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock-preview');
+      expect(store.pickupPhotoDialog()).toBeNull();
+    });
+  });
+
+  describe('markRestaurantArrival — 2026-09-16 business-workflow revision', () => {
+    it('does nothing if the assignment has no order', async () => {
+      const store = TestBed.inject(DeliveryAssignmentsStore);
+      await store.markRestaurantArrival('does-not-exist');
+
+      expect(assignmentsService.markRestaurantArrival).not.toHaveBeenCalled();
+    });
+
+    it('refuses while offline, without checking geolocation or calling the backend', async () => {
+      assignmentsService.getAssignments.mockResolvedValue([buildAssignment()]);
+      const store = TestBed.inject(DeliveryAssignmentsStore);
+      await store.loadAssignments();
+
+      networkStatus.isOffline.mockReturnValue(true);
+      await store.markRestaurantArrival('assignment-1');
+
+      expect(geolocationService.ensurePermission).not.toHaveBeenCalled();
+      expect(assignmentsService.markRestaurantArrival).not.toHaveBeenCalled();
+      expect(store.actionError()).toMatch(/offline/i);
+    });
+
+    it('sets a clear error and does not call the backend when location permission is denied', async () => {
+      assignmentsService.getAssignments.mockResolvedValue([buildAssignment()]);
+      geolocationService.ensurePermission.mockResolvedValue(false);
+      const store = TestBed.inject(DeliveryAssignmentsStore);
+      await store.loadAssignments();
+
+      await store.markRestaurantArrival('assignment-1');
+
+      expect(assignmentsService.markRestaurantArrival).not.toHaveBeenCalled();
+      expect(store.actionError()).toMatch(/location/i);
+    });
+
+    it('surfaces the backend geofence rejection message (e.g. too far away) without touching assignment state', async () => {
+      assignmentsService.getAssignments.mockResolvedValue([buildAssignment()]);
+      assignmentsService.markRestaurantArrival.mockRejectedValue(
+        new HttpErrorResponse({
+          error: {
+            message: 'You are 342m from the restaurant — move within 100m to mark arrival',
+          },
+        }),
+      );
+      const store = TestBed.inject(DeliveryAssignmentsStore);
+      await store.loadAssignments();
+
+      await store.markRestaurantArrival('assignment-1');
+
+      expect(store.actionError()).toMatch(/342m/);
+      expect(
+        store.groups().active.find((a) => a.id === 'assignment-1')?.arrivedAtRestaurantAt,
+      ).toBeUndefined();
+    });
+
+    it('on success, submits the device position and patches arrivedAtRestaurantAt onto the assignment', async () => {
+      assignmentsService.getAssignments.mockResolvedValue([buildAssignment()]);
+      assignmentsService.markRestaurantArrival.mockResolvedValue({
+        orderId: 'order-1',
+        arrivedAtRestaurantAt: '2026-09-16T10:00:00.000Z',
+      });
+      const store = TestBed.inject(DeliveryAssignmentsStore);
+      await store.loadAssignments();
+
+      await store.markRestaurantArrival('assignment-1');
+
+      expect(assignmentsService.markRestaurantArrival).toHaveBeenCalledWith(
+        'order-1',
+        12.9716,
+        77.5946,
+      );
+      expect(
+        store.groups().active.find((a) => a.id === 'assignment-1')?.arrivedAtRestaurantAt,
+      ).toBe('2026-09-16T10:00:00.000Z');
+      expect(store.actionError()).toBeNull();
     });
   });
 

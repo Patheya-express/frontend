@@ -48,4 +48,9 @@ export interface OrderResponseDto {
   subtotalAmount: number;
   taxAmount: number;
   totalAmount: number;
+
+  /**
+   * Portion of totalAmount already paid via wallet balance — the remainder is what any Razorpay payment must cover exactly (see PaymentsService.createPayment's remaining-amount check).
+   */
+  walletAmountUsed: number;
 }

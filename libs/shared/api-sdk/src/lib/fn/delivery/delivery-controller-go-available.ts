@@ -8,13 +8,16 @@ import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
 import { DeliveryPartnerResponseDto } from '../../models/delivery-partner-response-dto';
+import { GoAvailableDto } from '../../models/go-available-dto';
 
 export interface DeliveryControllerGoAvailable$Params {
+      body?: GoAvailableDto
 }
 
 export function deliveryControllerGoAvailable(http: HttpClient, rootUrl: string, params?: DeliveryControllerGoAvailable$Params, context?: HttpContext): Observable<StrictHttpResponse<DeliveryPartnerResponseDto>> {
   const rb = new RequestBuilder(rootUrl, deliveryControllerGoAvailable.PATH, 'patch');
   if (params) {
+    rb.body(params.body, 'application/json');
   }
 
   return http.request(

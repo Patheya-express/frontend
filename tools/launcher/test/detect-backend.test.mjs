@@ -8,6 +8,7 @@ import {
   checkHealth,
   describeUnexpectedOccupant,
   buildComposeUpArgs,
+  buildComposeWorkerUpArgs,
   formatDiagnosticsBlock,
   redactSecrets,
   isMissingEnvFileError,
@@ -258,6 +259,54 @@ describe('buildComposeUpArgs', () => {
   });
 });
 
+/**
+ * Regression coverage for "developers must not need to manually run
+ * `docker compose --profile worker up -d worker`": buildComposeWorkerUpArgs() is the one place
+ * that argv is assembled for starting the existing standalone BullMQ worker from setup/dev
+ * orchestration — asserting its shape directly (the same technique buildComposeUpArgs' own tests
+ * above use) is enough to guarantee it reuses the same compose file/env file as api-gateway (so the
+ * worker gets the same RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET/RAZORPAY_WEBHOOK_SECRET/JWT/
+ * BANK_ACCOUNT_ENCRYPTION_KEY values, nothing duplicated) and
+ * never silently starts the worker without the required `--profile worker` flag (Compose skips a
+ * profiled service entirely, without erroring, if the flag is missing).
+ */
+describe('buildComposeWorkerUpArgs', () => {
+  test('passes --env-file pointing at .env.compose — the exact same file buildComposeUpArgs uses for api-gateway, never a duplicated/second env file', () => {
+    const args = buildComposeWorkerUpArgs();
+    const envFileIndex = args.indexOf('--env-file');
+    assert.ok(envFileIndex !== -1, 'expected an explicit --env-file flag');
+    assert.equal(args[envFileIndex + 1], buildComposeUpArgs()[buildComposeUpArgs().indexOf('--env-file') + 1]);
+  });
+
+  test('passes -f pointing at the same docker-compose.yml buildComposeUpArgs uses', () => {
+    const args = buildComposeWorkerUpArgs();
+    const fIndex = args.indexOf('-f');
+    assert.ok(fIndex !== -1);
+    assert.equal(args[fIndex + 1], buildComposeUpArgs()[buildComposeUpArgs().indexOf('-f') + 1]);
+  });
+
+  test('passes --profile worker — without it Compose silently skips a profiled service rather than erroring', () => {
+    const args = buildComposeWorkerUpArgs();
+    const profileIndex = args.indexOf('--profile');
+    assert.ok(profileIndex !== -1, 'expected an explicit --profile flag');
+    assert.equal(args[profileIndex + 1], 'worker');
+  });
+
+  test('filters to the worker service by name — never brings up/recreates postgres/redis/kafka/zookeeper/api-gateway', () => {
+    const args = buildComposeWorkerUpArgs();
+    assert.ok(args.includes('up'));
+    assert.ok(args.includes('-d'));
+    assert.equal(args[args.length - 1], 'worker', 'expected "worker" as the trailing service-name filter');
+  });
+
+  test('never passes --env-file or --profile before "compose" (must be top-level compose flags, not `up` subcommand flags)', () => {
+    const args = buildComposeWorkerUpArgs();
+    assert.equal(args[0], 'compose');
+    assert.ok(args.indexOf('--env-file') < args.indexOf('up'));
+    assert.ok(args.indexOf('--profile') < args.indexOf('up'));
+  });
+});
+
 describe('formatDiagnosticsBlock', () => {
   test('returns null when nothing is available (Docker unreachable / container never created)', () => {
     assert.equal(formatDiagnosticsBlock({ containerStatus: null, recentLogs: null }), null);
@@ -387,5 +436,64 @@ describe('startSiblingBackend / detectBackend exit-code handling (source-level) 
     const fnBody = source.slice(fnStart, fnEnd);
     assert.match(fnBody, /await runCapture\('docker', buildComposeUpArgs\(\)/, 'expected the compose invocation to go through runCapture so its exit code is available to check');
     assert.doesNotMatch(fnBody, /\.on\('close'/, 'a manual close-event listener would mean the exit code is being ignored again');
+  });
+});
+
+/**
+ * ensureWorkerRunning()'s own control flow — same source-level technique as the
+ * startSiblingBackend/detectBackend block above, for the same reason: exercising it end-to-end
+ * needs a real Docker daemon, which this suite deliberately never depends on. Regression coverage
+ * for "pnpm run setup must not report success while the worker is unavailable" — the specific
+ * failure mode Phase 5 of this task calls out (a `docker compose up -d` that exits 0 is not proof
+ * the container it started stays up).
+ */
+describe('ensureWorkerRunning (source-level)', () => {
+  test('never reports success ("BullMQ worker running.") without first checking pollWorkerContainerStable()\'s result', () => {
+    const fnStart = source.indexOf('export async function ensureWorkerRunning');
+    const fnEnd = source.indexOf('\nexport', fnStart + 1);
+    const fnBody = source.slice(fnStart, fnEnd === -1 ? source.length : fnEnd);
+
+    const pollCallIndex = fnBody.indexOf('await pollWorkerContainerStable()');
+    const stableCheckIndex = fnBody.indexOf('if (!stable)');
+    const successLogIndex = fnBody.indexOf("log.ok('BullMQ worker running.')");
+
+    assert.ok(pollCallIndex !== -1, 'expected ensureWorkerRunning to call pollWorkerContainerStable()');
+    assert.ok(stableCheckIndex !== -1, 'expected an explicit stability check');
+    assert.ok(successLogIndex !== -1, 'expected the success log line');
+    assert.ok(pollCallIndex < stableCheckIndex && stableCheckIndex < successLogIndex, 'the poll must run, then be checked, before success is ever reported');
+
+    // And the !stable branch must return before reaching that success log line at all.
+    const failureBranch = fnBody.slice(stableCheckIndex, successLogIndex);
+    assert.match(failureBranch, /return\s*\{/, 'the !stable branch must return early, never falling through to the success log');
+  });
+
+  test('uses runCapture for the compose invocation (exit code inspected) and checks composeUp.code before proceeding to the stability poll', () => {
+    const fnStart = source.indexOf('export async function ensureWorkerRunning');
+    const fnEnd = source.indexOf('\nexport', fnStart + 1);
+    const fnBody = source.slice(fnStart, fnEnd === -1 ? source.length : fnEnd);
+
+    assert.match(fnBody, /await runCapture\('docker', buildComposeWorkerUpArgs\(\)/, 'expected the compose invocation to go through runCapture so its exit code is available to check');
+    assert.doesNotMatch(fnBody, /\.on\('close'/, 'a manual close-event listener would mean the exit code is being ignored');
+
+    const exitCodeCheckIndex = fnBody.indexOf('if (composeUp.code !== 0)');
+    const pollCallIndex = fnBody.indexOf('await pollWorkerContainerStable()');
+    assert.ok(exitCodeCheckIndex !== -1 && pollCallIndex !== -1);
+    assert.ok(exitCodeCheckIndex < pollCallIndex, 'a failed docker compose invocation must be checked before ever polling container status');
+  });
+
+  test('pollWorkerContainerStable requires more than one consecutive "running" read before declaring success — a single read could land moments before a boot crash', () => {
+    const fnStart = source.indexOf('async function pollWorkerContainerStable');
+    const fnEnd = source.indexOf('\n}', fnStart) + 2;
+    const fnBody = source.slice(fnStart, fnEnd);
+    assert.match(fnBody, /consecutiveRunning \+= 1/, "expected a running-read counter, not a single-read success");
+    assert.match(fnBody, /consecutiveRunning >= WORKER_STABLE_CONFIRMATIONS/, 'expected the counter to be compared against a >1 confirmation threshold before returning stable: true');
+  });
+
+  test('pollWorkerContainerStable treats "restarting" (not just any non-"running" status) as the crash-loop signal, matching detectBackend\'s own api-gateway logic — a merely "created" container must never be mistaken for a crash', () => {
+    const fnStart = source.indexOf('async function pollWorkerContainerStable');
+    const fnEnd = source.indexOf('\n}', fnStart) + 2;
+    const fnBody = source.slice(fnStart, fnEnd);
+    assert.match(fnBody, /status === 'restarting'/);
+    assert.match(fnBody, /consecutiveRestarting >= CRASH_LOOP_THRESHOLD/);
   });
 });

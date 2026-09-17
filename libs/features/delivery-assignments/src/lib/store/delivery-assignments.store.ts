@@ -5,6 +5,7 @@ import type {
 } from '@patheya-express-frontend/api-sdk';
 import { LogoutCleanupRegistry } from '@patheya-express-frontend/auth';
 import {
+  GeolocationService,
   MobilePlatformService,
   extractHttpErrorMessage,
 } from '@patheya-express-frontend/core';
@@ -56,6 +57,22 @@ export interface OtpDialogState {
   error: string | null;
 }
 
+/**
+ * Drives the mandatory pickup-parcel photo capture dialog — business requirement: a rider must
+ * upload a photo before pickup can complete, gated authoritatively server-side (see
+ * OrdersService.assertPhotoVerifiedForStatus), this dialog is only the UX front for it. `file`/
+ * `previewUrl` hold the not-yet-submitted selection so the rider can retake before confirming —
+ * the upload call itself (and therefore the server-side evidence) only happens on submit.
+ */
+export interface PickupPhotoDialogState {
+  assignmentId: string;
+  orderId: string;
+  file: File | null;
+  previewUrl: string | null;
+  uploading: boolean;
+  error: string | null;
+}
+
 const TERMINAL_ORDER_STATUSES: ReadonlyArray<OrderResponseDto['status']> = [
   'DELIVERED',
   'CANCELLED',
@@ -90,6 +107,7 @@ function buildGroups(
 export class DeliveryAssignmentsStore {
   private readonly assignmentsService = inject(DeliveryAssignmentsService);
   private readonly courierLocationService = inject(CourierLocationService);
+  private readonly geolocationService = inject(GeolocationService);
   private readonly activeAssignmentCache = inject(ActiveAssignmentCacheService);
   private readonly networkStatus = inject(NetworkStatusService);
   private readonly mobilePlatform = inject(MobilePlatformService);
@@ -100,6 +118,9 @@ export class DeliveryAssignmentsStore {
   private readonly _processingId = signal<string | null>(null);
   private readonly _actionError = signal<string | null>(null);
   private readonly _otpDialog = signal<OtpDialogState | null>(null);
+  private readonly _pickupPhotoDialog = signal<PickupPhotoDialogState | null>(
+    null,
+  );
 
   /** `null` until the first fetch attempt resolves one way or another. See `ActiveAssignmentStatus`. */
   private readonly _activeAssignmentSource = signal<'fresh' | 'cache' | null>(
@@ -117,6 +138,7 @@ export class DeliveryAssignmentsStore {
   readonly processingId = this._processingId.asReadonly();
   readonly actionError = this._actionError.asReadonly();
   readonly otpDialog = this._otpDialog.asReadonly();
+  readonly pickupPhotoDialog = this._pickupPhotoDialog.asReadonly();
 
   readonly groups = computed<AssignmentGroups>(() =>
     buildGroups(this._assignments()),
@@ -470,13 +492,177 @@ export class DeliveryAssignmentsStore {
     assignmentId: string,
     status: OrderResponseDto['status'],
   ): void {
+    this.patchAssignmentOrder(assignmentId, { status });
+  }
+
+  private patchAssignmentOrder(
+    assignmentId: string,
+    patch: Partial<DeliveryAssignmentResponseDto['order']>,
+  ): void {
     this._assignments.update((assignments) =>
       assignments.map((assignment) =>
         assignment.id === assignmentId && assignment.order
-          ? { ...assignment, order: { ...assignment.order, status } }
+          ? { ...assignment, order: { ...assignment.order, ...patch } }
           : assignment,
       ),
     );
+  }
+
+  private patchAssignment(
+    assignmentId: string,
+    patch: Partial<DeliveryAssignmentResponseDto>,
+  ): void {
+    this._assignments.update((assignments) =>
+      assignments.map((assignment) =>
+        assignment.id === assignmentId ? { ...assignment, ...patch } : assignment,
+      ),
+    );
+  }
+
+  /**
+   * 2026-09-16 business-workflow revision — "I've Arrived" at the restaurant. Mirrors
+   * `transitionAssignment`'s offline-check-first/processingId/actionError shape, but isn't built
+   * on top of it directly since this needs an extra async step (a one-shot device position read)
+   * before the backend call. The device position is only ever a *hint* the rider submits —
+   * `DeliveryAssignmentsService.markRestaurantArrival`'s doc comment is explicit that the backend
+   * is what actually enforces the 100m radius; a rejection here is the gate working, not a bug.
+   */
+  async markRestaurantArrival(assignmentId: string): Promise<void> {
+    const assignment = this._assignments().find((item) => item.id === assignmentId);
+    if (!assignment?.order || this._processingId()) {
+      return;
+    }
+
+    if (this.networkStatus.isOffline()) {
+      this._actionError.set(OFFLINE_MUTATION_MESSAGE);
+      return;
+    }
+
+    this._processingId.set(assignmentId);
+    this._actionError.set(null);
+
+    try {
+      const permitted = await this.geolocationService.ensurePermission();
+      if (!permitted) {
+        this._actionError.set(
+          'Location access is needed to mark arrival — please enable it and try again.',
+        );
+        return;
+      }
+
+      const position = await this.geolocationService.getCurrentPosition();
+      if (!position) {
+        this._actionError.set('Unable to get your current location. Please try again.');
+        return;
+      }
+
+      const result = await this.assignmentsService.markRestaurantArrival(
+        assignment.order.id,
+        position.coords.latitude,
+        position.coords.longitude,
+      );
+
+      this.patchAssignment(assignmentId, {
+        arrivedAtRestaurantAt: result.arrivedAtRestaurantAt,
+      });
+    } catch (error) {
+      this._actionError.set(
+        extractHttpErrorMessage(
+          error,
+          'Unable to mark arrival right now. Please try again.',
+        ),
+      );
+    } finally {
+      this._processingId.set(null);
+    }
+  }
+
+  /** Opens the pickup-photo dialog for this assignment — no network call yet, matching the OTP
+   *  dialog's "open first, then act" shape, except here the first action is a local file pick
+   *  rather than an immediate generate() call. */
+  openPickupPhotoDialog(assignmentId: string): void {
+    const assignment = this._assignments().find(
+      (item) => item.id === assignmentId,
+    );
+    if (!assignment?.order) {
+      return;
+    }
+
+    this._pickupPhotoDialog.set({
+      assignmentId,
+      orderId: assignment.order.id,
+      file: null,
+      previewUrl: null,
+      uploading: false,
+      error: null,
+    });
+  }
+
+  closePickupPhotoDialog(): void {
+    const dialog = this._pickupPhotoDialog();
+    if (dialog?.previewUrl) {
+      URL.revokeObjectURL(dialog.previewUrl);
+    }
+    this._pickupPhotoDialog.set(null);
+  }
+
+  /** Swaps in a newly picked file — purely local until submitPickupPhoto() is called, so a rider
+   *  can retake as many times as they like before anything is uploaded (Phase 7: replacement
+   *  before submission is a client-side-only operation). */
+  selectPickupPhoto(file: File): void {
+    const dialog = this._pickupPhotoDialog();
+    if (!dialog) {
+      return;
+    }
+
+    if (dialog.previewUrl) {
+      URL.revokeObjectURL(dialog.previewUrl);
+    }
+
+    this._pickupPhotoDialog.set({
+      ...dialog,
+      file,
+      previewUrl: URL.createObjectURL(file),
+      error: null,
+    });
+  }
+
+  /** Uploads the selected photo. The server treats this as write-once evidence (a second upload
+   *  for the same order is rejected) — success here is what OrdersService.updateOrderStatus then
+   *  requires before the order can advance to OUT_FOR_DELIVERY. */
+  async submitPickupPhoto(): Promise<void> {
+    const dialog = this._pickupPhotoDialog();
+    if (!dialog?.file || dialog.uploading) {
+      return;
+    }
+
+    if (this.networkStatus.isOffline()) {
+      this._pickupPhotoDialog.set({ ...dialog, error: OFFLINE_MUTATION_MESSAGE });
+      return;
+    }
+
+    this._pickupPhotoDialog.set({ ...dialog, uploading: true, error: null });
+
+    try {
+      await this.assignmentsService.uploadPickupPhoto(dialog.orderId, dialog.file);
+      this.patchAssignmentOrder(dialog.assignmentId, {
+        pickupPhotoUploaded: true,
+      });
+      this.closePickupPhotoDialog();
+    } catch (error) {
+      const current = this._pickupPhotoDialog();
+      if (!current) {
+        return;
+      }
+      this._pickupPhotoDialog.set({
+        ...current,
+        uploading: false,
+        error: extractHttpErrorMessage(
+          error,
+          'Unable to upload the pickup photo. Please try again.',
+        ),
+      });
+    }
   }
 
   dismissActionError(): void {

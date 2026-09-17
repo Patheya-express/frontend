@@ -6,7 +6,10 @@ import type {
   OrderResponseDto,
 } from '@patheya-express-frontend/api-sdk';
 import { LogoutCleanupRegistry } from '@patheya-express-frontend/auth';
-import { MobilePlatformService } from '@patheya-express-frontend/core';
+import {
+  GeolocationService,
+  MobilePlatformService,
+} from '@patheya-express-frontend/core';
 import { LoggerService } from '@patheya-express-frontend/mobile-observability';
 import { formatCurrency } from '@patheya-express-frontend/ui';
 import { DeliveryDashboardService } from '../services/delivery-dashboard.service';
@@ -80,6 +83,7 @@ function buildMetrics(
 export class DeliveryDashboardStore {
   private readonly dashboardService = inject(DeliveryDashboardService);
   private readonly mobilePlatform = inject(MobilePlatformService);
+  private readonly geolocationService = inject(GeolocationService);
   private readonly logger = inject(LoggerService);
 
   private heartbeatHandle: ReturnType<typeof setInterval> | null = null;
@@ -178,9 +182,19 @@ export class DeliveryDashboardStore {
     }
   }
 
+  /**
+   * Always-on presence heartbeat (2026-09-16 follow-up) — grabs a fix (best-effort; see
+   * tryGetCurrentLocation()'s own doc comment) before going online, so the very first moment a
+   * rider is dispatchable, DeliveryPartner.currentLatitude/currentLongitude is already populated
+   * rather than waiting for the first heartbeat tick up to DELIVERY_PRESENCE_HEARTBEAT_SECONDS
+   * later.
+   */
   goOnline(): Promise<void> {
     return this.toggleStatus(
-      () => this.dashboardService.goOnline(),
+      async () => {
+        const location = await this.tryGetCurrentLocation();
+        return this.dashboardService.goOnline(location);
+      },
       () => this.startHeartbeat(),
     );
   }
@@ -251,14 +265,51 @@ export class DeliveryDashboardStore {
    */
   private async sendHeartbeat(): Promise<void> {
     try {
-      await this.dashboardService.pingOnline();
-      this.logHeartbeatEvent('presence_heartbeat_sent');
+      const location = await this.tryGetCurrentLocation();
+      await this.dashboardService.pingOnline(location);
+      this.logHeartbeatEvent('presence_heartbeat_sent', {
+        hasLocation: location != null,
+      });
     } catch (error) {
       this.logHeartbeatEvent(
         'presence_heartbeat_failed',
         { reason: String(error) },
         'warn',
       );
+    }
+  }
+
+  /**
+   * Always-on presence heartbeat (2026-09-16 follow-up) — "location should always be accessible
+   * unless the rider is offline or logged out" is enforced entirely by WHEN this is called (only
+   * from goOnline() and sendHeartbeat(), which only ever runs between startHeartbeat() and
+   * stopHeartbeat() — i.e. exactly the rider's online session, cleared on goOffline() and on
+   * logout via LogoutCleanupRegistry), not by anything special here. Deliberately best-effort and
+   * silent: a denied permission or a momentary GPS failure must never block going online or fail
+   * a heartbeat tick (goOnline and pingOnline both already work with no location at all — see
+   * GoAvailableDto/MarkOnlineDto on the backend), it just means dispatch's radius filter won't
+   * have a fresh fix for this rider until the next successful attempt.
+   */
+  private async tryGetCurrentLocation(): Promise<
+    { latitude: number; longitude: number } | undefined
+  > {
+    try {
+      const permitted = await this.geolocationService.ensurePermission();
+      if (!permitted) {
+        return undefined;
+      }
+
+      const position = await this.geolocationService.getCurrentPosition();
+      if (!position) {
+        return undefined;
+      }
+
+      return {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      };
+    } catch {
+      return undefined;
     }
   }
 

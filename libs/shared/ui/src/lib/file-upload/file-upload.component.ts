@@ -24,6 +24,10 @@ import {
 export class FileUploadComponent {
   /** e.g. "image/png,image/jpeg,image/webp" or "image/png,image/jpeg,application/pdf" */
   @Input() accept = 'image/png,image/jpeg,image/webp';
+  /** Set to 'environment' (rear camera) or 'user' (front camera) to make mobile browsers/WebViews
+   *  open the native camera directly instead of a file/gallery picker — standard `<input
+   *  capture>` behavior, no native plugin involved. Leave unset for a plain file picker. */
+  @Input() capture?: 'user' | 'environment';
   @Input() label = 'Upload file';
   @Input() ariaLabel = 'Upload file';
   @Input() uploading = false;

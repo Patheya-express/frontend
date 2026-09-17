@@ -1,0 +1,53 @@
+<!-- One order visible at a time (LiveOrdersFacade.trackedOrders is already newest-first, capped at
+     3); no tracker at all until there's an active order, and no loading skeleton — it simply
+     appears the moment one is known, and disappears the moment none remain. -->
+@if (visible() && selectedOrder(); as order) {
+  <div
+    class="live-orders-tracker"
+    [class.live-orders-tracker--native]="isNative"
+    [class.live-orders-tracker--above-cart-bar]="aboveCartBar()"
+  >
+    <a
+      class="live-orders-tracker__bar"
+      [routerLink]="['/orders', order.id]"
+      mobileSwipe
+      (pointerdown)="onPointerDown()"
+      (swiped)="onSwiped($event)"
+      (click)="onBarClick($event)"
+      (keydown.arrowleft)="selectPrevious($event)"
+      (keydown.arrowright)="selectNext($event)"
+    >
+      <span class="live-orders-tracker__icon" aria-hidden="true">{{ icon(order.status) }}</span>
+      <span class="live-orders-tracker__info">
+        <span class="live-orders-tracker__primary">
+          <span class="live-orders-tracker__restaurant">{{ restaurantLabel(order) }}</span>
+          <lib-order-status-badge [status]="order.status" />
+        </span>
+        @if (statusMessage(order.status); as message) {
+          <span class="live-orders-tracker__message">{{ message }}</span>
+        }
+      </span>
+      <span class="live-orders-tracker__chevron" aria-hidden="true">›</span>
+    </a>
+
+    @if (orders().length > 1) {
+      <div class="live-orders-tracker__dots" role="tablist" aria-label="Active orders">
+        @for (item of orders(); track item.id; let i = $index) {
+          <button
+            type="button"
+            class="live-orders-tracker__dot"
+            role="tab"
+            [class.live-orders-tracker__dot--active]="item.id === order.id"
+            [attr.aria-selected]="item.id === order.id"
+            [attr.aria-label]="'Order ' + (i + 1) + ' of ' + orders().length + ': ' + restaurantLabel(item)"
+            (click)="select(item.id)"
+          ></button>
+        }
+      </div>
+    } @else {
+      <div class="live-orders-tracker__dots" aria-hidden="true">
+        <span class="live-orders-tracker__dot live-orders-tracker__dot--active"></span>
+      </div>
+    }
+  </div>
+}

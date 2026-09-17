@@ -100,6 +100,25 @@ export class GeolocationService {
     );
   }
 
+  /**
+   * 2026-09-16 — one-shot position read, for actions that need "where am I right now" rather than
+   * a continuous stream (e.g. the restaurant-arrival geofence check: the backend is authoritative
+   * either way, this is only what gets submitted with the arrival request). Deliberately separate
+   * from `startWatching`/`stopWatching`'s persistent-watch state — does not touch `watchId`, so it
+   * can be called regardless of whether a watch is already running elsewhere (courier-location
+   * tracking) without disturbing it.
+   */
+  async getCurrentPosition(): Promise<Position | null> {
+    try {
+      return await Geolocation.getCurrentPosition({
+        enableHighAccuracy: true,
+        timeout: WATCH_TIMEOUT_MS,
+      });
+    } catch {
+      return null;
+    }
+  }
+
   async stopWatching(): Promise<void> {
     if (this.watchId === null) {
       return;

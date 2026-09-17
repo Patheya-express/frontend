@@ -10,6 +10,10 @@ allowBuilds:
   # repo's CI — the published npm package already ships prebuilt dist/ output, so there's nothing
   # this workspace needs that script to produce. Deliberately false, not left as pnpm's placeholder.
   '@sentry/capacitor': false
+  # Its postinstall only verifies the platform-specific native binary optional dependency (e.g.
+  # @swc/core-win32-x64-msvc) loaded correctly, falling back to @swc/wasm if not — no arbitrary
+  # build step, safe to allow (same trust level as using @swc/core at all).
+  '@swc/core': true
   esbuild: true
   less: true
   lmdb: true

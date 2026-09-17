@@ -131,8 +131,8 @@ export function failWithGuidance({ rootCause, suggestedFix, nextAction, docs, re
   }
   // Short, targeted evidence (e.g. a crash-looping container's status and last few log lines) —
   // never a raw exception dump, which stays gated behind `verbose` below. See
-  // tools/launcher/lib/detect-backend.mjs's collectApiGatewayDiagnostics()/formatDiagnosticsBlock()
-  // for the one current producer of this field.
+  // tools/launcher/lib/detect-backend.mjs's collectContainerDiagnostics()/formatDiagnosticsBlock()
+  // for the current producers of this field.
   if (diagnostics) {
     write('error', `\n${dim(diagnostics)}`);
   }

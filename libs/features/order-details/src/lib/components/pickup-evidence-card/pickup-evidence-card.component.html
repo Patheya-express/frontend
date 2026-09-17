@@ -1,0 +1,20 @@
+@if (arrivedAtRestaurantAt() || pickupPhoto()) {
+  <section class="pickup-evidence-card">
+    @if (arrivedAtRestaurantAt()) {
+      <p class="pickup-evidence-arrived">
+        Your delivery partner has arrived at the restaurant.
+      </p>
+    }
+
+    @if (pickupPhoto(); as photo) {
+      <h2 class="pickup-evidence-title">Parcel photo</h2>
+      <p class="pickup-evidence-help">
+        Taken by your delivery partner at pickup, for reference.
+      </p>
+
+      @if (photoUrl; as url) {
+        <img class="pickup-evidence-photo" [src]="url" alt="Parcel photo taken at pickup" />
+      }
+    }
+  </section>
+}

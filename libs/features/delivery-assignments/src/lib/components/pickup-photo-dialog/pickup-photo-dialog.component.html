@@ -1,0 +1,39 @@
+@if (facade.pickupPhotoDialog(); as dialog) {
+  <div class="pickup-photo-dialog-backdrop">
+    <div class="pickup-photo-dialog" role="alertdialog" aria-modal="true" aria-label="Pickup verification">
+      <h2 class="pickup-photo-dialog-title">Pickup verification</h2>
+      <p class="pickup-photo-dialog-help">
+        Take a clear photo of the parcel before leaving the restaurant.
+      </p>
+
+      <lib-file-upload
+        accept="image/png,image/jpeg,image/webp"
+        capture="environment"
+        label="Take photo"
+        ariaLabel="Take or upload parcel photo"
+        [uploading]="dialog.uploading"
+        [previewUrl]="dialog.previewUrl ?? undefined"
+        [selectedFileName]="dialog.file?.name"
+        (fileSelected)="onFileSelected($event)"
+      />
+
+      @if (dialog.error) {
+        <p class="pickup-photo-dialog-error">{{ dialog.error }}</p>
+      }
+
+      <div class="pickup-photo-dialog-actions">
+        <button type="button" class="pickup-photo-dialog-cancel" [disabled]="dialog.uploading" (click)="close()">
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="pickup-photo-dialog-confirm"
+          [disabled]="!canSubmit()"
+          (click)="submit()"
+        >
+          {{ dialog.uploading ? 'Uploading…' : 'Submit photo' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

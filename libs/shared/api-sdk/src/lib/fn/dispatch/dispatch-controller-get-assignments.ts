@@ -14,7 +14,7 @@ export interface DispatchControllerGetAssignments$Params {
 /**
  * Optional — omit to get every assignment (unchanged default behavior); pass to narrow to one status (Pending/Accepted/Rejected/Expired).
  */
-  status?: 'PENDING' | 'ASSIGNED' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED';
+  status?: 'PENDING' | 'ASSIGNED' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED' | 'COMPLETED';
 }
 
 export function dispatchControllerGetAssignments(http: HttpClient, rootUrl: string, params?: DispatchControllerGetAssignments$Params, context?: HttpContext): Observable<StrictHttpResponse<Array<DeliveryAssignmentResponseDto>>> {

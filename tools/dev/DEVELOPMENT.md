@@ -145,23 +145,28 @@ produced `EADDRINUSE :::3000`. If you intentionally want api-gateway running nat
 instead of in a container (faster inner-loop iteration on backend code), exclude it from Compose
 yourself and pass `--skip-infrastructure` — see "Backend-only" below.
 
-### Local secrets (JWT)
+### Local secrets (JWT, bank-account encryption)
 
-The Docker-managed `api-gateway` container reads its `JWT_ACCESS_SECRET`/`JWT_REFRESH_SECRET` from
-`patheya-express-platform/infrastructure/docker/.env.compose` — via `docker-compose.yml`'s
-`${JWT_ACCESS_SECRET}`/`${JWT_REFRESH_SECRET}` substitution, and every `docker compose up` this
-tooling runs passes `--env-file infrastructure/docker/.env.compose` explicitly (see
-`tools/launcher/lib/detect-backend.mjs`'s `startSiblingBackend()`) — never relying on Compose's own
-same-directory `.env` auto-discovery, since the file is deliberately not named `.env`. This is a
-completely separate file from `apps/api-gateway/.env` (host-side tools only); see "Environment
-configuration" below for both.
+The Docker-managed `api-gateway` container reads its local secrets —
+`JWT_ACCESS_SECRET`/`JWT_REFRESH_SECRET` and `BANK_ACCOUNT_ENCRYPTION_KEY` — from
+`patheya-express-platform/infrastructure/docker/.env.compose` — via `docker-compose.yml`'s `${VAR}`
+substitution, and every `docker compose up` this tooling runs passes `--env-file
+infrastructure/docker/.env.compose` explicitly (see `tools/launcher/lib/detect-backend.mjs`'s
+`startSiblingBackend()`) — never relying on Compose's own same-directory `.env` auto-discovery,
+since the file is deliberately not named `.env`. This is a completely separate file from
+`apps/api-gateway/.env` (host-side tools only); see "Environment configuration" below for both.
 
 Neither file exists on a fresh clone — only their committed, itself-gitignored `.env*.example`
 templates do — and both templates ship literal placeholder secrets
-(`replace-with-a-long-random-value` / `dev-access-secret-change-me`) that the backend's own
-`env.validation.ts` rejects at boot in *every* environment, including development. Without this
-step, the container crash-loops on `"JWT_ACCESS_SECRET" still contains an unedited placeholder
-value` before ever reaching a state this tooling's health check could report anything useful about.
+(`replace-with-a-long-random-value` / `dev-access-secret-change-me` / `dev-bank-account-key-change-me`).
+The backend's own `env.validation.ts` rejects a placeholder JWT secret at boot in *every*
+environment, including development — without this step, the container crash-loops on `"JWT_ACCESS_
+SECRET" still contains an unedited placeholder value` before ever reaching a state this tooling's
+health check could report anything useful about. `BANK_ACCOUNT_ENCRYPTION_KEY` is different: it's
+only required in production, so a placeholder there doesn't block boot — but it does make every
+restaurant bank-account save/read call fail with `"BANK_ACCOUNT_ENCRYPTION_KEY is not configured —
+cannot encrypt bank account data"` the first time it's actually used, which is exactly as disruptive
+once you hit that flow. Both are provisioned identically, for exactly this reason.
 
 `pnpm run setup` (and, independently, the frontend launcher's own auto-start — see
 `startSiblingBackend()`) fixes this automatically:
@@ -170,11 +175,15 @@ value` before ever reaching a state this tooling's health check could report any
   overwriting a file that already exists.
 - Generates a real, cryptographically random secret (48 bytes, base64url) for any secret key that's
   missing, empty, or still one of the known placeholder strings — **idempotent**: an already-valid
-  secret from a previous run, or one you set yourself, is never regenerated or rotated.
+  secret from a previous run, or one you set yourself, is never regenerated or rotated. This matters
+  even more for `BANK_ACCOUNT_ENCRYPTION_KEY` than for the JWT keys: it's a KDF input
+  (`crypto.util.ts`'s `deriveKey`, via `scrypt`), so rotating it after any restaurant bank-account
+  row has been saved would make that row permanently undecryptable — never something this tooling
+  does automatically.
 - **Never prints, logs, or returns the generated value anywhere** — only which keys were touched
-  (e.g. "Local development secrets generated (JWT_ACCESS_SECRET, JWT_REFRESH_SECRET)"). If you need
-  the actual value (e.g. to decode a token by hand), read the file yourself:
-  `infrastructure/docker/.env.compose`.
+  (e.g. "Local development secrets generated (JWT_ACCESS_SECRET, JWT_REFRESH_SECRET,
+  BANK_ACCOUNT_ENCRYPTION_KEY)"). If you need the actual value (e.g. to decode a token by hand),
+  read the file yourself: `infrastructure/docker/.env.compose`.
 
 This is implemented once, in `tools/dev/lib/env-file.mjs` (`ensureLocalSecrets`/`generateSecret`/
 `isPlaceholderValue`) — both `tools/dev/bootstrap.mjs` and `tools/launcher/lib/detect-backend.mjs`
@@ -189,8 +198,9 @@ waiting out the health-poll timeout for a backend that was never actually starte
 succeeds but the api-gateway container still won't come up**, `detectBackend()`'s health poll
 detects a genuine crash-loop (Docker reports the container status as `restarting`) within a few
 seconds — well before its full startup timeout — and attaches the container's status plus its last
-~40 log lines to the failure message. Either way, any `JWT_ACCESS_SECRET`/`JWT_REFRESH_SECRET` value
-appearing in that attached output is redacted before it reaches the terminal.
+~40 log lines to the failure message. Either way, any `JWT_ACCESS_SECRET`/`JWT_REFRESH_SECRET`/
+`BANK_ACCOUNT_ENCRYPTION_KEY` value appearing in that attached output is redacted before it reaches
+the terminal.
 
 ### Ports
 
@@ -276,12 +286,15 @@ pnpm run setup
      what the **Docker-managed api-gateway container itself** actually reads (see "Docker
      architecture" and "Local secrets" below).
 
-   Both files ship placeholder JWT secrets (`replace-with-a-long-random-value` /
-   `dev-access-secret-change-me`) that the backend's own startup validation rejects outright, in
-   *every* environment — so immediately after scaffolding, this step also generates a real,
-   cryptographically random `JWT_ACCESS_SECRET`/`JWT_REFRESH_SECRET` for each file, replacing only
-   the placeholder (never a value you or a previous run already set for real) and never printing
-   the generated value anywhere. See "Local secrets (JWT)" below for the full contract.
+   Both files ship placeholder secrets — JWT (`replace-with-a-long-random-value` /
+   `dev-access-secret-change-me`), which the backend's own startup validation rejects outright in
+   *every* environment, and `BANK_ACCOUNT_ENCRYPTION_KEY` (same placeholder style), which it only
+   rejects in production but which the restaurant bank-account save/read endpoints need regardless
+   — so immediately after scaffolding, this step also generates a real, cryptographically random
+   value for each of `JWT_ACCESS_SECRET`/`JWT_REFRESH_SECRET`/`BANK_ACCOUNT_ENCRYPTION_KEY` in each
+   file, replacing only the placeholder (never a value you or a previous run already set for real)
+   and never printing the generated value anywhere. See "Local secrets (JWT, bank-account
+   encryption)" below for the full contract.
 4. **Backend Prisma Client generation** (`pnpm --filter api-gateway run db:generate`, i.e. `prisma
    generate`) — needs only the checked-out `schema.prisma`, not a reachable database, so this runs
    before Docker/Postgres is even started. Neither `prisma` nor `@prisma/client` runs this
@@ -407,8 +420,8 @@ pnpm delivery:android
   setup` (step 3 above) if missing.
 - **Backend, the Docker-managed api-gateway container itself**:
   `patheya-express-platform/infrastructure/docker/.env.compose` — a *different* file, scaffolded
-  from `.env.compose.example`, also by step 3 above. See "Local secrets (JWT)" above for exactly
-  why these are two separate files and what each is for.
+  from `.env.compose.example`, also by step 3 above. See "Local secrets (JWT, bank-account
+  encryption)" above for exactly why these are two separate files and what each is for.
 
   Both: never committed (already gitignored in that repo — `.env*` is the ignore pattern, with an
   explicit `!.env.example`/`!**/.env.compose.example` exception for the checked-in templates only);
@@ -489,11 +502,22 @@ teammate's, if sharing a machine) is likely already running that app.
 **"JWT_ACCESS_SECRET still contains an unedited placeholder value"** (in `docker logs
 patheya-express-api-gateway`, or as a crash-loop diagnostic attached to a "did not become healthy"
 failure) — `pnpm run setup`/the launcher's auto-start generate a real secret into
-`infrastructure/docker/.env.compose` automatically (see "Local secrets (JWT)" above), so seeing
-this means that step didn't run or was bypassed — most often because Docker Compose was invoked by
-hand without `--env-file infrastructure/docker/.env.compose`. Fix: re-run `pnpm run setup` (or
-`pnpm run dev`), or run `docker compose -f infrastructure/docker/docker-compose.yml --env-file
-infrastructure/docker/.env.compose up -d` yourself from `patheya-express-platform`.
+`infrastructure/docker/.env.compose` automatically (see "Local secrets (JWT, bank-account
+encryption)" above), so seeing this means that step didn't run or was bypassed — most often because
+Docker Compose was invoked by hand without `--env-file infrastructure/docker/.env.compose`. Fix:
+re-run `pnpm run setup` (or `pnpm run dev`), or run `docker compose -f
+infrastructure/docker/docker-compose.yml --env-file infrastructure/docker/.env.compose up -d`
+yourself from `patheya-express-platform`.
+
+**"BANK_ACCOUNT_ENCRYPTION_KEY is not configured — cannot encrypt bank account data"** (only when
+actually saving/reading a restaurant bank account — this one doesn't crash-loop the container, since
+`env.validation.ts` only requires this key in production) — same root cause and fix as the JWT
+placeholder failure above: `infrastructure/docker/.env.compose` still has the shipped
+`dev-bank-account-key-change-me` placeholder rather than a generated value. Re-run `pnpm run setup`
+(safe — it never rotates an already-valid key, only fills in a missing/placeholder one), then
+restart just the `api-gateway` container so it picks up the new value: `docker compose -f
+infrastructure/docker/docker-compose.yml --env-file infrastructure/docker/.env.compose up -d
+api-gateway` (no database reset, no other containers affected).
 
 **"Docker Compose failed to start the local backend stack"** — `docker compose up -d` itself exited
 non-zero (a missing `--env-file` target, Docker Desktop not actually running despite the engine

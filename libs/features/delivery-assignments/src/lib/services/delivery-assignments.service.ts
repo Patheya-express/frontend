@@ -5,6 +5,8 @@ import {
   type DeliveryAssignmentResponseDto,
   type ProofOtpGeneratedResponseDto,
   type ProofOtpStatusResponseDto,
+  type ProofPhotoResponseDto,
+  type RestaurantArrivalResponseDto,
 } from '@patheya-express-frontend/api-sdk';
 import { CurrentDeliveryPartnerService } from '@patheya-express-frontend/core';
 
@@ -61,6 +63,32 @@ export class DeliveryAssignmentsService {
 
   async verifyDeliveryOtp(orderId: string, code: string): Promise<ProofOtpStatusResponseDto> {
     const response = await this.deliveryProofService.proofControllerVerifyDeliveryOtp({ orderId, body: { code } });
+    return unwrap(response);
+  }
+
+  // Mandatory pickup-parcel photo — write-once evidence required before the order can advance to
+  // OUT_FOR_DELIVERY (see ProofService.uploadPickupPhoto/OrdersService.assertPhotoVerifiedForStatus).
+  async uploadPickupPhoto(orderId: string, file: File): Promise<ProofPhotoResponseDto> {
+    const response = await this.deliveryProofService.proofControllerUploadPickupPhoto({
+      orderId,
+      body: { file },
+    });
+    return unwrap(response);
+  }
+
+  // 2026-09-16 business-workflow revision — "I've Arrived" at the restaurant. The backend is
+  // authoritative: it validates these coordinates against the order's real pickup location and a
+  // 100m radius (see ProofService.markRestaurantArrival) — this call can fail with a clear
+  // "too far away" message, which is not a bug, it's the gate working.
+  async markRestaurantArrival(
+    orderId: string,
+    latitude: number,
+    longitude: number,
+  ): Promise<RestaurantArrivalResponseDto> {
+    const response = await this.deliveryProofService.proofControllerMarkRestaurantArrival({
+      orderId,
+      body: { latitude, longitude },
+    });
     return unwrap(response);
   }
 }

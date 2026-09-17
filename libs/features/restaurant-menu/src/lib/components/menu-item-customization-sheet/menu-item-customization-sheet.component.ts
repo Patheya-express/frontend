@@ -42,7 +42,12 @@ export class MenuItemCustomizationSheetComponent implements OnInit {
 
   protected readonly unitPrice = computed(() => {
     const variant = this.item.variants.find((v) => v.id === this.selectedVariantId());
-    return variant ? variant.price : this.item.basePrice;
+    // Prices come back from the API as Prisma Decimal values serialized to strings (e.g. "220")
+    // despite the SDK typing them as `number` — coerce explicitly, matching how
+    // payments-checkout.service.ts and the menu-management forms handle the same Decimal
+    // serialization behavior. Without this, `unitPrice() + addonsTotal()` below silently does
+    // string concatenation instead of addition (e.g. "220" + "0" => "2200", not 220).
+    return Number(variant ? variant.price : this.item.basePrice);
   });
 
   protected readonly addonsTotal = computed(() => {
@@ -51,7 +56,7 @@ export class MenuItemCustomizationSheetComponent implements OnInit {
     for (const addon of this.item.addons) {
       for (const option of addon.options) {
         if (selected.has(option.id)) {
-          total += option.price;
+          total += Number(option.price);
         }
       }
     }

@@ -14,6 +14,7 @@ import {
 import { DeliveryAssignmentsFacade } from '../../facades/delivery-assignments.facade';
 import { AssignmentCardComponent } from '../../components/assignment-card/assignment-card.component';
 import { ProofOtpDialogComponent } from '../../components/proof-otp-dialog/proof-otp-dialog.component';
+import { PickupPhotoDialogComponent } from '../../components/pickup-photo-dialog/pickup-photo-dialog.component';
 
 @Component({
   selector: 'lib-delivery-assignments-page',
@@ -25,6 +26,7 @@ import { ProofOtpDialogComponent } from '../../components/proof-otp-dialog/proof
     OfflineBannerComponent,
     AssignmentCardComponent,
     ProofOtpDialogComponent,
+    PickupPhotoDialogComponent,
   ],
   templateUrl: './delivery-assignments-page.component.html',
   styleUrl: './delivery-assignments-page.component.scss',
