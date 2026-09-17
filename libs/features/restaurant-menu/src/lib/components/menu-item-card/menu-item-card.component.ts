@@ -4,13 +4,18 @@ import { CartFacade } from '@patheya-express-frontend/cart';
 import { HapticsService, MediaUrlService } from '@patheya-express-frontend/core';
 import { AuthFacade } from '@patheya-express-frontend/auth';
 import { FavoriteButtonComponent } from '@patheya-express-frontend/favorites';
-import { highlightSegments, LazyImageDirective, MOBILE_MOTION_DURATIONS_MS } from '@patheya-express-frontend/ui';
+import {
+  highlightSegments,
+  LazyImageDirective,
+  MOBILE_MOTION_DURATIONS_MS,
+  QuantityStepperComponent,
+} from '@patheya-express-frontend/ui';
 import { MenuItemCustomizationSheetComponent } from '../menu-item-customization-sheet/menu-item-customization-sheet.component';
 
 @Component({
   selector: 'lib-menu-item-card',
   standalone: true,
-  imports: [MenuItemCustomizationSheetComponent, FavoriteButtonComponent, LazyImageDirective],
+  imports: [MenuItemCustomizationSheetComponent, FavoriteButtonComponent, LazyImageDirective, QuantityStepperComponent],
   templateUrl: './menu-item-card.component.html',
   styleUrl: './menu-item-card.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

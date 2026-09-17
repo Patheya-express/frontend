@@ -32,6 +32,7 @@ export * from './lib/restaurant-branch-switcher/restaurant-branch-switcher.compo
 export * from './lib/search-bar/search-bar.component';
 export * from './lib/carousel/carousel.component';
 export * from './lib/horizontal-shelf/horizontal-shelf.component';
+export * from './lib/quantity-stepper/quantity-stepper.component';
 
 // Tokens (TS mirrors of theme.scss's new custom properties — see theme.scss for the CSS side)
 export * from './lib/tokens/z-index.tokens';

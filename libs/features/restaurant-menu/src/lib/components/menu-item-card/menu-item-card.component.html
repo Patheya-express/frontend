@@ -43,11 +43,7 @@
         } @else if (!simpleCartItem() || simpleCartItem()!.quantity === 0) {
           <button type="button" class="add-btn" (click)="add()">Add</button>
         } @else {
-          <div class="menu-item-stepper">
-            <button type="button" class="stepper-btn" aria-label="Decrease quantity" (click)="decrease()">−</button>
-            <span class="stepper-value">{{ simpleCartItem()!.quantity }}</span>
-            <button type="button" class="stepper-btn" aria-label="Increase quantity" (click)="increase()">+</button>
-          </div>
+          <lib-quantity-stepper [value]="simpleCartItem()!.quantity" (decreased)="decrease()" (increased)="increase()" />
         }
       </div>
     }

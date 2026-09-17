@@ -1,15 +1,7 @@
 <button type="button" class="sheet-backdrop" aria-label="Close" (click)="close()"></button>
 
-<div
-  class="sheet-panel"
-  role="dialog"
-  aria-modal="true"
-  tabindex="-1"
-  [mobileAutoFocus]="true"
-  libFocusTrap
-  [attr.aria-label]="item.name"
->
-  <header class="sheet-header">
+<lib-bottom-sheet class="sheet-panel" [ariaLabel]="item.name" [showHandle]="false" (dismissed)="close()">
+  <header sheetHeader class="sheet-header">
     <h2>{{ item.name }}</h2>
     <button type="button" class="sheet-close" aria-label="Close" (click)="close()">✕</button>
   </header>
@@ -66,14 +58,10 @@
     }
   </div>
 
-  <footer class="sheet-footer">
-    <div class="quantity-stepper">
-      <button type="button" (click)="decreaseQuantity()" aria-label="Decrease quantity">−</button>
-      <span>{{ quantity() }}</span>
-      <button type="button" (click)="increaseQuantity()" aria-label="Increase quantity">+</button>
-    </div>
+  <footer sheetFooter class="sheet-footer">
+    <lib-quantity-stepper [value]="quantity()" (decreased)="decreaseQuantity()" (increased)="increaseQuantity()" />
     <button type="button" class="add-to-cart-btn" [disabled]="!isValid() || adding()" (click)="addToCart()">
       {{ adding() ? 'Adding…' : 'Add item · ₹' + totalPrice() }}
     </button>
   </footer>
-</div>
+</lib-bottom-sheet>

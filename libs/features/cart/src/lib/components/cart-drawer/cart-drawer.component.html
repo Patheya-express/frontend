@@ -1,41 +1,33 @@
 @if (open) {
   <button type="button" class="drawer-backdrop" aria-label="Close cart" (click)="close()"></button>
 
-  <aside
-    class="drawer-panel"
-    role="dialog"
-    aria-modal="true"
-    aria-label="Cart"
-    tabindex="-1"
-    [mobileAutoFocus]="true"
-    libFocusTrap
-  >
-    <header class="drawer-header">
-      <h2>Your Cart</h2>
-      <button type="button" class="drawer-close" aria-label="Close cart" (click)="close()">✕</button>
-    </header>
+  <lib-bottom-sheet class="drawer-panel" ariaLabel="Cart" [showHandle]="false" (dismissed)="close()">
+    <ng-container sheetHeader>
+      <header class="drawer-header">
+        <h2>Your Cart</h2>
+        <button type="button" class="drawer-close" aria-label="Close cart" (click)="close()">✕</button>
+      </header>
 
-    @if (error()) {
-      <p class="drawer-error" role="alert">{{ error() }}</p>
+      @if (error()) {
+        <p class="drawer-error" role="alert">{{ error() }}</p>
+      }
+    </ng-container>
+
+    @if (items().length === 0) {
+      <lib-empty-state
+        title="Your cart is empty"
+        message="Add items from a restaurant to get started."
+        actionLabel="Browse restaurants"
+        (refresh)="browseRestaurants()"
+      />
+    } @else {
+      @for (item of items(); track item.id) {
+        <lib-cart-item [item]="item" />
+      }
     }
 
-    <div class="drawer-body">
-      @if (items().length === 0) {
-        <lib-empty-state
-          title="Your cart is empty"
-          message="Add items from a restaurant to get started."
-          actionLabel="Browse restaurants"
-          (refresh)="browseRestaurants()"
-        />
-      } @else {
-        @for (item of items(); track item.id) {
-          <lib-cart-item [item]="item" />
-        }
-      }
-    </div>
-
     @if (items().length > 0) {
-      <footer class="drawer-footer" [class.drawer-footer--native]="isNative">
+      <footer sheetFooter class="drawer-footer" [class.drawer-footer--native]="isNative">
         <lib-cart-summary />
         <div class="drawer-actions">
           <button type="button" class="drawer-clear" (click)="clearCart()">Clear cart</button>
@@ -43,5 +35,5 @@
         </div>
       </footer>
     }
-  </aside>
+  </lib-bottom-sheet>
 }

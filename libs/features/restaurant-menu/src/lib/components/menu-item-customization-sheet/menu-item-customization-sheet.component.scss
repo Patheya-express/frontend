@@ -8,6 +8,10 @@
   z-index: 100;
 }
 
+// Positioning/sizing only — background, radius, shadow, max-height, and the internal flex
+// column are all owned by BottomSheetComponent's own `.mobile-bottom-sheet__surface` now (see
+// its component styles); duplicating them here would just fight the shared chrome. Same division
+// of responsibility BottomSheetHostComponent's own `.mobile-bottom-sheet-host__sheet` class uses.
 .sheet-panel {
   position: fixed;
   bottom: 0;
@@ -15,18 +19,11 @@
   transform: translateX(-50%);
   width: 100%;
   max-width: 480px;
-  max-height: 85vh;
-  display: flex;
-  flex-direction: column;
-  background: var(--color-surface);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  box-shadow: var(--shadow-lg);
   z-index: 101;
 
   @media (min-width: 640px) {
     bottom: 50%;
     transform: translate(-50%, 50%);
-    border-radius: var(--radius-lg);
   }
 }
 
@@ -54,8 +51,11 @@
 }
 
 .sheet-body {
-  overflow-y: auto;
-  padding: var(--space-4) var(--space-5);
+  // This renders inside BottomSheetComponent's own `.mobile-bottom-sheet__content` now, which
+  // already provides the horizontal/bottom padding and the scrolling behavior (`overflow-y: auto`)
+  // for the sheet's default content slot — only the top padding it doesn't supply is added here,
+  // rather than duplicating (and doubling up) padding/scroll the wrapper already owns.
+  padding-top: var(--space-4);
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
@@ -113,35 +113,6 @@
   // on desktop/web, so this is a no-op there.
   padding: var(--space-4) var(--space-5) calc(var(--space-4) + var(--safe-area-bottom));
   border-top: 1px solid var(--color-border);
-}
-
-.quantity-stepper {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: 2px var(--space-1);
-  flex-shrink: 0;
-
-  button {
-    width: 28px;
-    height: 28px;
-    min-width: var(--touch-target-min, 44px);
-    min-height: var(--touch-target-min, 44px);
-    border: none;
-    background: transparent;
-    color: var(--color-primary);
-    font-size: var(--font-size-lg);
-    cursor: pointer;
-  }
-
-  span {
-    min-width: 16px;
-    text-align: center;
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-semibold);
-  }
 }
 
 .add-to-cart-btn {

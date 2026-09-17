@@ -10,9 +10,15 @@ import { SwipeDirective, type MobileSwipeEvent } from '../directives/swipe.direc
  * around whatever content it's given, so it's also usable standalone for a sheet that isn't
  * going through the overlay stack (e.g. a permanently-mounted sheet in a custom layout).
  *
+ * Default (unnamed) projected content scrolls internally. The two named slots below are optional
+ * — sheets that don't need a non-scrolling header/footer (the common case) can ignore them
+ * entirely and project everything into the default slot, exactly as before this pair was added.
+ *
  * @example
  * <lib-bottom-sheet (dismissed)="close()">
- *   <p>Sheet content</p>
+ *   <header sheetHeader>Title</header>
+ *   <p>Scrollable sheet content</p>
+ *   <footer sheetFooter>Actions</footer>
  * </lib-bottom-sheet>
  */
 @Component({
@@ -38,9 +44,11 @@ import { SwipeDirective, type MobileSwipeEvent } from '../directives/swipe.direc
       @if (showHandle()) {
         <div class="mobile-bottom-sheet__handle" aria-hidden="true"></div>
       }
+      <ng-content select="[sheetHeader]" />
       <div class="mobile-bottom-sheet__content">
         <ng-content />
       </div>
+      <ng-content select="[sheetFooter]" />
     </div>
   `,
   styles: `

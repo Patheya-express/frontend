@@ -12,16 +12,19 @@ import {
 import type { MenuItemResponseDto } from '@patheya-express-frontend/api-sdk';
 import { CartFacade } from '@patheya-express-frontend/cart';
 import { HapticsService } from '@patheya-express-frontend/core';
-import { AutoFocusDirective, FocusTrapDirective } from '@patheya-express-frontend/ui';
+import { BottomSheetComponent, QuantityStepperComponent } from '@patheya-express-frontend/ui';
 
 @Component({
   selector: 'lib-menu-item-customization-sheet',
   standalone: true,
-  imports: [AutoFocusDirective, FocusTrapDirective],
+  imports: [BottomSheetComponent, QuantityStepperComponent],
   templateUrl: './menu-item-customization-sheet.component.html',
   styleUrl: './menu-item-customization-sheet.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
+    // BottomSheetComponent itself has no Escape handling (only the service-driven
+    // BottomSheetHostComponent does) — this sheet is mounted directly by MenuItemCardComponent,
+    // not through BottomSheetService, so it keeps its own listener from the UI-1A pass.
     '(document:keydown.escape)': 'close()',
   },
 })

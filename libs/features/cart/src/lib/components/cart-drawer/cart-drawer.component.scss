@@ -8,17 +8,14 @@
   z-index: 90;
 }
 
+// Positioning only — background, radius, shadow, max-height, and the internal flex column are
+// all owned by BottomSheetComponent's own `.mobile-bottom-sheet__surface` now (see its component
+// styles). Same division of responsibility BottomSheetHostComponent's own
+// `.mobile-bottom-sheet-host__sheet` class uses.
 .drawer-panel {
   position: fixed;
-  top: 0;
-  right: 0;
+  inset-inline: 0;
   bottom: 0;
-  width: 100%;
-  max-width: 420px;
-  background: var(--color-surface);
-  display: flex;
-  flex-direction: column;
-  box-shadow: var(--shadow-lg);
   z-index: 91;
 }
 
@@ -60,22 +57,18 @@ h2 {
   font-size: var(--font-size-sm);
 }
 
-.drawer-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0 var(--space-5);
-}
-
 .drawer-footer {
-  // Base bottom padding always includes the OS-level safe area (a fixed, full-height panel like
-  // this one doesn't inherit `.app-shell-content`'s padding, so it needs its own).
-  padding: var(--space-2) var(--space-5) calc(var(--space-5) + var(--safe-area-bottom));
+  // Bottom padding no longer adds --safe-area-bottom itself — BottomSheetComponent's surface
+  // already carries the `safe-area-bottom` utility class, so this footer's own bottom padding
+  // only needs the deliberate visual gap on top of that (same total spacing as before the
+  // migration, just not double-counting the safe area now that the shared surface supplies it).
+  padding: var(--space-2) var(--space-5) var(--space-5);
   border-top: 1px solid var(--color-border);
 
   // Native Android/iOS shell only — also clears AppShellComponent's fixed bottom tab bar, whose
-  // own height sits on top of the safe area above.
+  // own height sits on top of the safe area (added separately by the shared surface).
   &.drawer-footer--native {
-    padding-bottom: calc(var(--touch-target-large) + var(--safe-area-bottom) + var(--space-4));
+    padding-bottom: calc(var(--touch-target-large) + var(--space-4));
   }
 }
 
