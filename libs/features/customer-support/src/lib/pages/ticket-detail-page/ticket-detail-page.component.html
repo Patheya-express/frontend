@@ -13,7 +13,7 @@
       </div>
       <div class="ticket-detail-badges">
         <span class="ticket-detail-badge" [attr.data-priority]="ticket.priority">{{ ticket.priority }}</span>
-        <span class="ticket-detail-badge">{{ ticket.status.replace('_', ' ') }}</span>
+        <lib-status-chip [label]="ticket.status.replace('_', ' ')" />
       </div>
     </header>
 

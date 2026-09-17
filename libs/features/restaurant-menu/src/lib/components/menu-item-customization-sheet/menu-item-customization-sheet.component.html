@@ -3,7 +3,7 @@
 <lib-bottom-sheet class="sheet-panel" [ariaLabel]="item.name" [showHandle]="false" (dismissed)="close()">
   <header sheetHeader class="sheet-header">
     <h2>{{ item.name }}</h2>
-    <button type="button" class="sheet-close" aria-label="Close" (click)="close()">✕</button>
+    <lib-icon-button ariaLabel="Close" size="sm" (buttonClick)="close()">✕</lib-icon-button>
   </header>
 
   <div class="sheet-body">

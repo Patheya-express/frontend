@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { BottomSheetComponent, EmptyStateComponent } from '@patheya-express-frontend/ui';
+import { BottomSheetComponent, EmptyStateComponent, IconButtonComponent } from '@patheya-express-frontend/ui';
 import { MobilePlatformService } from '@patheya-express-frontend/core';
 import { CartFacade } from '../../facades/cart.facade';
 import { CartItemComponent } from '../cart-item/cart-item.component';
@@ -9,7 +9,7 @@ import { CartSummaryComponent } from '../cart-summary/cart-summary.component';
 @Component({
   selector: 'lib-cart-drawer',
   standalone: true,
-  imports: [RouterLink, EmptyStateComponent, CartItemComponent, CartSummaryComponent, BottomSheetComponent],
+  imports: [RouterLink, EmptyStateComponent, CartItemComponent, CartSummaryComponent, BottomSheetComponent, IconButtonComponent],
   templateUrl: './cart-drawer.component.html',
   styleUrl: './cart-drawer.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

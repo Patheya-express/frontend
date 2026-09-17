@@ -5,7 +5,7 @@
     <ng-container sheetHeader>
       <header class="drawer-header">
         <h2>Your Cart</h2>
-        <button type="button" class="drawer-close" aria-label="Close cart" (click)="close()">✕</button>
+        <lib-icon-button ariaLabel="Close cart" size="sm" (buttonClick)="close()">✕</lib-icon-button>
       </header>
 
       @if (error()) {

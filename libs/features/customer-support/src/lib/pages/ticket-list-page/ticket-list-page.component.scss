@@ -112,8 +112,7 @@
   flex-shrink: 0;
 }
 
-.ticket-item-priority,
-.ticket-item-status {
+.ticket-item-priority {
   font-size: var(--font-size-xs);
   padding: 2px var(--space-2);
   border-radius: var(--radius-sm);

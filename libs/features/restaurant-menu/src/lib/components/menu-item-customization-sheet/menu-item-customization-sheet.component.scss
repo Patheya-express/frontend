@@ -42,14 +42,6 @@
   }
 }
 
-.sheet-close {
-  border: none;
-  background: none;
-  font-size: var(--font-size-lg);
-  color: var(--color-text-subtle);
-  cursor: pointer;
-}
-
 .sheet-body {
   // This renders inside BottomSheetComponent's own `.mobile-bottom-sheet__content` now, which
   // already provides the horizontal/bottom padding and the scrolling behavior (`overflow-y: auto`)

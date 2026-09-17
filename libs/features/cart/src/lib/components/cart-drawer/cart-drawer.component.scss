@@ -34,20 +34,6 @@ h2 {
   color: var(--color-text);
 }
 
-.drawer-close {
-  border: none;
-  background: transparent;
-  color: var(--color-text-muted);
-  font-size: var(--font-size-base);
-  cursor: pointer;
-  padding: var(--space-1);
-
-  @media (hover: hover) and (pointer: fine) {
-    &:hover {
-      color: var(--color-text);
-    }
-  }
-}
 
 .drawer-error {
   margin: 0;
