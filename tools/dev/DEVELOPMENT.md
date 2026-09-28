@@ -346,18 +346,33 @@ already-set-up machine) — see this change's validation record.
 pnpm run dev
 ```
 
-(→ `node tools/dev/bootstrap.mjs customer`, i.e. the same steps minus dependency install, `.env`
+(→ `node tools/dev/bootstrap.mjs`, which defaults to the Customer App — the same steps minus dependency install, `.env`
 scaffolding, migrations, and the database seed — those are one-time, not daily.) Every step it does run is idempotent:
 `docker compose up -d` on an already-running stack is a fast no-op check, and the health poll
 returns immediately once the backend is already up.
 
-Want a different app?
+Want a different app, or several at once? Name them (Nx project names), comma- or space-separated:
 
 ```bash
-node tools/dev/bootstrap.mjs partner
-node tools/dev/bootstrap.mjs delivery
-node tools/dev/bootstrap.mjs admin
+pnpm run dev                                                   # Customer (default)
+pnpm run dev customer-app                                      # Customer only
+pnpm run dev customer-app,delivery-app                         # Customer + Delivery
+pnpm run dev customer-app,restaurant-app,delivery-app,admin-app  # all four
 ```
+
+The backend is prepared once, then each app starts through the frontend launcher on its own port
+from `tools/launcher/lib/registry.mjs` (`defaultPort`) — the same ports the backend's
+`*_APP_URL` settings expect:
+
+| App              | Launcher alias | Port |
+| ---------------- | -------------- | ---- |
+| `customer-app`   | `customer`     | 4200 |
+| `restaurant-app` | `partner`      | 4201 |
+| `admin-app`      | `admin`        | 4202 |
+| `delivery-app`   | `delivery`     | 4203 |
+
+Unknown names fail before anything starts (listing the valid ones); duplicates are ignored. One
+Ctrl+C stops every app. The launcher aliases still work too (`node tools/dev/bootstrap.mjs partner`).
 
 ### Frontend-only
 

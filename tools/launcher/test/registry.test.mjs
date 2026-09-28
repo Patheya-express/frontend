@@ -144,3 +144,17 @@ describe('registry: environment file resolution', () => {
     assert.equal(resolveApiBaseUrl('this-app-does-not-exist', 'qa'), null);
   });
 });
+
+describe('dev-server ports (registry defaultPort is the single source of truth)', () => {
+  test('each app has its own port, matching the backend\'s *_APP_URL defaults', () => {
+    const ports = Object.fromEntries(Object.values(APPS).map((app) => [app.project, app.defaultPort]));
+    assert.deepEqual(ports, { 'customer-app': 4200, 'restaurant-app': 4201, 'delivery-app': 4203, 'admin-app': 4202 });
+    assert.equal(new Set(Object.values(ports)).size, Object.keys(ports).length);
+  });
+
+  test('launch.mjs serves web on the registry defaultPort, not a hardcoded or per-project port', async () => {
+    const { readFileSync } = await import('node:fs');
+    const source = readFileSync(new URL('../lib/launch.mjs', import.meta.url), 'utf8');
+    assert.match(source, /\['run', `\$\{app\.project\}:serve`, `--port=\$\{app\.defaultPort\}`\]/);
+  });
+});

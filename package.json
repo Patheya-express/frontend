@@ -11,7 +11,7 @@
     "doctor": "node tools/launcher/doctor.mjs",
     "test:launcher": "node --test tools/launcher/test/*.test.mjs",
     "setup": "node tools/dev/bootstrap.mjs customer --setup",
-    "dev": "node tools/dev/bootstrap.mjs customer",
+    "dev": "node tools/dev/bootstrap.mjs",
     "dev:backend-only": "node tools/dev/bootstrap.mjs none --backend-only",
     "lint:dev": "eslint tools/dev",
     "test:dev": "node --test tools/dev/test/*.test.mjs",
