@@ -82,6 +82,15 @@
             }
           ]
         },
+        "mobile-production": {
+          "outputHashing": "all",
+          "fileReplacements": [
+            {
+              "replace": "apps/customer-app/src/environments/environment.ts",
+              "with": "apps/customer-app/src/environments/environment.mobile.prod.ts"
+            }
+          ]
+        },
         "development": {
           "optimization": false,
           "extractLicenses": false,

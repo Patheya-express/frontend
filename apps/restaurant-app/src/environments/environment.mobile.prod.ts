@@ -1,9 +1,10 @@
 import type { AppEnvironment } from '@patheya-express-frontend/core';
 
 /**
- * Production build (`nx build restaurant-app --configuration=production`), served from S3 +
- * CloudFront: the restaurant web build (secondary channel; the Capacitor app is primary).
- * Calls the Production API on AWS (ECS Fargate behind the public ALB) directly.
+ * Production native shell build (`nx build restaurant-app --configuration=mobile-production`, used by
+ * `nx run restaurant-app:cap-sync --configuration=mobile-production` for release Android/iOS builds).
+ * Calls the Production API (https://api.patheyaexpress.com) directly over HTTPS — never through
+ * CloudFront. The QA-pointed `environment.mobile.ts` stays the development/QA device build.
  */
 export const environment: AppEnvironment = {
   production: true,

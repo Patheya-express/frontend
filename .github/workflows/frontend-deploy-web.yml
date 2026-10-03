@@ -1,0 +1,170 @@
+name: frontend-deploy-web
+
+# Production static web deployment — S3 + CloudFront (ADR-004 as amended in the platform repo's
+# cloud-architecture-blueprint.md). Builds the Angular production output and publishes it to the
+# app's private S3 origin; no nginx container is involved in Production.
+#
+#   admin-app        -> admin.patheyaexpress.com       (primary web application)
+#   customer-app     -> customer.patheyaexpress.com    (secondary web channel)
+#   restaurant-app   -> restaurant.patheyaexpress.com  (secondary web channel)
+#   delivery-app     -> delivery.patheyaexpress.com    (secondary web channel)
+#
+# The Capacitor mobile apps are NOT deployed here — they ship through the app stores and call
+# https://api.patheyaexpress.com directly (environment.mobile.prod.ts).
+#
+# Caching contract (matches modules/static-site's CachingOptimized behavior):
+#   content-hashed bundles (*-XXXXXXXX.js/.css, media/*)  public, max-age=31536000, immutable
+#   index.html                                             no-store — always revalidated
+#   everything else (favicon, public/ assets)              public, max-age=300
+# Only /index.html is invalidated: every other changed file has a new content-hashed name.
+# Superseded hashed bundles are deliberately left in place (no `--delete`) so a browser still
+# running the previous index.html can lazy-load its chunks mid-session.
+#
+# Runs only in the `production` GitHub Environment: its required reviewers are the approval gate,
+# and the deploy role trusts only this environment's OIDC subject. Environment configuration:
+#   vars.PRODUCTION_STATIC_DEPLOY_ROLE_ARN  root layer output frontend_static_deploy_role_arn
+#   vars.PRODUCTION_STATIC_SITES            app layer output static_site_deploy_settings (JSON)
+#   secrets.RAZORPAY_LIVE_KEY_ID            live Razorpay key ID (customer-app only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to build (a release tag such as v1.4.0, or a commit SHA on main).
+        required: true
+        type: string
+      app:
+        description: Which web app to deploy.
+        required: true
+        type: choice
+        default: all
+        options: [all, admin-app, customer-app, restaurant-app, delivery-app]
+
+permissions:
+  contents: read
+  id-token: write # AWS OIDC
+
+concurrency:
+  group: frontend-deploy-web-production
+  cancel-in-progress: false
+
+env:
+  # Kept in sync with ci.yml.
+  PNPM_VERSION: 11.5.3
+  NODE_VERSION: 24
+  AWS_REGION: ap-south-1
+
+jobs:
+  resolve:
+    name: Resolve app list
+    runs-on: ubuntu-latest
+    outputs:
+      apps: ${{ steps.apps.outputs.apps }}
+    steps:
+      - id: apps
+        shell: bash
+        run: |
+          if [[ "${{ inputs.app }}" == "all" ]]; then
+            echo 'apps=["admin-app","customer-app","restaurant-app","delivery-app"]' >> "$GITHUB_OUTPUT"
+          else
+            echo 'apps=["${{ inputs.app }}"]' >> "$GITHUB_OUTPUT"
+          fi
+
+  deploy:
+    name: Deploy ${{ matrix.app }}
+    needs: resolve
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJSON(needs.resolve.outputs.apps) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Resolve deploy target
+        shell: bash
+        env:
+          STATIC_SITES: ${{ vars.PRODUCTION_STATIC_SITES }}
+          APP: ${{ matrix.app }}
+        run: |
+          set -euo pipefail
+          site="${APP%-app}"
+          bucket="$(jq -r --arg site "$site" '.[$site].bucket_name // empty' <<<"$STATIC_SITES")"
+          distribution="$(jq -r --arg site "$site" '.[$site].distribution_id // empty' <<<"$STATIC_SITES")"
+          if [[ -z "$bucket" || -z "$distribution" ]]; then
+            echo "::error::PRODUCTION_STATIC_SITES has no bucket/distribution for '$site' (app layer output static_site_deploy_settings)"
+            exit 1
+          fi
+          {
+            echo "BUCKET=$bucket"
+            echo "DISTRIBUTION_ID=$distribution"
+            echo "DIST_DIR=dist/apps/$APP/browser"
+          } >> "$GITHUB_ENV"
+
+      - name: Inject Production build-time configuration
+        env:
+          RAZORPAY_LIVE_KEY_ID: ${{ secrets.RAZORPAY_LIVE_KEY_ID }}
+        run: node scripts/inject-production-env.mjs ${{ matrix.app }}
+
+      - name: Verify Production configuration
+        run: node scripts/verify-production-env.mjs ${{ matrix.app }}
+
+      - name: Build (production)
+        run: pnpm exec nx build ${{ matrix.app }} --configuration=production
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ env.AWS_REGION }}
+          role-to-assume: ${{ vars.PRODUCTION_STATIC_DEPLOY_ROLE_ARN }}
+          role-session-name: frontend-deploy-${{ github.run_id }}
+
+      - name: Upload content-hashed bundles (immutable)
+        shell: bash
+        run: |
+          set -euo pipefail
+          aws s3 sync "$DIST_DIR" "s3://$BUCKET" --only-show-errors \
+            --exclude '*' \
+            --include '*-????????.js' --include '*-????????.css' --include 'media/*' \
+            --cache-control 'public, max-age=31536000, immutable'
+
+      - name: Upload remaining static files (short cache)
+        shell: bash
+        run: |
+          set -euo pipefail
+          aws s3 sync "$DIST_DIR" "s3://$BUCKET" --only-show-errors \
+            --exclude 'index.html' \
+            --exclude '*-????????.js' --exclude '*-????????.css' --exclude 'media/*' \
+            --cache-control 'public, max-age=300'
+
+      # Last, so it never references a bundle that is not yet uploaded.
+      - name: Upload index.html (never cached)
+        shell: bash
+        run: |
+          set -euo pipefail
+          aws s3 cp "$DIST_DIR/index.html" "s3://$BUCKET/index.html" --only-show-errors \
+            --cache-control 'no-store' --content-type 'text/html; charset=utf-8'
+
+      - name: Invalidate /index.html
+        shell: bash
+        run: |
+          set -euo pipefail
+          invalidation="$(aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" \
+            --paths /index.html --query 'Invalidation.Id' --output text)"
+          aws cloudfront wait invalidation-completed --distribution-id "$DISTRIBUTION_ID" --id "$invalidation"
+          echo "### ${{ matrix.app }} deployed from \`${{ inputs.ref }}\` to \`$BUCKET\` (invalidation $invalidation)" >> "$GITHUB_STEP_SUMMARY"

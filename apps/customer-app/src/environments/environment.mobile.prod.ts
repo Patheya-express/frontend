@@ -1,9 +1,10 @@
 import type { AppEnvironment } from '@patheya-express-frontend/core';
 
 /**
- * Production build (`nx build customer-app --configuration=production`), served from S3 +
- * CloudFront: the customer web build (secondary channel; the Capacitor app is primary).
- * Calls the Production API on AWS (ECS Fargate behind the public ALB) directly.
+ * Production native shell build (`nx build customer-app --configuration=mobile-production`, used by
+ * `nx run customer-app:cap-sync --configuration=mobile-production` for release Android/iOS builds).
+ * Calls the Production API (https://api.patheyaexpress.com) directly over HTTPS — never through
+ * CloudFront. The QA-pointed `environment.mobile.ts` stays the development/QA device build.
  *
  * `razorpayKeyId` is a build-time placeholder: CI substitutes the live key ID (rzp_live_...) from
  * the RAZORPAY_LIVE_KEY_ID build secret via scripts/inject-production-env.mjs, and
