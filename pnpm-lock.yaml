@@ -39,8 +39,8 @@ importers:
         specifier: ^10.69.0
         version: 10.69.0(@angular/common@21.2.17(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2))(@angular/router@21.2.0(@angular/common@21.2.17(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2))(@angular/platform-browser@21.2.0(@angular/animations@21.2.0(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2)))(@angular/common@21.2.17(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2)))(rxjs@7.8.2))(rxjs@7.8.2)
       '@sentry/capacitor':
-        specifier: ^4.3.0
-        version: 4.3.0(@capacitor/core@8.4.2)(@sentry/angular@10.69.0(@angular/common@21.2.17(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2))(@angular/router@21.2.0(@angular/common@21.2.17(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2))(@angular/platform-browser@21.2.0(@angular/animations@21.2.0(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2)))(@angular/common@21.2.17(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2)))(rxjs@7.8.2))(rxjs@7.8.2))
+        specifier: ^4.4.0
+        version: 4.4.0(@capacitor/core@8.4.2)(@sentry/angular@10.69.0(@angular/common@21.2.17(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2))(@angular/router@21.2.0(@angular/common@21.2.17(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2))(@angular/platform-browser@21.2.0(@angular/animations@21.2.0(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2)))(@angular/common@21.2.17(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2)))(rxjs@7.8.2))(rxjs@7.8.2))
       capacitor-secure-storage-plugin:
         specifier: ^0.13.0
         version: 0.13.0(@capacitor/core@8.4.2)
@@ -3366,8 +3366,8 @@ packages:
     resolution: {integrity: sha512-8391tnm96YbR7b8SYfEA/NEIZuyb2r3SZrtAT0bhZtjlujcYWjo7gugQvk8sWLU9cAa/euD00eJoIoJvNfpd7Q==}
     engines: {node: '>=18'}
 
-  '@sentry/capacitor@4.3.0':
-    resolution: {integrity: sha512-pDBC0nT8aOhZ0HRuYMgX4U+2FqqRv05oohQmREzC08eBSjToMRftgPbG0pgv7VK00Cf4cc0IwIHBMRSOyHjqFg==}
+  '@sentry/capacitor@4.4.0':
+    resolution: {integrity: sha512-t2PPB90JvKLCsSmF09jGYGtNW0ao6tLgyYyivFLNWRKkEbMWyHR5RtyaEb7CnRgdx9wOTUQ0mGrwYGpfbUE/ZQ==}
     peerDependencies:
       '@capacitor/core': '>=3.0.0'
       '@sentry/angular': 10.69.0
@@ -11240,7 +11240,7 @@ snapshots:
       '@sentry/replay': 10.69.0
       '@sentry/replay-canvas': 10.69.0
 
-  '@sentry/capacitor@4.3.0(@capacitor/core@8.4.2)(@sentry/angular@10.69.0(@angular/common@21.2.17(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2))(@angular/router@21.2.0(@angular/common@21.2.17(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2))(@angular/platform-browser@21.2.0(@angular/animations@21.2.0(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2)))(@angular/common@21.2.17(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2)))(rxjs@7.8.2))(rxjs@7.8.2))':
+  '@sentry/capacitor@4.4.0(@capacitor/core@8.4.2)(@sentry/angular@10.69.0(@angular/common@21.2.17(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2))(@angular/router@21.2.0(@angular/common@21.2.17(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2))(@angular/platform-browser@21.2.0(@angular/animations@21.2.0(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2)))(@angular/common@21.2.17(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.17(@angular/compiler@21.2.0)(rxjs@7.8.2)))(rxjs@7.8.2))(rxjs@7.8.2))':
     dependencies:
       '@capacitor/core': 8.4.2
       '@sentry/browser': 10.69.0
