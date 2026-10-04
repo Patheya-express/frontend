@@ -11,16 +11,16 @@ let package = Package(
             targets: ["CapApp-SPM"])
     ],
     dependencies: [
-        .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", exact: "8.4.2"),
-        .package(name: "CapacitorApp", path: "../../../../../node_modules/.pnpm/@capacitor+app@8.1.1_@capacitor+core@8.4.2/node_modules/@capacitor/app"),
-        .package(name: "CapacitorGeolocation", path: "../../../../../node_modules/.pnpm/@capacitor+geolocation@8.2.1_@capacitor+core@8.4.2/node_modules/@capacitor/geolocation"),
-        .package(name: "CapacitorHaptics", path: "../../../../../node_modules/.pnpm/@capacitor+haptics@8.0.2_@capacitor+core@8.4.2/node_modules/@capacitor/haptics"),
-        .package(name: "CapacitorKeyboard", path: "../../../../../node_modules/.pnpm/@capacitor+keyboard@8.0.5_@capacitor+core@8.4.2/node_modules/@capacitor/keyboard"),
-        .package(name: "CapacitorPushNotifications", path: "../../../../../node_modules/.pnpm/@capacitor+push-notifications@8.1.2_@capacitor+core@8.4.2/node_modules/@capacitor/push-notifications"),
-        .package(name: "CapacitorSplashScreen", path: "../../../../../node_modules/.pnpm/@capacitor+splash-screen@8.0.2_@capacitor+core@8.4.2/node_modules/@capacitor/splash-screen"),
-        .package(name: "CapacitorStatusBar", path: "../../../../../node_modules/.pnpm/@capacitor+status-bar@8.0.3_@capacitor+core@8.4.2/node_modules/@capacitor/status-bar"),
-        .package(name: "SentryCapacitor", path: "../../../../../node_modules/.pnpm/@sentry+capacitor@4.4.0_@capacitor+core@8.4.2_@sentry+angular@10.69.0_@angular+common@2_d37b28a4071ef99b6218e26fbb53f0c2/node_modules/@sentry/capacitor"),
-        .package(name: "CapacitorSecureStoragePlugin", path: "../../../../../node_modules/.pnpm/capacitor-secure-storage-plugin@0.13.0_@capacitor+core@8.4.2/node_modules/capacitor-secure-storage-plugin")
+        .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", exact: "8.5.2"),
+        .package(name: "CapacitorApp", path: "../../../../../node_modules/.pnpm/@capacitor+app@8.1.1_@capacitor+core@8.5.2/node_modules/@capacitor/app"),
+        .package(name: "CapacitorGeolocation", path: "../../../../../node_modules/.pnpm/@capacitor+geolocation@8.2.1_@capacitor+core@8.5.2/node_modules/@capacitor/geolocation"),
+        .package(name: "CapacitorHaptics", path: "../../../../../node_modules/.pnpm/@capacitor+haptics@8.0.2_@capacitor+core@8.5.2/node_modules/@capacitor/haptics"),
+        .package(name: "CapacitorKeyboard", path: "../../../../../node_modules/.pnpm/@capacitor+keyboard@8.0.5_@capacitor+core@8.5.2/node_modules/@capacitor/keyboard"),
+        .package(name: "CapacitorPushNotifications", path: "../../../../../node_modules/.pnpm/@capacitor+push-notifications@8.1.2_@capacitor+core@8.5.2/node_modules/@capacitor/push-notifications"),
+        .package(name: "CapacitorSplashScreen", path: "../../../../../node_modules/.pnpm/@capacitor+splash-screen@8.0.2_@capacitor+core@8.5.2/node_modules/@capacitor/splash-screen"),
+        .package(name: "CapacitorStatusBar", path: "../../../../../node_modules/.pnpm/@capacitor+status-bar@8.0.3_@capacitor+core@8.5.2/node_modules/@capacitor/status-bar"),
+        .package(name: "SentryCapacitor", path: "../../../../../node_modules/.pnpm/@sentry+capacitor@4.4.0_@capacitor+core@8.5.2_@sentry+angular@10.69.0_@angular+common@2_61f9658588e25f173500c503630eb9a6/node_modules/@sentry/capacitor"),
+        .package(name: "CapacitorSecureStoragePlugin", path: "../../../../../node_modules/.pnpm/capacitor-secure-storage-plugin@0.13.0_@capacitor+core@8.5.2/node_modules/capacitor-secure-storage-plugin")
     ],
     targets: [
         .target(

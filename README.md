@@ -124,11 +124,14 @@ Required for iOS development
 
 macOS
 
-Xcode
-
-CocoaPods
+Xcode (16 or later)
 
 iOS development certificates/provisioning as applicable
+
+CocoaPods is NOT required — the iOS projects use Swift Package Manager.
+
+Full mobile prerequisites, setup, signing and launch steps for Android and iOS:
+docs/mobile/README.md
 
 Verify the basic tools:
 
@@ -439,21 +442,17 @@ Before mobile work, verify the configured Capacitor version:
 
 pnpm list @capacitor/core
 
-Build the relevant application first:
+Each mobile app is its own Capacitor project under apps/<app>/ — there is no Capacitor project at
+the repository root, so never run `cap` commands from here. Build + sync through the configured
+workflow (it builds the app with the mobile configuration, then runs `cap sync` inside the app):
 
-pnpm exec nx build <app>
+pnpm mobile:sync:customer
 
-Then synchronize the native project using the repository's configured Capacitor workflow.
+pnpm mobile:sync:partner
 
-Typical commands:
+pnpm mobile:sync:delivery
 
-pnpm exec cap sync android
-
-and on macOS:
-
-pnpm exec cap sync ios
-
-Use the actual Capacitor project configuration as the source of truth.
+See docs/mobile/README.md for the complete mobile workflow.
 
 13. Android Development
 
@@ -479,7 +478,7 @@ If the device is unauthorized, unlock the phone and accept the USB debugging aut
 
 Open the Android project:
 
-pnpm exec cap open android
+pnpm mobile:android:customer   (or mobile:android:partner / mobile:android:delivery)
 
 Build/install through Android Studio.
 
@@ -507,12 +506,12 @@ iOS native development requires macOS.
 
 Typical workflow:
 
-pnpm install
-pnpm exec nx build <app>
-pnpm exec cap sync ios
-pnpm exec cap open ios
+pnpm install --frozen-lockfile
+pnpm mobile:sync:customer
+pnpm mobile:ios:customer
 
-Then build/run through Xcode.
+Then select your Development Team and device and build/run through Xcode. Signing, Developer Mode,
+the UIScene requirement and troubleshooting: docs/mobile/README.md.
 
 Windows developers cannot perform the final native iOS build locally.
 

@@ -2,12 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CAPACITOR_DEBUG</key>
+	<key>CAPACITOR_DEBUG</key>
 	<string>$(CAPACITOR_DEBUG)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>Patheya Express</string>
+	<string>Patheya Express</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -20,40 +20,46 @@
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
-	<key>CFBundleVersion</key>
-	<string>$(CURRENT_PROJECT_VERSION)</string>
-	<!-- Deep links: patheyaexpress://<path>, e.g. patheyaexpress://restaurants/<id>. Handled by
-	     the appUrlOpen listener in mobile.providers.ts, which routes the URL through the existing
-	     Angular Router — no separate native screens. -->
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>patheyaexpress</string>
 			</array>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
 		</dict>
 	</array>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<!-- WKWebView's navigator.geolocation (customer-home's "nearby restaurants", used via the
-	     plain web Geolocation API, not a native Capacitor plugin) silently fails without this —
-	     no crash, but the permission prompt never appears and the call always errors out. -->
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Patheya Express uses your location to show nearby restaurants and estimate delivery times.</string>
-	<!-- lib-file-upload (profile photo, review photos, support ticket attachments) uses a plain
-	     &lt;input type="file"&gt; with no `capture` attribute — iOS's resulting picker sheet still
-	     needs these to offer "Take Photo" / read from the library without silently failing. -->
 	<key>NSCameraUsageDescription</key>
 	<string>Patheya Express uses your camera to let you take a photo for uploads like your profile picture or a review.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Patheya Express uses your location to show nearby restaurants and estimate delivery times.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Patheya Express uses your photo library to let you choose a photo for uploads like your profile picture or a review.</string>
-	<!-- Required for @capacitor/push-notifications to deliver silent/background pushes. The
-	     "Push Notifications" capability itself (which generates the aps-environment entitlement)
-	     still has to be added in Xcode — see docs/mobile/CAPACITOR.md for that manual step, since
-	     it can't be done from this Windows checkout. -->
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>Default Configuration</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

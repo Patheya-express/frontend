@@ -4,6 +4,11 @@ Converts `customer-app`, `restaurant-app` and `delivery-app` into installable An
 wrapping the existing Angular web builds in a Capacitor native shell. No backend changes, no
 business-logic changes, no new UI — this is packaging + platform plumbing only.
 
+> **Setting up, running or releasing the apps?** Use [`README.md`](./README.md) (Mobile Development &
+> Launch Prerequisites) — the authoritative, current guide. This file records the Phase 1 design.
+> Where the two differ (notably iOS: Swift Package Manager, no CocoaPods; the UIScene migration),
+> `README.md` is correct.
+
 > **Naming note**: the Phase 1 brief referred to the restaurant-facing app as `partner-app`. This
 > workspace's actual project is `restaurant-app` — it is the restaurant-partner application, so it
 > was treated as the "partner" target throughout (app id `com.patheyaexpress.partner`, app name
@@ -221,19 +226,16 @@ pnpm run mobile:ios:partner
 pnpm run mobile:ios:delivery
 ```
 
-equivalent to `cd apps/customer-app && npx cap open ios`. **Requires macOS** — Xcode and
-CocoaPods don't run on Windows. From this Windows environment, `cap add ios` was verified
-(project scaffolding, `Package.swift` plugin registration); `pod install` and an actual
-simulator/device run must happen on a Mac. On first checkout on macOS, run `npx cap sync ios`
-from inside `apps/<app>/` (or `pod install` inside `ios/App/`) before opening the workspace.
+equivalent to `cd apps/customer-app && npx cap open ios`. **Requires macOS** — Xcode doesn't run
+on Windows. The iOS projects use **Swift Package Manager** (`ios/App/CapApp-SPM`); CocoaPods is not
+used and not required. On first checkout on macOS, run `pnpm mobile:sync:<app>` before opening the
+project. Full first-time setup, signing and device steps: [`README.md` §8–§13](./README.md#8-ios-setup--first-time).
 
 ## 10. Remaining risks / follow-ups
 
-- **Not validated on real Android/iOS toolchains.** This machine has no Android Studio/SDK/
-  emulator and no Xcode (Windows) — `cap add`/`cap sync` were verified end-to-end (they ran
-  cleanly, produced valid-looking project files, registered all four plugins on both platforms),
-  but no `gradlew assembleDebug`, emulator boot, `pod install`, or Xcode build was actually run.
-  Do that on real toolchains before shipping.
+- **Toolchain validation (updated):** Customer iOS has since been built and launched on a
+  physical iPhone, and all three iOS projects build in Xcode. Android has still not been built on a
+  real toolchain. Current status: [`README.md` §21](./README.md#21-known-current-limitations).
 - **No app icons / splash images** were generated — Capacitor's templates ship placeholder
   Android/iOS icons and a blank splash. Run `@capacitor/assets` (or equivalent) against real
   brand assets per app before a store submission; out of scope for "no UI" Phase 1.
