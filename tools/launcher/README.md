@@ -1,7 +1,7 @@
 # Unified launch commands
 
 One command to validate your environment, make sure the backend is reachable, build, sync
-Capacitor, and launch — for web, Android, or iOS — for any of the four apps. Plus `pnpm doctor`,
+Capacitor, and launch — for web, Android, or iOS — for any of the four apps. Plus `pnpm run doctor`,
 a full diagnostic sweep across every app and every tool at once.
 
 ```bash
@@ -19,7 +19,7 @@ pnpm delivery:ios
 
 pnpm admin:web           # admin-app is web-only, by design (see docs/mobile/CAPACITOR.md)
 
-pnpm doctor              # full diagnostic report — every app, every tool, one run
+pnpm run doctor              # full diagnostic report — every app, every tool, one run
 ```
 
 Or call the launcher directly for anything the aliases don't cover:
@@ -35,7 +35,7 @@ node tools/launcher/cli.mjs <app> <platform> [options]
 ```
 tools/launcher/
   cli.mjs                    entry point — arg parsing, pipeline orchestration, dashboard
-  doctor.mjs                 pnpm doctor — full diagnostic sweep, no app/platform required
+  doctor.mjs                 pnpm run doctor — full diagnostic sweep, no app/platform required
   lib/
     log.mjs                  levels (SUCCESS/ERROR/WARN/INFO/DEBUG/TRACE), dashboard, output capture
     exec.mjs                 cross-spawn-backed process runner (capture / inherit / inherit+capture)
@@ -125,7 +125,7 @@ that case — someone who already has the backend running, or is starting it ano
 
 ### Doctor vs. the launcher
 
-`pnpm doctor` reuses the exact same check-building functions as Step 1
+`pnpm run doctor` reuses the exact same check-building functions as Step 1
 (`buildToolChecks`/`buildAppChecks` in `validate-environment.mjs`) and the exact same
 `detectBackend` as Step 2 — no duplicated logic, per the hardening brief's own rule. The
 difference is scope and behavior: the launcher validates **one** app+platform+environment and
@@ -184,7 +184,7 @@ in `lib/registry.mjs`'s `DEVICE_PROFILES` — adding one is a single entry, a la
 1. **Environment validation** (parallel with Backend) — every applicable check from
    `validate-environment.mjs` runs concurrently: Node/pnpm/Nx versions, Git, GitHub CLI (optional),
    Docker (optional), workspace integrity, the app's environment files, Capacitor config and native
-   project (native only), Java/Gradle/Android SDK (Android only), Xcode/CocoaPods (iOS only, macOS
+   project (native only), Java/Gradle/Android SDK (Android only), Xcode (iOS only, macOS
    only), and app configuration — Google Maps key, Firebase config file, media/Cloudinary base URL,
    Razorpay key (only required for `customer`; the other three apps carry the field but never
    consume it, so it's a warning there, not an error), Socket URL, API URL, and environment
@@ -252,15 +252,15 @@ feature than DX-hardening scope. For live web-asset reload on a device, point
 `capacitor.config.ts` at a dev server via the existing `CAP_SERVER_URL` mechanism instead — that's
 the real live-reload path this repo already has (see `docs/mobile/CAPACITOR.md`).
 
-## `pnpm doctor`
+## `pnpm run doctor`
 
 ```bash
-pnpm doctor
-pnpm doctor --verbose
+pnpm run doctor
+pnpm run doctor --verbose
 ```
 
 Runs, all concurrently: Development Tools (Node/pnpm/Nx/Git/gh/Docker/Java/Gradle/Android
-SDK/Xcode/CocoaPods), each of the four apps' configuration (environment files, Capacitor, native
+SDK/Xcode), each of the four apps' configuration (environment files, Capacitor, native
 projects, Maps/Firebase/media/Razorpay/Socket/API), and the local backend's health. Prints the same
 kind of dashboard the launcher does, plus a pass/warning/fail count and a per-section timing
 breakdown. Exits non-zero if anything failed (errors, not warnings) — safe to use as a pre-flight
@@ -273,7 +273,7 @@ it for `local`.
 ## Troubleshooting / FAQ
 
 **"adb not found" / "ANDROID_HOME not set"** — Install Android Studio (or just the command-line
-SDK tools) and make sure `platform-tools` is on `PATH`. `pnpm doctor` will tell you both of these
+SDK tools) and make sure `platform-tools` is on `PATH`. `pnpm run doctor` will tell you both of these
 independently; fixing `ANDROID_HOME` alone doesn't put `adb` on `PATH` and vice versa.
 
 **"iOS development requires macOS"** — There's no way around this; Xcode doesn't run on
@@ -306,7 +306,7 @@ checkout/payment flow; the other three apps carry the field structurally (the sh
 `AppEnvironment` interface requires it) but never read it.
 
 **Google Maps API key missing (error)** — This one blocks, because the address picker genuinely
-needs it. If `pnpm doctor` reports this for `qa`, check
+needs it. If `pnpm run doctor` reports this for `qa`, check
 `apps/<app>/src/environments/environment.qa.ts`'s `maps.googleMapsApiKey` — this has been found
 empty there for at least `customer-app` (see `infrastructure/docs/secrets-guide.md` for how to set
 real values).
@@ -321,8 +321,9 @@ running the tool here, not a hypothetical.
 
 ### macOS
 
-The only platform where the iOS checks (`xcodebuild`, `pod`, `xcrun simctl`/`xctrace`) can
-meaningfully pass. `CocoaPods` is only checked when targeting iOS on macOS specifically.
+The only platform where the iOS checks (`xcodebuild`, `xcrun simctl`/`xctrace`) can
+meaningfully pass. The iOS projects use Swift Package Manager, so `pod` is only checked if an app's
+`ios/App` ever gains a `Podfile` (none does today).
 
 ### Linux
 

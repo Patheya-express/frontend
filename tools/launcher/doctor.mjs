@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Task 3 — `pnpm doctor`. Unlike the launcher (which validates one app+platform+env and stops at
+// Task 3 — `pnpm run doctor`. Unlike the launcher (which validates one app+platform+env and stops at
 // the first failure), doctor never stops early — it's a full diagnostic sweep across every app,
 // every tool, and the backend, meant to answer "what, across this whole workspace, needs my
 // attention" in one run. Read-only: it never auto-starts the backend (passes noBackendStart:true

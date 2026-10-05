@@ -408,7 +408,7 @@ pnpm partner:android
 pnpm delivery:android
 ```
 
-`pnpm doctor` reports Java/Gradle/Android SDK/Xcode/CocoaPods status across every app at once.
+`pnpm run doctor` reports Java/Gradle/Android SDK/Xcode status across every app at once (use `pnpm run doctor`, not `pnpm doctor` — pnpm 11 has its own built-in `doctor` command).
 
 ## Environment configuration
 
@@ -464,7 +464,7 @@ described here. This is a warning, never a blocking error.
 |---|---|---|---|
 | Git, Node.js, pnpm, Docker | ✔ | | |
 | Java, Android SDK/`adb`, Gradle | | ✔ (Android) | |
-| Xcode, CocoaPods | | ✔ (iOS, macOS only) | |
+| Xcode (Swift Package Manager — CocoaPods is not used) | | ✔ (iOS, macOS only) | |
 | GitHub CLI (`gh`) | | | ✔ — never required by any script here |
 
 `pnpm run setup`/`pnpm run dev` never fail on missing Android/iOS tooling — see "Mobile" above.

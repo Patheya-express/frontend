@@ -150,15 +150,17 @@ three — bump these per release using your normal release process.
 
 ## 6. Signing placeholders
 
-- **Android**: `android/app/build.gradle` reads `android/keystore.properties` (gitignored) if
-  present and signs `release` builds with it; falls back to the Android debug keystore otherwise,
-  so `assembleRelease` still works locally without a real keystore. Copy
-  `android/keystore.properties.example` → `android/keystore.properties` and fill in your real
-  release keystore path/passwords/alias before shipping.
+- **Android** (updated): `android/app/build.gradle` applies the shared
+  `tools/mobile/android/release-signing.gradle`, which signs `release` builds from
+  `android/keystore.properties` (gitignored) or the `PATHEYA_ANDROID_*` CI variables and **fails
+  release builds when neither is configured** — there is no debug-keystore fallback any more. See
+  [`README.md` §13](./README.md#13-android-signing).
 - **iOS**: `App.xcodeproj` is left on `CODE_SIGN_STYLE = Automatic` with the correct bundle id
   already set — opening the project in Xcode with a signed-in Apple ID lets you pick a Team
   directly. For CI/`xcodebuild -exportArchive`, copy `ios/exportOptions.plist.example` →
-  `ios/exportOptions.plist` and fill in your real Apple Developer Team ID.
+  `ios/exportOptions.plist` and fill in your real Apple Developer Team ID. The Release
+  configuration also signs `App/App.entitlements` (push) — see
+  [`README.md` §9](./README.md#9-ios-signing--development-testflight-app-store).
 
 ## 7. Build commands
 
@@ -229,30 +231,28 @@ pnpm run mobile:ios:delivery
 equivalent to `cd apps/customer-app && npx cap open ios`. **Requires macOS** — Xcode doesn't run
 on Windows. The iOS projects use **Swift Package Manager** (`ios/App/CapApp-SPM`); CocoaPods is not
 used and not required. On first checkout on macOS, run `pnpm mobile:sync:<app>` before opening the
-project. Full first-time setup, signing and device steps: [`README.md` §8–§13](./README.md#8-ios-setup--first-time).
+project. Full first-time setup, signing and device steps: [`README.md` §8–§13](./README.md#8-ios-development--physical-devices).
 
 ## 10. Remaining risks / follow-ups
 
-- **Toolchain validation (updated):** Customer iOS has since been built and launched on a
-  physical iPhone, and all three iOS projects build in Xcode. Android has still not been built on a
-  real toolchain. Current status: [`README.md` §21](./README.md#21-known-current-limitations).
+- **Toolchain validation (updated):** all three apps now build on real toolchains (Xcode and
+  Gradle) and have been launched on physical devices as recorded in the validation matrix:
+  [`README.md` §0](./README.md#0-validation-matrix).
 - **No app icons / splash images** were generated — Capacitor's templates ship placeholder
   Android/iOS icons and a blank splash. Run `@capacitor/assets` (or equivalent) against real
   brand assets per app before a store submission; out of scope for "no UI" Phase 1.
-  Explicitly deferred per the brief.
+  Explicitly deferred per the brief. Still open — see [`README.md` §19](./README.md#19-app-identity-versioning-icons--splash).
 - **Push notifications (M6)**: `@capacitor/push-notifications` is wired in all three native apps
   (customer/restaurant/delivery), including the Android 13+ `POST_NOTIFICATIONS` manifest
-  permission and the iOS `UIBackgroundModes: remote-notification` Info.plist key. One manual,
-  Mac-only step remains for each app before push actually works on iOS: open
-  `apps/<app>/ios/App/App.xcodeproj` in Xcode, select the App target → Signing & Capabilities →
-  "+ Capability" → "Push Notifications". This generates the `aps-environment` entitlement, which
-  can't be produced from a Windows checkout and isn't required for Android. Server-side APNs/FCM
-  key configuration is a separate backend concern, out of scope here.
+  permission and the iOS `UIBackgroundModes: remote-notification` Info.plist key. (Updated) The
+  `aps-environment` entitlement is now committed (`App/App.entitlements`, Release configuration);
+  what remains is external — see [`README.md` §17](./README.md#17-push-notifications).
 - **Real device testing of the hardware back-button handler** (`mobile.providers.ts`) hasn't
   happened — it's implemented against the documented `@capacitor/app` API but only exercised via
   a successful TypeScript compile, not a running Android device.
 - **`environment.mobile.ts` hardcodes the QA origin.** That's intentional (a device/emulator can't
   reach `localhost`), but it means the default mobile build is QA, not production — package with
   `--configuration=production` explicitly for a store release, not `--configuration=mobile`.
-- **Signing is placeholder-only**, as scoped — no real keystore or Apple Team ID exists yet; see
-  §6. Store submission will fail until those are filled in with real, securely-stored credentials.
+- **Signing credentials are external**, as scoped — no real keystore or Apple Team ID exists yet;
+  see §6 and [`README.md` §25](./README.md#25-external-actions-register). Store submission is
+  blocked until those exist.

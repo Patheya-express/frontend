@@ -7,6 +7,7 @@
   "scripts": {
     "build": "nx run-many --target=build --all",
     "verify:prod-env": "node scripts/verify-production-env.mjs customer-app && node scripts/verify-production-env.mjs admin-app && node scripts/verify-production-env.mjs restaurant-app && node scripts/verify-production-env.mjs delivery-app",
+    "verify:mobile-release": "node scripts/verify-production-env.mjs customer-app --mobile-release && node scripts/verify-production-env.mjs restaurant-app --mobile-release && node scripts/verify-production-env.mjs delivery-app --mobile-release",
     "lint:launcher": "eslint tools/launcher",
     "doctor": "node tools/launcher/doctor.mjs",
     "test:launcher": "node --test tools/launcher/test/*.test.mjs",

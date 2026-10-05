@@ -3,10 +3,15 @@ import type { AppEnvironment } from '@patheya-express-frontend/core';
 /** Production build (`nx build customer-app --configuration=production`). */
 export const environment: AppEnvironment = {
   production: true,
-  apiBaseUrl: 'https://patheya-express-api-gateway-sg.onrender.com',
-  socketUrl: 'https://patheya-express-api-gateway-sg.onrender.com',
-  mediaBaseUrl: 'https://patheya-express-api-gateway-sg.onrender.com',
-  razorpayKeyId: 'rzp_test_Sop8avBtckAdw2',
+  // Production API origin — the host of the backend's production ingress
+  // (patheya-express-platform k8s/overlays/production). Never the QA/Render origin.
+  apiBaseUrl: 'https://api.patheyaexpress.com',
+  socketUrl: 'https://api.patheyaexpress.com',
+  mediaBaseUrl: 'https://api.patheyaexpress.com',
+  // Razorpay LIVE key ID (public, not a secret — the key secret stays on the backend). This
+  // placeholder deliberately blocks production builds via scripts/verify-production-env.mjs until
+  // the real live key ID is committed; a Razorpay test key must never ship to production.
+  razorpayKeyId: 'rzp_live_REPLACE_WITH_REAL_KEY',
   maps: { provider: 'GOOGLE_MAPS', googleMapsApiKey: '' },
   environmentName: 'production',
   releaseVersion: '1.0',

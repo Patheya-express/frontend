@@ -1,0 +1,86 @@
+// Release-signing policy shared by every Patheya Express Android shell (customer, partner,
+// delivery). Applied from each `apps/<app>/android/app/build.gradle`; see docs/mobile/README.md
+// "Android Signing".
+//
+// Credentials come from, in order of precedence per field:
+//   1. `apps/<app>/android/keystore.properties` (gitignored; local machines) — fields storeFile,
+//      storePassword, keyAlias, keyPassword (see keystore.properties.example). A relative storeFile
+//      resolves against `apps/<app>/android/app/`.
+//   2. Environment variables (CI) — PATHEYA_ANDROID_KEYSTORE_FILE, PATHEYA_ANDROID_KEYSTORE_PASSWORD,
+//      PATHEYA_ANDROID_KEY_ALIAS, PATHEYA_ANDROID_KEY_PASSWORD.
+//
+// Debug builds are unaffected (Android's debug keystore). Release builds have NO fallback: any
+// release variant task (assembleRelease, bundleRelease, installRelease, …) fails before compiling
+// when release signing is incomplete, so a debug-signed artifact can never be mistaken for a
+// store-uploadable one.
+
+def keystorePropertiesFile = rootProject.file('keystore.properties')
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.withInputStream { keystoreProperties.load(it) }
+}
+
+def releaseSetting = { String propertyName, String environmentName ->
+    def value = keystoreProperties.getProperty(propertyName) ?: System.getenv(environmentName)
+    return value?.trim() ? value.trim() : null
+}
+
+def releaseStoreFilePath = releaseSetting('storeFile', 'PATHEYA_ANDROID_KEYSTORE_FILE')
+def releaseStorePassword = releaseSetting('storePassword', 'PATHEYA_ANDROID_KEYSTORE_PASSWORD')
+def releaseKeyAlias = releaseSetting('keyAlias', 'PATHEYA_ANDROID_KEY_ALIAS')
+def releaseKeyPassword = releaseSetting('keyPassword', 'PATHEYA_ANDROID_KEY_PASSWORD')
+def releaseStoreFile = releaseStoreFilePath ? file(releaseStoreFilePath) : null
+
+def missingReleaseSigning = []
+if (!releaseStoreFile) {
+    missingReleaseSigning << 'storeFile / PATHEYA_ANDROID_KEYSTORE_FILE'
+} else if (!releaseStoreFile.exists()) {
+    missingReleaseSigning << "storeFile (${releaseStoreFile} does not exist)"
+}
+if (!releaseStorePassword) {
+    missingReleaseSigning << 'storePassword / PATHEYA_ANDROID_KEYSTORE_PASSWORD'
+}
+if (!releaseKeyAlias) {
+    missingReleaseSigning << 'keyAlias / PATHEYA_ANDROID_KEY_ALIAS'
+}
+if (!releaseKeyPassword) {
+    missingReleaseSigning << 'keyPassword / PATHEYA_ANDROID_KEY_PASSWORD'
+}
+def releaseSigningConfigured = missingReleaseSigning.isEmpty()
+
+android {
+    signingConfigs {
+        release {
+            if (releaseSigningConfigured) {
+                storeFile releaseStoreFile
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
+    buildTypes {
+        release {
+            signingConfig = releaseSigningConfigured ? signingConfigs.release : null
+        }
+    }
+}
+
+def releaseSigningError = "Release signing is not configured for ${android.namespace}. Missing: " +
+    "${missingReleaseSigning.join(', ')}. Provide ${rootProject.file('keystore.properties')} " +
+    '(copy keystore.properties.example) or the PATHEYA_ANDROID_* environment variables. ' +
+    'Release builds never fall back to the debug keystore. Use assembleDebug for local testing.'
+
+def verifyReleaseSigning = tasks.register('verifyReleaseSigning') {
+    group = 'verification'
+    description = 'Fails unless release signing credentials are fully configured.'
+    doLast {
+        if (!releaseSigningConfigured) {
+            throw new GradleException(releaseSigningError)
+        }
+    }
+}
+
+tasks.matching { it.name == 'preReleaseBuild' }.configureEach {
+    dependsOn verifyReleaseSigning
+}

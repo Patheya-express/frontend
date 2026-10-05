@@ -1,193 +1,182 @@
 # Patheya Express Mobile Development & Launch Prerequisites
 
-The authoritative guide for building, syncing, installing and launching the Patheya Express mobile
-apps on Android and iOS — from a fresh machine through to store-release prerequisites.
+The authoritative guide for building, syncing, installing, launching and releasing the Patheya
+Express mobile apps (Customer, Restaurant/Partner, Delivery) on iOS and Android.
 
-- **Architecture/design history** of the mobile shells (why each app has its own Capacitor project,
-  `MobilePlatformService`, `provideMobilePlatform()`, safe-area tokens): see
-  [`CAPACITOR.md`](./CAPACITOR.md). This document does not repeat it.
-- **Launcher** (`pnpm customer:ios`, `pnpm customer:android`, …): see
-  [`tools/launcher/README.md`](../../tools/launcher/README.md) and the limitation in
-  [§21](#21-known-current-limitations).
+- **Architecture/design history** of the Capacitor shells (`MobilePlatformService`,
+  `provideMobilePlatform()`, safe-area tokens): [`CAPACITOR.md`](./CAPACITOR.md). Not repeated here.
+- **Launcher** (`pnpm customer:ios`, `pnpm partner:android`, …):
+  [`tools/launcher/README.md`](../../tools/launcher/README.md).
 
-Every command below exists in this repository's `package.json` or Nx project configuration. Run all
-commands from the `frontend/` repository root unless a step says otherwise.
+Every command below exists in this repository's `package.json`, Nx project configuration or native
+projects. Run commands from the `frontend/` repository root unless a step says otherwise.
+
+**Status vocabulary used throughout**
+
+| Status                              | Meaning                                                                                                    |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| **IMPLEMENTED**                     | Done in this repository.                                                                                   |
+| **VALIDATED**                       | Implemented and verified by an actual build/run, with the evidence stated.                                 |
+| **REQUIRES EXTERNAL CONFIGURATION** | The repository has a defined slot for the value or file; someone with the external account must supply it. |
+| **BLOCKED**                         | Can't proceed without an external account or credential that doesn't exist yet.                            |
+
+> **Overall: repository production-ready pending external prerequisites.** Every repository-side
+> stage is implemented. Store release is blocked only by the external items in
+> [§25](#25-external-actions-register), and the release gate (`pnpm verify:mobile-release`) lists
+> them mechanically.
 
 ---
 
 ## Contents
 
+0. [Validation Matrix](#0-validation-matrix)
 1. [Overview](#1-overview)
 2. [Supported Development Environment](#2-supported-development-environment)
 3. [Required Developer Tools](#3-required-developer-tools)
 4. [Repository Setup](#4-repository-setup)
-5. [Environment Configuration](#5-environment-configuration)
-6. [Build the Web Application for Mobile](#6-build-the-web-application-for-mobile)
-7. [Capacitor Sync](#7-capacitor-sync)
-8. [iOS Setup — First Time](#8-ios-setup--first-time)
-9. [iOS Developer Mode](#9-ios-developer-mode)
-10. [iOS Signing & Trust](#10-ios-signing--trust)
-11. [iOS UIScene Requirement](#11-ios-uiscene-requirement)
-12. [iOS Sentry / Swift Package Requirement](#12-ios-sentry--swift-package-requirement)
-13. [iOS Troubleshooting](#13-ios-troubleshooting)
-14. [Android Setup — First Time](#14-android-setup--first-time)
-15. [Android Build Workflow](#15-android-build-workflow)
-16. [Android Physical Device](#16-android-physical-device)
-17. [Android Signing](#17-android-signing)
-18. [Android Troubleshooting](#18-android-troubleshooting)
-19. [Production Release Prerequisites](#19-production-release-prerequisites)
-20. [Pre-Launch Checklist](#20-pre-launch-checklist)
-21. [Known Current Limitations](#21-known-current-limitations)
+5. [Environments & Configuration](#5-environments--configuration)
+6. [Build](#6-build)
+7. [Capacitor Sync & Swift Package Manager](#7-capacitor-sync--swift-package-manager)
+8. [iOS Development & Physical Devices](#8-ios-development--physical-devices)
+9. [iOS Signing — Development, TestFlight, App Store](#9-ios-signing--development-testflight-app-store)
+10. [iOS UIScene Lifecycle](#10-ios-uiscene-lifecycle)
+11. [Sentry (Crash Reporting)](#11-sentry-crash-reporting)
+12. [Android Development & Physical Devices](#12-android-development--physical-devices)
+13. [Android Signing](#13-android-signing)
+14. [Permissions & Location](#14-permissions--location)
+15. [Payments (Razorpay)](#15-payments-razorpay)
+16. [Google Maps](#16-google-maps)
+17. [Push Notifications](#17-push-notifications)
+18. [Deep Links](#18-deep-links)
+19. [App Identity, Versioning, Icons & Splash](#19-app-identity-versioning-icons--splash)
+20. [CI/CD](#20-cicd)
+21. [TestFlight & App Store Release](#21-testflight--app-store-release)
+22. [Google Play Release](#22-google-play-release)
+23. [Troubleshooting](#23-troubleshooting)
+24. [Production Checklist](#24-production-checklist)
+25. [External Actions Register](#25-external-actions-register)
+
+---
+
+## 0. Validation Matrix
+
+Evidence key: _gen_ = `xcodebuild … -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO`
+(Debug and Release); _gradle_ = `./gradlew assembleDebug` / `bundleRelease` on JDK 21 + Android SDK 36.
+
+### iOS
+
+|                                                                                           | Customer                                                  | Restaurant                                                                               | Delivery                                                                                 |
+| ----------------------------------------------------------------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Build (Debug + Release, generic device)                                                   | PASS (_gen_, 0 errors)                                    | PASS (_gen_, 0 errors)                                                                   | PASS (_gen_, 0 errors)                                                                   |
+| Sync (`pnpm mobile:sync:*`) + SPM resolve (capacitor-swift-pm 8.5.2, sentry-cocoa 9.28.0) | PASS                                                      | PASS                                                                                     | PASS                                                                                     |
+| UIScene migration                                                                         | PASS                                                      | PASS                                                                                     | PASS                                                                                     |
+| Simulator                                                                                 | PASS (iOS 27 simulator launch, earlier release cycle)     | PENDING                                                                                  | PENDING                                                                                  |
+| Physical device                                                                           | PASS (iPhone 16 Pro Max, development-signed launch)       | PASS (iPhone 16 Pro Max, development-signed Debug; launched and still running after 8 s) | PASS (iPhone 16 Pro Max, development-signed Debug; launched and still running after 8 s) |
+| Release build (Archive)                                                                   | BLOCKED — needs Apple Developer Program team (§9)         | BLOCKED                                                                                  | BLOCKED                                                                                  |
+| Signing                                                                                   | Development: PASS (Personal Team) · Distribution: BLOCKED | Development: PASS · Distribution: BLOCKED                                                | Development: PASS · Distribution: BLOCKED                                                |
+| Production config (`pnpm verify:mobile-release`)                                          | BLOCKED — live Razorpay key, Sentry DSN, Maps key         | BLOCKED — Sentry DSN, Maps key                                                           | BLOCKED — Sentry DSN, Maps key                                                           |
+
+### Android
+
+|                                                  | Customer                                                                                                                                    | Restaurant                                             | Delivery                                               |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------ |
+| Build (`assembleDebug`)                          | PASS (_gradle_)                                                                                                                             | PASS (_gradle_)                                        | PASS (_gradle_)                                        |
+| Sync                                             | PASS                                                                                                                                        | PASS                                                   | PASS                                                   |
+| Emulator                                         | PENDING (no emulator image installed)                                                                                                       | PENDING                                                | PENDING                                                |
+| Physical device                                  | PASS — reported by the project owner before this change set; re-test pending for the new location permission                                | PENDING                                                | PENDING                                                |
+| Release build (`bundleRelease`)                  | PASS — R8-minified AAB, signed with a throwaway validation key via `PATHEYA_ANDROID_*`; without credentials the build **fails** as designed | PASS (same)                                            | PASS (same)                                            |
+| Signing                                          | Debug: PASS · Release keystore: BLOCKED (no real keystore yet)                                                                              | Debug: PASS · Release: BLOCKED                         | Debug: PASS · Release: BLOCKED                         |
+| Production config (`pnpm verify:mobile-release`) | BLOCKED — live Razorpay key, Sentry DSN, Maps key                                                                                           | BLOCKED — Sentry DSN, Maps key, `google-services.json` | BLOCKED — Sentry DSN, Maps key, `google-services.json` |
+
+Merged Android permissions were checked in the built APKs with `aapt2 dump permissions` (§14).
 
 ---
 
 ## 1. Overview
 
-Patheya Express's mobile apps are the **existing Angular applications packaged in a Capacitor
-native shell**. There is no separate mobile codebase: the same Angular build that runs on the web is
-bundled into each native project and loaded in a WebView, and Capacitor plugins provide native
-capabilities (status bar, splash screen, keyboard, geolocation, haptics, push notifications, secure
-storage, deep links, Sentry crash reporting).
+The mobile apps are the **existing Angular applications packaged in Capacitor native shells**. The
+same Angular build that runs on the web is bundled into each native project and loaded in a WebView.
+Capacitor plugins add native capabilities: status bar, splash screen, keyboard, geolocation, haptics,
+push notifications, secure storage, deep links and Sentry.
 
-| Nx project       | Mobile name / role             | Bundle / Application ID       | Display name             | Native projects                       |
-| ---------------- | ------------------------------ | ----------------------------- | ------------------------ | ------------------------------------- |
-| `customer-app`   | Customer                       | `com.patheyaexpress.customer` | Patheya Express          | `apps/customer-app/android`, `/ios`   |
-| `restaurant-app` | Restaurant partner ("partner") | `com.patheyaexpress.partner`  | Patheya Express Partner  | `apps/restaurant-app/android`, `/ios` |
-| `delivery-app`   | Delivery partner               | `com.patheyaexpress.delivery` | Patheya Express Delivery | `apps/delivery-app/android`, `/ios`   |
-| `admin-app`      | Admin                          | —                             | —                        | **Web only — no mobile target**       |
-
-> The restaurant app's npm scripts use the name **`partner`** (`mobile:sync:partner`,
-> `mobile:ios:partner`, `partner:ios`), matching its app ID `com.patheyaexpress.partner`.
-
-### How the web build and native projects relate
+| Nx project       | Role                                    | Bundle / Application ID       | Display name             | Native projects                       |
+| ---------------- | --------------------------------------- | ----------------------------- | ------------------------ | ------------------------------------- |
+| `customer-app`   | Customer                                | `com.patheyaexpress.customer` | Patheya Express          | `apps/customer-app/android`, `/ios`   |
+| `restaurant-app` | Restaurant partner (scripts: `partner`) | `com.patheyaexpress.partner`  | Patheya Express Partner  | `apps/restaurant-app/android`, `/ios` |
+| `delivery-app`   | Delivery partner                        | `com.patheyaexpress.delivery` | Patheya Express Delivery | `apps/delivery-app/android`, `/ios`   |
+| `admin-app`      | Admin                                   | —                             | —                        | **Web only — no mobile target**       |
 
 ```
 Angular source (apps/<app>/src)
-  │  pnpm mobile:build            → nx build <app> --configuration=mobile
+  │  pnpm mobile:build          → nx build <app> --configuration=mobile
   ▼
-dist/apps/<app>/browser           (webDir in apps/<app>/capacitor.config.ts)
-  │  pnpm mobile:sync:<app>       → nx build + `npx cap sync` inside apps/<app>/
+dist/apps/<app>/browser          (webDir in apps/<app>/capacitor.config.ts)
+  │  pnpm mobile:sync:<app>     → build + `npx cap sync` inside apps/<app>/
   ▼
-apps/<app>/ios/App/App/public                    (iOS web assets, gitignored)
-apps/<app>/android/app/src/main/assets/public    (Android web assets, gitignored)
-apps/<app>/ios/App/CapApp-SPM/Package.swift      (regenerated: iOS plugin packages)
-apps/<app>/android/capacitor.settings.gradle     (regenerated: Android plugin modules)
-  │  pnpm mobile:ios:<app> / pnpm mobile:android:<app>   → opens Xcode / Android Studio
+ios/App/App/public, android/app/src/main/assets/public   (gitignored web assets)
+ios/App/CapApp-SPM/Package.swift, android/capacitor.settings.gradle   (regenerated, committed)
+  │  pnpm mobile:ios:<app> / pnpm mobile:android:<app>   → Xcode / Android Studio
   ▼
-Build, sign and run from the IDE
+Build, sign, run
 ```
 
-### Why the existing Nx workflow must be used
-
-- **Each app is its own Capacitor project** rooted at `apps/<app>/` with its own
-  `capacitor.config.ts` (app ID, name, `webDir`). Capacitor CLI commands only work from inside the
-  app directory; the Nx targets (`cap-sync`, `cap-open-ios`, `cap-open-android` in each
-  `apps/<app>/project.json`) set that working directory for you.
-- **`cap-sync` always builds first** (`dependsOn: build`, configuration forwarded), so the native
-  shell never receives a stale or wrong-environment web bundle.
-- **There is no Capacitor project at the repository root.** Never run `npx cap init`,
-  `npx cap add ios|android`, `npx cap sync` or `pnpm exec cap …` from the repository root — that
-  creates a stray, unconfigured project (`capacitor.config.ts` + `ios/` at the root) that is not
-  part of this architecture.
+**Use the Nx workflow, never root-level Capacitor commands.** Each app is its own Capacitor project
+in `apps/<app>/`, and the Nx targets (`cap-sync`, `cap-open-ios`, `cap-open-android`) run from that
+directory and always build first. There is no Capacitor project at the repository root: never run
+`npx cap init`, `npx cap add`, `npx cap sync` or `pnpm exec cap …` from the root.
 
 ---
 
 ## 2. Supported Development Environment
 
-Versions marked **pinned** are fixed by repository files. Versions marked **validated** are what the
-current state was verified with; they are not enforced by the repository.
-
-### Both platforms
-
-| Tool                           | Requirement                                              | Source                                             |
-| ------------------------------ | -------------------------------------------------------- | -------------------------------------------------- |
-| Node.js                        | **24** (what CI uses). No `.nvmrc`/`engines` pin exists. | `.github/workflows/ci.yml` → `NODE_VERSION: 24`    |
-| pnpm                           | **11.5.3** — pinned                                      | `package.json` → `"packageManager": "pnpm@11.5.3"` |
-| Nx                             | 23.0.2 — pinned (installed by pnpm)                      | `package.json`                                     |
-| Angular                        | 21.2.x (installed by pnpm)                               | `package.json`                                     |
-| Capacitor core/cli/ios/android | **8.5.2** (installed by pnpm)                            | `package.json`, `pnpm-lock.yaml`                   |
-
-> Newer Node majors can build the apps, but Jest's TypeScript config loading fails on Node 26
-> (`__dirname is not defined in ES module scope`). Use Node 24 to match CI.
-
-### iOS
-
-| Item                  | Requirement                                                                                                                                                                   | Source                                                                                         |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| macOS                 | Required — Xcode only runs on macOS. Validated on macOS 26.6.                                                                                                                 | —                                                                                              |
-| Xcode                 | **Minimum Xcode 16** (the `SentryCapacitor` Swift package declares `swift-tools-version: 6.0`, first shipped in Xcode 16). **Validated: Xcode 27.0 (27A266a), iOS SDK 27.0.** | `@sentry/capacitor` `Package.swift`                                                            |
-| iOS deployment target | **iOS 15.0** — pinned                                                                                                                                                         | `project.pbxproj` `IPHONEOS_DEPLOYMENT_TARGET = 15.0`; `CapApp-SPM/Package.swift` `.iOS(.v15)` |
-| iOS SDK               | Apps built with current SDKs **must use the UIScene lifecycle** — see [§11](#11-ios-uiscene-requirement).                                                                     | —                                                                                              |
-| Dependency manager    | **Swift Package Manager** (`CapApp-SPM`)                                                                                                                                      | `apps/<app>/ios/App/CapApp-SPM/Package.swift`                                                  |
-| CocoaPods             | **CocoaPods is NOT required for this project.** There is no `Podfile`. Do not install or introduce it.                                                                        | —                                                                                              |
-
-### Android
-
-| Item                   | Requirement                                                             | Source                                                                     |
-| ---------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| JDK                    | **21** — pinned                                                         | `apps/<app>/android/app/capacitor.build.gradle` → `JavaVersion.VERSION_21` |
-| Gradle                 | **8.14.3** — pinned, via the Gradle wrapper (no global Gradle needed)   | `apps/<app>/android/gradle/wrapper/gradle-wrapper.properties`              |
-| Android Gradle Plugin  | **8.13.0** — pinned                                                     | `apps/<app>/android/build.gradle`                                          |
-| Google Services plugin | 4.4.4 — pinned                                                          | `apps/<app>/android/build.gradle`                                          |
-| compileSdk / targetSdk | **36** (Android 16) — pinned                                            | `apps/<app>/android/variables.gradle`                                      |
-| minSdk                 | **24** (Android 7.0) — pinned                                           | `apps/<app>/android/variables.gradle`                                      |
-| Android Studio         | A current stable release that supports AGP 8.13 and SDK 36. Not pinned. | —                                                                          |
+| Tool                            | Requirement                                                                                                                                                          | Source                                              |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| Node.js                         | **24** (CI). No `.nvmrc`/`engines` pin. Node 26 builds, but Jest config loading fails on it.                                                                         | `.github/workflows/ci.yml`                          |
+| pnpm                            | **11.5.3** — pinned                                                                                                                                                  | `package.json` `packageManager`                     |
+| Nx / Angular                    | 23.0.2 / 21.2.x (installed by pnpm)                                                                                                                                  | `package.json`                                      |
+| Capacitor core/cli/ios/android  | **8.5.2** (all four must match)                                                                                                                                      | `package.json`, `pnpm-lock.yaml`                    |
+| Capacitor plugins               | app 8.1.1, geolocation 8.2.1, haptics 8.0.2, keyboard 8.0.5, push-notifications 8.1.2, splash-screen 8.0.2, status-bar 8.0.3; capacitor-secure-storage-plugin 0.13.0 | `pnpm-lock.yaml`                                    |
+| Sentry                          | `@sentry/capacitor` **4.4.0** → `sentry-cocoa` **9.28.0** (exact); `@sentry/angular` 10.69.0                                                                         | §11                                                 |
+| **iOS** — macOS + Xcode         | **Xcode 16+** (the SentryCapacitor package uses `swift-tools-version: 6.0`). Validated on **Xcode 27.0 / iOS SDK 27.0**, macOS 26.6.                                 | —                                                   |
+| iOS deployment target           | **15.0** — pinned                                                                                                                                                    | `project.pbxproj`, `CapApp-SPM/Package.swift`       |
+| iOS dependency manager          | **Swift Package Manager.** **CocoaPods is NOT required for this project** (no `Podfile`).                                                                            | —                                                   |
+| **Android** — JDK               | **21** — pinned                                                                                                                                                      | `android/app/capacitor.build.gradle`                |
+| Gradle / AGP                    | **8.14.3** (wrapper) / **8.13.0**                                                                                                                                    | `gradle-wrapper.properties`, `android/build.gradle` |
+| compileSdk / targetSdk / minSdk | **36 / 36 / 24**                                                                                                                                                     | `android/variables.gradle`                          |
+| Google Services plugin          | 4.4.4                                                                                                                                                                | `android/build.gradle`                              |
+| Android Studio                  | Current stable that supports AGP 8.13 and SDK 36 (not pinned). Validated with command-line tools: platform-tools, `platforms;android-36`, `build-tools;36.0.0`.      | —                                                   |
 
 ---
 
 ## 3. Required Developer Tools
 
-### Required for both
+**Both platforms:** Git, Node.js 24, pnpm 11.5.3 (`corepack enable && corepack prepare pnpm@11.5.3 --activate`).
 
-- **Git**
-- **Node.js 24** (see §2)
-- **pnpm 11.5.3** — the simplest way is Corepack, which reads `packageManager` from `package.json`:
+**iOS:** a Mac, Xcode (open it once to install components), command-line tools pointed at Xcode
+(`sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer`, or prefix commands with
+`DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`), an Apple ID (a free Personal Team is
+enough for your own device; the paid **Apple Developer Program** is required for push, TestFlight
+and the App Store — §9), and an iPhone running iOS 15+. **Not required: CocoaPods.**
 
-  ```bash
-  corepack enable
-  corepack prepare pnpm@11.5.3 --activate
-  ```
-
-### Required for iOS
-
-- A Mac running a macOS version supported by your Xcode
-- **Xcode** (from the Mac App Store or developer.apple.com) — opened once to accept the license and
-  install additional components
-- **Xcode Command Line Tools** pointed at the full Xcode (see §8)
-- An **Apple ID** signed in to Xcode. A free Personal Team is enough for running on your own device;
-  the **Apple Developer Program** (paid) is required for TestFlight/App Store and for push
-  notifications — see §10 and §19.
-- A physical iPhone running iOS 15.0 or later, with a USB cable (or the iOS Simulator, installed
-  through Xcode → Settings → Components)
-- **Not required:** CocoaPods
-
-### Required for Android
-
-- **Android Studio**
-- **JDK 21** (Android Studio's bundled JDK, or a separately installed JDK 21)
-- **Android SDK Platform 36**, installed through Android Studio's SDK Manager
-- **Android SDK Platform-Tools** (`adb`)
-- **Android Emulator** + a system image (optional if you use a physical device)
-- `ANDROID_HOME` (or `ANDROID_SDK_ROOT`) set, and `$ANDROID_HOME/platform-tools` on `PATH`
-- For release builds only: a release keystore (see §17) and a Google Play Console account (§19)
-
-### Check your machine
+**Android:** Android Studio (or the SDK command-line tools) with **JDK 21**, **SDK Platform 36**,
+**Platform-Tools** (`adb`), **Build-Tools 36**, and optionally the Emulator plus a system image.
+Set the SDK location:
 
 ```bash
-node -v                    # v24.x
-pnpm -v                    # 11.5.3
-java -version              # 21 (Android)
-xcodebuild -version        # Xcode 16+ (iOS)
-adb version                # Android
-
-pnpm run doctor            # repository health check (tools, per-app config, backend)
+export ANDROID_HOME="$HOME/Library/Android/sdk"          # Android Studio's default on macOS
+export PATH="$PATH:$ANDROID_HOME/platform-tools"
 ```
 
-> Use **`pnpm run doctor`**, not `pnpm doctor` — pnpm 11 has its own built-in `doctor` command that
-> shadows the repository script.
->
-> `pnpm run doctor` reports **"CocoaPods ✖ pod not found"** on a correctly set up Mac. That check is
-> stale for this SPM-based project and can be ignored — see §21.
+**Check the machine:**
+
+```bash
+node -v && pnpm -v && java -version && xcodebuild -version && adb version
+pnpm run doctor        # tools + per-app config + backend health
+```
+
+Use **`pnpm run doctor`**. pnpm 11 has a built-in `pnpm doctor` command that always takes precedence
+over a script with the same name, so plain `pnpm doctor` never reaches the repository's checker.
+The checker only asks for CocoaPods if an app's `ios/App` contains a `Podfile`, and none does.
 
 ---
 
@@ -197,627 +186,617 @@ pnpm run doctor            # repository health check (tools, per-app config, bac
 git clone <patheya-express-frontend repository URL>
 cd frontend
 pnpm install --frozen-lockfile
-```
-
-`--frozen-lockfile` installs exactly what `pnpm-lock.yaml` records and fails instead of silently
-changing it — the same command CI runs.
-
-**Why pnpm (and only pnpm):** the workspace is a pnpm workspace (`pnpm-workspace.yaml`), the
-lockfile is `pnpm-lock.yaml`, and — specific to mobile — the generated native files reference
-plugins through pnpm's store layout (`node_modules/.pnpm/<package>@<version>_<peers>/…`) in both
-`CapApp-SPM/Package.swift` and `android/capacitor.settings.gradle`. Installing with npm or yarn
-produces a different `node_modules` layout, and the native projects will not resolve.
-
-Verify the mobile dependency versions:
-
-```bash
 pnpm list @capacitor/core @capacitor/cli @capacitor/ios @capacitor/android @sentry/capacitor
-# @capacitor/* 8.5.2, @sentry/capacitor 4.4.0
 ```
 
----
-
-## 5. Environment Configuration
-
-Each mobile app has these Angular environment files in `apps/<app>/src/environments/`, selected at
-build time through `fileReplacements` in `apps/<app>/project.json`:
-
-| File                     | Build configuration                    | Used for                                                                    |
-| ------------------------ | -------------------------------------- | --------------------------------------------------------------------------- |
-| `environment.ts`         | `development` (default for `nx serve`) | Local web dev → `http://localhost:3000`                                     |
-| `environment.mobile.ts`  | **`mobile`**                           | **Native device/emulator builds** (`pnpm mobile:*`, launcher native builds) |
-| `environment.qa.ts`      | `qa`                                   | QA web deployment                                                           |
-| `environment.staging.ts` | `staging`                              | Staging web deployment                                                      |
-| `environment.prod.ts`    | `production`                           | Production / store release                                                  |
-
-**Why `mobile` exists:** a phone or emulator cannot reach your Mac/PC's `localhost`, so
-`environment.mobile.ts` points at a deployed backend instead. Today it points at the deployed QA
-API gateway (`https://patheya-express-api-gateway-sg.onrender.com`, `environmentName: 'qa'`). The
-backend at that origin must be up for the app to load data.
-
-### Fields (`AppEnvironment`, `libs/shared/core/src/lib/environment/app-environment.ts`)
-
-| Field                                     | Kind                  | Notes                                                                                                                                            |
-| ----------------------------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `apiBaseUrl`, `socketUrl`, `mediaBaseUrl` | Public runtime config | Backend origins. Must be reachable from the device.                                                                                              |
-| `razorpayKeyId`                           | Public runtime config | Razorpay **key ID** (publishable). Used by `customer-app` checkout only. The Razorpay **key secret** is backend-only and must never appear here. |
-| `maps.googleMapsApiKey`                   | Public runtime config | Browser key; must be restricted in Google Cloud (by app/bundle ID and API).                                                                      |
-| `sentryDsn`                               | Public runtime config | A Sentry DSN is non-secret by design. Empty ⇒ crash reporting is a no-op.                                                                        |
-| `environmentName`, `releaseVersion`       | Build metadata        | `releaseVersion` must match the native version (§19).                                                                                            |
-
-All environment files are **committed and contain only public, client-side values**. Everything in
-them ships inside the app bundle and can be extracted from it.
-
-### Secrets — never commit
-
-| Secret                                                                         | Where it belongs                                                                                                     |
-| ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| Android release keystore (`*.jks`, `*.keystore`) and its passwords             | `apps/<app>/android/keystore.properties` (gitignored) locally; CI secret store                                       |
-| iOS export options with your Team ID                                           | `apps/<app>/ios/exportOptions.plist` (gitignored)                                                                    |
-| Apple signing certificates / provisioning profiles, App Store Connect API keys | Keychain / CI secret store — never the repo                                                                          |
-| APNs auth key (`.p8`), FCM server credentials, Razorpay key secret             | Backend secret management — see [`infrastructure/docs/secrets-guide.md`](../../infrastructure/docs/secrets-guide.md) |
-
-`.gitignore` already excludes `keystore.properties`, `*.jks`, `*.keystore`, `exportOptions.plist`,
-`xcuserdata/`, `DerivedData/`, `Pods/`, native `build/` folders and the synced `public/` web assets.
-
-### Live reload against a local dev server (optional)
-
-`capacitor.config.ts` honours `CAP_SERVER_URL` so the native shell loads a dev server on your LAN
-instead of the bundled assets — see [`CAPACITOR.md` §7](./CAPACITOR.md#live-reload). Never sync a
-release build with `CAP_SERVER_URL` set, and never commit a machine IP into an environment file.
+Use pnpm only. The lockfile is `pnpm-lock.yaml`, and the generated native files (`Package.swift`,
+`capacitor.settings.gradle`) reference plugins through pnpm's `node_modules/.pnpm/…` layout. npm or
+yarn would produce a layout the native projects can't resolve. `--frozen-lockfile` is what CI runs.
 
 ---
 
-## 6. Build the Web Application for Mobile
+## 5. Environments & Configuration
+
+Angular `fileReplacements` (`apps/<app>/project.json`) choose one environment file per build
+configuration. Every file is committed and contains **public client-side values only**.
+
+| Configuration                          | File                     | API origin (customer / restaurant / delivery)         | Razorpay key (customer)                                 | Purpose                                                |
+| -------------------------------------- | ------------------------ | ----------------------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------ |
+| `development` (default for `nx serve`) | `environment.ts`         | `http://localhost:3000`                               | test                                                    | Local web dev                                          |
+| `qa`                                   | `environment.qa.ts`      | `https://patheya-express-api-gateway-sg.onrender.com` | test                                                    | QA web                                                 |
+| **`mobile`**                           | `environment.mobile.ts`  | same QA origin, `environmentName: 'qa'`               | test                                                    | **Device/emulator builds** (`pnpm mobile:*`, launcher) |
+| `staging`                              | `environment.staging.ts` | `https://api.staging.patheyaexpress.com`              | test                                                    | Staging                                                |
+| `production`                           | `environment.prod.ts`    | `https://api.patheyaexpress.com`                      | `rzp_live_REPLACE_WITH_REAL_KEY` (blocking placeholder) | Store / production                                     |
+
+The staging and production origins are the hosts of the backend's own ingress overlays
+(`patheya-express-platform/k8s/overlays/{staging,production}/ingress-patch.yaml`). **Neither resolves
+in DNS yet.** Production and staging builds won't reach a backend until that deployment exists
+(§25). QA and `mobile` stay on the working Render deployment. Production never uses the QA origin.
+
+> **Web deployments share these files.** `production` is each app's default build configuration. Any
+> web deployment that builds the default configuration but is meant to run against the QA backend
+> (for example a demo site on Vercel) must build with `--configuration=qa`. Otherwise its next
+> deploy will point at the production origin.
+
+### Configuration gates
+
+| Command                                           | When                         | Checks                                                                                                                                                                                                                                                                                             |
+| ------------------------------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm verify:prod-env` (also in CI's `build` job) | Every push                   | `environment.prod.ts` has no `REPLACE_WITH`/`CHANGEME`/`TODO` placeholders, no `localhost`, no Razorpay test key                                                                                                                                                                                   |
+| **`pnpm verify:mobile-release`**                  | **Before every store build** | The above, plus: production origins are `https://` and differ from the app's QA/mobile origins; `sentryDsn` and `maps.googleMapsApiKey` are set; `releaseVersion` equals Android `versionName` and iOS `MARKETING_VERSION`; `android/app/google-services.json` exists with this app's package name |
+
+Both run `scripts/verify-production-env.mjs` (`<app> [--mobile-release]`). **Expected today:**
+`verify:prod-env` fails for `customer-app` on purpose (Razorpay placeholder, §15).
+`verify:mobile-release` fails for all three apps, and its output is exactly the external work left.
+
+### Never commit
+
+Android keystores and `keystore.properties`, Apple certificates (`*.p12`, `*.cer`), keys (`*.p8`),
+provisioning profiles (`*.mobileprovision`), `exportOptions.plist`, and `.env`/`.env.local`.
+`.gitignore` covers all of these repo-wide. Backend secrets (Razorpay key secret, APNs key, FCM
+credentials) belong to backend secret management
+([`infrastructure/docs/secrets-guide.md`](../../infrastructure/docs/secrets-guide.md)).
+
+**Live reload** (optional): `CAP_SERVER_URL=http://<LAN-IP>:4200` before syncing points the shell at
+a dev server ([`CAPACITOR.md` §7](./CAPACITOR.md#live-reload)). Never sync a release build with it
+set.
+
+---
+
+## 6. Build
 
 ```bash
-pnpm mobile:build
+pnpm mobile:build     # nx run-many --target=build --projects=customer-app,restaurant-app,delivery-app --configuration=mobile
 ```
 
-Runs `nx run-many --target=build --projects=customer-app,restaurant-app,delivery-app
---configuration=mobile`: production-optimised Angular builds for the three mobile apps using
-`environment.mobile.ts`, written to `dist/apps/<app>/browser`.
-
-You normally don't need to run this separately — every `pnpm mobile:sync:*` command builds its app
-first. It is useful as a quick "does everything compile" check. Never copy `dist/` folders into the
-native projects by hand; sync does that.
+Optional on its own: every sync command builds first. Never copy `dist/` into native projects by hand.
 
 ---
 
-## 7. Capacitor Sync
+## 7. Capacitor Sync & Swift Package Manager
 
 ```bash
 pnpm mobile:sync:customer     # nx run customer-app:cap-sync   --configuration=mobile
 pnpm mobile:sync:partner      # nx run restaurant-app:cap-sync --configuration=mobile
 pnpm mobile:sync:delivery     # nx run delivery-app:cap-sync   --configuration=mobile
 pnpm mobile:sync              # all three
-```
 
-Each one builds the app (`mobile` configuration) and then runs `npx cap sync` inside `apps/<app>/`,
-which:
-
-1. Copies `dist/apps/<app>/browser` into the iOS and Android projects.
-2. Writes `capacitor.config.json` into each native project.
-3. Regenerates the plugin wiring:
-   - **iOS:** `ios/App/CapApp-SPM/Package.swift` — a local Swift package that lists every Capacitor
-     plugin (by its path under `node_modules/.pnpm/…`) and pins `capacitor-swift-pm` to exactly the
-     installed `@capacitor/ios` version.
-   - **Android:** `android/capacitor.settings.gradle` and `android/app/capacitor.build.gradle`.
-
-**Sync again whenever** you pull changes, change any dependency, change `capacitor.config.ts` or an
-environment file, or change web code you want to see in the native app.
-
-**Review generated changes.** `Package.swift`, `capacitor.settings.gradle` and `Package.resolved` are
-committed. After a dependency change they legitimately change (new versions or pnpm paths) and must
-be committed together with `package.json`/`pnpm-lock.yaml`. If sync changes them when no dependency
-changed, check your pnpm install before committing.
-
-> **Windows checkouts:** sync writes host-specific paths (backslashes, shorter pnpm folder names).
-> Do not commit `Package.swift` regenerated on Windows — it won't resolve on macOS.
-
-**Release build sync:** the `pnpm mobile:sync:*` scripts always use the `mobile` (QA) configuration.
-To package another environment, call the Nx target directly — the configuration is forwarded to the
-build:
-
-```bash
+# Store/release bundles: forward another configuration to the same target
 pnpm exec nx run customer-app:cap-sync --configuration=production
 ```
 
+Sync copies the web build into both native projects and regenerates the plugin wiring:
+
+- **iOS:** `ios/App/CapApp-SPM/Package.swift` lists every plugin by path and pins
+  `capacitor-swift-pm` to `exact: <@capacitor/ios version>`.
+- **Android:** `capacitor.settings.gradle` and `app/capacitor.build.gradle`.
+
+Sync again after pulling, after any dependency or `capacitor.config.ts`/environment change, and to
+ship web changes to devices.
+
+`Package.swift`, `capacitor.settings.gradle` and each app's
+`App.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved` are **committed**. They
+change only when dependencies change, and are committed together with `package.json` and
+`pnpm-lock.yaml`. **Never hand-edit `Package.resolved`.** Xcode or
+`xcodebuild -resolvePackageDependencies -project App.xcodeproj` regenerates it. Sync output from
+Windows (backslash paths) must not be committed.
+
 ---
 
-## 8. iOS Setup — First Time
+## 8. iOS Development & Physical Devices
 
-1. **Install Xcode** (16 or later; see §2), open it once, accept the license and let it install
-   components. Install an iOS Simulator runtime from Xcode → Settings → Components if you want one.
-2. **Point the command-line tools at Xcode** (needed if `xcode-select` points at the standalone
-   Command Line Tools):
-
+1. Install and open Xcode. Point the command-line tools at it (§3).
+2. `pnpm install --frozen-lockfile && pnpm mobile:sync:customer` (or `:partner` / `:delivery`).
+3. Resolve packages (Xcode also does this on open):
    ```bash
-   sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
-   xcodebuild -version
+   cd apps/customer-app/ios/App && xcodebuild -resolvePackageDependencies -project App.xcodeproj; cd -
    ```
+   Expect `capacitor-swift-pm @ 8.5.2` and `Sentry … sentry-cocoa @ 9.28.0`.
+4. Open the project: `pnpm mobile:ios:customer` / `pnpm mobile:ios:partner` / `pnpm mobile:ios:delivery`.
+5. Xcode → Settings → Accounts → add your Apple ID.
+6. Target **App** → **Signing & Capabilities** → **Team**: choose your team. Keep **Automatically
+   manage signing** on, and don't change the bundle identifier. The team you pick is saved in
+   `project.pbxproj` as `DEVELOPMENT_TEAM`. **That change is personal; don't commit it.** No team is
+   committed.
+7. Connect the iPhone and unlock it. Tap **Trust** on "Trust This Computer?".
+8. **Developer Mode:** iPhone **Settings → Privacy & Security → Developer Mode → On**. The phone
+   restarts; confirm **Turn On** afterwards. The row only appears after the phone has been connected
+   to Xcode once. Without it, Xcode shows the device as unavailable, and development apps can't
+   launch.
+9. Select **`<Your iPhone>`** as the run destination and press **⌘R**. **Keep the phone unlocked:** iOS
+   refuses to launch apps on a locked device.
+10. First run with a new account: if iOS says "Untrusted Developer", go to **Settings → General → VPN
+    & Device Management → (your Apple ID) → Trust**.
 
-   Without `sudo`, prefix individual commands with
-   `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer` instead.
-
-3. **Install and sync** (see §4 and §7):
-
-   ```bash
-   pnpm install --frozen-lockfile
-   pnpm mobile:sync:customer
-   ```
-
-4. **Resolve Swift packages** (Xcode also does this automatically when the project opens):
-
-   ```bash
-   cd apps/customer-app/ios/App
-   xcodebuild -resolvePackageDependencies -project App.xcodeproj
-   cd ../../../..
-   ```
-
-   Expect `capacitor-swift-pm @ 8.5.2` and `Sentry: https://github.com/getsentry/sentry-cocoa @ 9.28.0`.
-
-5. **Open the existing project:**
-
-   ```bash
-   pnpm mobile:ios:customer      # apps/customer-app/ios/App/App.xcodeproj
-   pnpm mobile:ios:partner       # apps/restaurant-app/ios/App/App.xcodeproj
-   pnpm mobile:ios:delivery      # apps/delivery-app/ios/App/App.xcodeproj
-   ```
-
-6. **Sign in:** Xcode → Settings → Accounts → **+** → Apple ID.
-7. **Select the team:** in the project navigator select **App** → target **App** → **Signing &
-   Capabilities** → **Team** → your team. Do not change the Bundle Identifier.
-8. Leave **Automatically manage signing** enabled (the project uses `CODE_SIGN_STYLE = Automatic`).
-9. **Connect your iPhone** with a cable and unlock it.
-10. **Trust the Mac:** on the iPhone, tap **Trust** on the "Trust This Computer?" prompt and enter
-    the passcode.
-11. **Enable Developer Mode** on the iPhone — see §9.
-12. **Select the device:** in the Xcode toolbar's run-destination menu choose **`<Your iPhone>`**
-    (it appears under "iOS Device" by the name set in the phone's Settings → General → About).
-13. **Run:** press **⌘R** (Product → Run). The first install can take a while because Xcode copies
-    debug symbols for the phone's iOS version.
-14. If iOS says the developer is not trusted, follow §10 "Trusting the developer on the device", then
-    run again.
-
-You can confirm the device is visible from the terminal:
-
-```bash
-xcrun devicectl list devices
-```
+Terminal checks: `xcrun devicectl list devices`; the launcher alternative is `pnpm customer:ios`
+(validates, builds, syncs, then launches on a chosen device). The launcher no longer requires
+CocoaPods.
 
 ---
 
-## 9. iOS Developer Mode
+## 9. iOS Signing — Development, TestFlight, App Store
 
-iOS refuses to launch development-signed apps unless Developer Mode is on:
+|                     | Development (your device)                    | TestFlight / App Store                                       |
+| ------------------- | -------------------------------------------- | ------------------------------------------------------------ |
+| Account             | Any Apple ID; free Personal Team works       | **Paid Apple Developer Program, organization team**          |
+| Build configuration | Debug (⌘R)                                   | Release (Product → Archive)                                  |
+| Entitlements        | None (Debug has no `CODE_SIGN_ENTITLEMENTS`) | `App/App.entitlements` → `aps-environment` (push)            |
+| Signing             | Automatic, Apple Development certificate     | Automatic, Apple Distribution certificate, App Store profile |
+| Status              | **VALIDATED** (all three apps)               | **BLOCKED** — no organization team yet                       |
 
-**iPhone: Settings → Privacy & Security → Developer Mode → On**
+**IMPLEMENTED: the release-signing guard.** Each app's **Release** configuration signs with
+`App/App.entitlements` (`aps-environment`), which only a paid team with the Push Notifications
+capability can sign. An archive therefore can't be produced with a free Personal Team. Debug has no
+entitlements, so free-team device development keeps working. When exporting for distribution, Xcode
+re-signs `aps-environment` as `production` from the distribution profile, so the committed value
+`development` is correct.
 
-- The phone **restarts**. After it restarts, unlock it and confirm **Turn On** when prompted.
-- The **Developer Mode** row only appears after the phone has been connected to a Mac running Xcode
-  (or has had a development app installed). If you don't see it, connect the phone, open Xcode, and
-  select the phone as a run destination once.
-- Without Developer Mode, Xcode reports the device as unavailable ("Developer Mode disabled"), or the
-  app installs but cannot be launched for development.
+**Personal Team limits:** profiles expire after 7 days, only a few devices and apps are allowed, and
+there's no push capability, TestFlight or App Store. A bundle ID belongs to one team; if the
+organization team registers `com.patheyaexpress.*`, personal teams can't use those IDs and developers
+must join the organization team.
 
----
-
-## 10. iOS Signing & Trust
-
-### Development on your own device
-
-| Concept                          | What it is in this project                                                                                                                                                                                                   |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Apple ID**                     | Signed in under Xcode → Settings → Accounts                                                                                                                                                                                  |
-| **Development Team**             | Chosen per developer in Signing & Capabilities. The committed project has **no team set**, so each developer selects their own. This change is local; do not commit it unless the team agrees on a shared organization team. |
-| **Automatically manage signing** | Enabled. Xcode creates the development certificate and an "iOS Team Provisioning Profile" for the bundle ID                                                                                                                  |
-| **Bundle ID**                    | Fixed per app (§1)                                                                                                                                                                                                           |
-| **Provisioning**                 | Managed by Xcode; nothing to download by hand                                                                                                                                                                                |
-
-**Trusting the developer on the device** (needed the first time an app signed by a given account
-runs, mainly with a free Personal Team): if iOS shows "Untrusted Developer", go to **Settings →
-General → VPN & Device Management → (your Apple ID under Developer App) → Trust**, then launch again.
-
-**Personal Team (free Apple ID) limits:**
-
-- Provisioning profiles expire after **7 days**; re-run from Xcode to re-sign.
-- Only a few devices and a few app IDs are allowed.
-- A bundle ID can be registered by only one team. If another team already owns
-  `com.patheyaexpress.*`, a Personal Team cannot use it — you must join that team.
-- **No Push Notifications capability** and no other paid-only capabilities.
-- **No TestFlight, no App Store distribution.**
-
-### TestFlight / App Store distribution
-
-A Personal Team is **never sufficient** for release. Distribution needs a paid **Apple Developer
-Program** organization team, the App IDs registered under it, an Apple Distribution certificate,
-App Store provisioning, and an App Store Connect app record — see §19. For CLI exports, copy
-`apps/<app>/ios/exportOptions.plist.example` to `exportOptions.plist` (gitignored) and set the
-organization Team ID.
+For command-line exports, copy `apps/<app>/ios/exportOptions.plist.example` to
+`exportOptions.plist` (gitignored) and set the organization Team ID. Release steps: §21.
 
 ---
 
-## 11. iOS UIScene Requirement
+## 10. iOS UIScene Lifecycle
 
-### Symptom
+**Symptom:** `Application failed to launch: UIScene life cycle is required for apps built with this SDK.`
 
-On a physical iPhone, an app built with the current iOS SDK refused to launch:
+**Cause:** current iOS SDKs require the scene-based lifecycle. Capacitor iOS 8.4.x had no scene
+support; Capacitor **8.5.0** added it (`SceneDelegateProxy`, scene-aware pause/resume).
 
-```
-Application failed to launch: UIScene life cycle is required for apps built with this SDK.
-```
+**Resolution (IMPLEMENTED in all three apps; VALIDATED: builds plus physical launches — §0):**
+Capacitor core/cli/ios/android **8.5.2**, plus Capacitor CLI 8.5.2's official migration task
+(`migrateToUIScene`) run per app. All three apps now have byte-identical `AppDelegate.swift` and
+`SceneDelegate.swift`, and the same `Info.plist` scene manifest:
 
-### Cause
+| File (`apps/<app>/ios/App/…`)   | Content                                                                                                                                                                |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `App/Info.plist`                | `UIApplicationSceneManifest`: one window scene, `UISceneDelegateClassName = $(PRODUCT_MODULE_NAME).SceneDelegate`, `UISceneStoryboardFile = Main`, multiple scenes off |
+| `App/SceneDelegate.swift`       | Capacitor template: window with `CAPBridgeViewController`, forwards connect/URL/universal-link events to `SceneDelegateProxy.shared`                                   |
+| `App/AppDelegate.swift`         | `application(_:configurationForConnecting:options:)` → `SceneDelegate`                                                                                                 |
+| `App.xcodeproj/project.pbxproj` | `SceneDelegate.swift` in the App target's Sources                                                                                                                      |
 
-Current iOS SDKs require the **scene-based lifecycle** (`UIApplicationSceneManifest` +
-`UISceneDelegate`). The Capacitor iOS template the apps were created from used the old
-app-delegate–only lifecycle, and Capacitor iOS **8.4.x has no scene support**. Scene support
-(`SceneDelegateProxy`, scene-aware app pause/resume events) first shipped in **Capacitor 8.5.0**.
-
-### Resolution (applied to `customer-app`)
-
-1. `@capacitor/core`, `@capacitor/cli`, `@capacitor/ios` and `@capacitor/android` were upgraded to
-   **8.5.2**. No plugin versions changed.
-2. Capacitor CLI 8.5.2's official UIScene migration (`migrateToUIScene`, the iOS step of
-   `cap migrate`) was applied to the Customer iOS project. It changed:
-
-| File (`apps/customer-app/ios/App/…`) | Change                                                                                                                                                                        |
-| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `App/Info.plist`                     | Added `UIApplicationSceneManifest` → one window scene, `UISceneDelegateClassName = $(PRODUCT_MODULE_NAME).SceneDelegate`, `UISceneStoryboardFile = Main`, multiple scenes off |
-| `App/SceneDelegate.swift`            | New — Capacitor's template: creates the window with `CAPBridgeViewController` and forwards scene connect/URL/universal-link events to `SceneDelegateProxy.shared`             |
-| `App/AppDelegate.swift`              | Added `application(_:configurationForConnecting:options:)` returning the `SceneDelegate` configuration                                                                        |
-| `App.xcodeproj/project.pbxproj`      | Registers `SceneDelegate.swift` in the App target's Sources                                                                                                                   |
-
-Deep links (`patheyaexpress://…`) keep working: `SceneDelegateProxy` still posts Capacitor's existing
-URL-open notifications, which `@capacitor/app` listens for.
-
-`cap migrate` itself was **not** run: it would also upgrade every official plugin and rewrite the
-Android Gradle files, and its own output says it is not intended for monorepos.
-
-**Restaurant and Delivery have not been migrated yet** and will fail on a physical device with the
-same message until the same step is applied to `apps/restaurant-app` and `apps/delivery-app` (§21).
-
-Don't remove the scene manifest or `SceneDelegate.swift` from the Customer app, and don't use
-workarounds such as building with an older SDK.
+Don't run `npx cap migrate` in this repo: it would also upgrade every official plugin and rewrite the
+Android Gradle files, and it says itself that it isn't meant for monorepos.
 
 ---
 
-## 12. iOS Sentry / Swift Package Requirement
+## 11. Sentry (Crash Reporting)
 
-Validated combination:
+**Native SDK (VALIDATED):** `@sentry/capacitor` **4.4.0** pins `sentry-cocoa` **`exact: "9.28.0"`**.
+Version 4.3.0 allowed any 9.x, and `sentry-cocoa` 9.29.0 removed `PrivateSentrySDKOnly`, which the
+plugin calls (`Cannot find 'PrivateSentrySDKOnly' in scope`). Upgrade Sentry only by upgrading
+`@sentry/capacitor` together with `@sentry/angular` at the exact matching version. Never edit
+`Package.resolved`; never use CocoaPods.
 
-| Package                            | Version    |
-| ---------------------------------- | ---------- |
-| `@sentry/capacitor` (npm)          | **4.4.0**  |
-| `sentry-cocoa` (Swift package)     | **9.28.0** |
-| `@sentry/angular` / `@sentry/core` | 10.69.0    |
+**Initialization (IMPLEMENTED):** each app's `main.ts` calls `initMobileObservability()`
+(`libs/shared/mobile-observability`) before bootstrap: `sendDefaultPii: false`, no tracing,
+event/breadcrumb scrubbing, failures swallowed. **An empty `sentryDsn` disables Sentry entirely.**
 
-Why: `@sentry/capacitor`'s native iOS code calls `PrivateSentrySDKOnly`, which `sentry-cocoa`
-**removed in 9.29.0**. `@sentry/capacitor` 4.3.0 allowed any 9.x of `sentry-cocoa` (`from:
-"9.16.1"`), so Swift Package Manager picked 9.30.0 and the build failed with
-`Cannot find 'PrivateSentrySDKOnly' in scope`. `@sentry/capacitor` 4.4.0 pins `sentry-cocoa`
-**`exact: "9.28.0"`** in its own `Package.swift`, which fixes it.
-
-Rules:
-
-- The **source of truth** is `@sentry/capacitor`'s version in `package.json`/`pnpm-lock.yaml`. The
-  Sentry version follows from it. Upgrade Sentry by upgrading `@sentry/capacitor` together with
-  `@sentry/angular`, which it requires at the exact same version.
-- **Never hand-edit `Package.resolved`.** It is committed
-  (`App.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`) and is regenerated
-  by Xcode or by `xcodebuild -resolvePackageDependencies`.
-- Do not use CocoaPods (`@sentry/capacitor` 4.4.0 no longer ships a podspec at all).
-- Crash reporting only runs when the environment's `sentryDsn` is set (§5, §21).
+**DSN (REQUIRES EXTERNAL CONFIGURATION):** no Sentry project exists yet, so `sentryDsn` is empty in
+every environment. Repository policy (`AppEnvironment.sentryDsn`) treats a DSN as public, so it's
+committed in the environment file. Create one Sentry project per app, put each DSN in
+`environment.prod.ts` (and optionally `qa`/`staging`/`mobile`), then run
+`pnpm verify:mobile-release`.
 
 ---
 
-## 13. iOS Troubleshooting
+## 12. Android Development & Physical Devices
 
-| Problem                                                                                                            | Fix                                                                                                                                                                                                                                              |
-| ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **"Signing for "App" requires a development team"**                                                                | Signing & Capabilities → select a Team (§8 step 7).                                                                                                                                                                                              |
-| **"Failed to register bundle identifier" / "No profiles for 'com.patheyaexpress.…'"**                              | The bundle ID is owned by another team, or a Personal Team has hit its limit. Join the organization team that owns the ID. Don't change the bundle ID to work around it.                                                                         |
-| **"Untrusted Developer"** on launch                                                                                | Settings → General → VPN & Device Management → Trust (§10).                                                                                                                                                                                      |
-| **"Developer Mode disabled"** / device greyed out                                                                  | §9.                                                                                                                                                                                                                                              |
-| **iPhone not listed in Xcode**                                                                                     | Unlock the phone, reconnect the cable, accept **Trust This Computer**, open Window → Devices and Simulators, and wait for "Preparing device / copying shared cache" to finish. Check with `xcrun devicectl list devices`.                        |
-| **"Trust This Computer?" never appears**                                                                           | Unplug and replug while unlocked. If it was previously declined: Settings → General → Transfer or Reset iPhone → Reset → Reset Location & Privacy, then reconnect.                                                                               |
-| **"UIScene life cycle is required for apps built with this SDK"**                                                  | The app is missing the scene migration (§11). For Customer, confirm `Info.plist` has `UIApplicationSceneManifest` and `SceneDelegate.swift` is in the target. Restaurant/Delivery are not migrated yet.                                          |
-| **Swift package resolution fails / packages missing**                                                              | Run `pnpm install --frozen-lockfile` and `pnpm mobile:sync:<app>` first (local plugin paths point into `node_modules/.pnpm`). Then in Xcode: **File → Packages → Resolve Package Versions**.                                                     |
-| **"… xcframework.zip already exists in file system"** / **Sentry.xcframework missing** / "No such module 'Sentry'" | Stale Swift package artifacts in DerivedData (typically after a dependency version change). Xcode: **File → Packages → Reset Package Caches**, then **Product → Clean Build Folder** (⇧⌘K). If that still fails, see the next row.               |
-| **DerivedData corruption** (persistent odd build errors)                                                           | Quit Xcode, delete **this project's** DerivedData folder (Xcode → Settings → Locations shows the path; the folder starts with `App-`), reopen, let packages resolve, rebuild. This is a troubleshooting step only, not part of the normal build. |
-| **`Cannot find 'PrivateSentrySDKOnly' in scope`**                                                                  | `sentry-cocoa` resolved to 9.29+. Check `pnpm list @sentry/capacitor` shows 4.4.0 and resolve packages again (§12). Don't edit `Package.resolved`.                                                                                               |
-| **`pod: command not found`**                                                                                       | Expected — CocoaPods isn't used. If it comes from `pnpm <app>:ios` (launcher), use `pnpm mobile:ios:<app>` instead (§21).                                                                                                                        |
-| **`xcodebuild` says it requires Xcode, but the active developer directory is Command Line Tools**                  | §8 step 2.                                                                                                                                                                                                                                       |
-
----
-
-## 14. Android Setup — First Time
-
-> Android has **not yet been validated** on a physical device or emulator in this repository (§21).
-> The steps below follow the committed native configuration.
-
-1. **Install Android Studio** (current stable; §2).
-2. **JDK 21:** Android Studio → Settings → Build, Execution, Deployment → Build Tools → Gradle →
-   **Gradle JDK** = a JDK 21 (the bundled JBR 21 or an installed JDK 21).
-3. **Android SDK** (Android Studio → Settings → Languages & Frameworks → Android SDK):
-   - SDK Platforms: **Android 16 (API 36)**
-   - SDK Tools: **Android SDK Platform-Tools**, **Android SDK Build-Tools**, **Android Emulator**
-4. **Environment variables** (macOS/zsh example; adjust the SDK path to yours):
-
-   ```bash
-   export ANDROID_HOME="$HOME/Library/Android/sdk"
-   export PATH="$PATH:$ANDROID_HOME/platform-tools"
-   ```
-
-   Then check with `adb version` and `pnpm run doctor`.
-
-5. **Emulator (optional):** Device Manager → create a virtual device with an API 36 system image.
-6. **Physical device:** §16.
-7. **Gradle:** comes from the wrapper (`gradlew`, Gradle 8.14.3). No global Gradle install is needed.
-   The first sync downloads Gradle and dependencies.
-8. **Signing:** debug builds need nothing. Release builds: §17.
-
----
-
-## 15. Android Build Workflow
+Setup: Android Studio or the command-line tools. Gradle JDK = **21** (Android Studio → Settings →
+Build Tools → Gradle → Gradle JDK). SDK Platform 36, Build-Tools 36, Platform-Tools. Set
+`ANDROID_HOME` (§3).
 
 ```bash
 pnpm install --frozen-lockfile
+pnpm mobile:sync:customer && pnpm mobile:android:customer      # opens Android Studio
+pnpm mobile:sync:partner  && pnpm mobile:android:partner
+pnpm mobile:sync:delivery && pnpm mobile:android:delivery
 
-pnpm mobile:sync:customer          # build (mobile config) + cap sync
-pnpm mobile:android:customer       # open apps/customer-app/android in Android Studio
-
-pnpm mobile:sync:partner           # Restaurant / Partner
-pnpm mobile:android:partner        # apps/restaurant-app/android
-
-pnpm mobile:sync:delivery
-pnpm mobile:android:delivery       # apps/delivery-app/android
+# Command line (from apps/<app>/android; gradlew is committed executable)
+./gradlew assembleDebug        # app/build/outputs/apk/debug/app-debug.apk
+./gradlew installDebug         # install on the connected device/emulator
 ```
 
-In Android Studio, wait for the Gradle sync to finish, pick a device or emulator, and press **Run**.
+Launcher alternative: `pnpm customer:android` (also `partner:` / `delivery:`).
 
-Command-line equivalents from the app's `android/` folder (standard Gradle wrapper tasks):
+**Physical device:**
+
+1. Settings → About phone → tap **Build number** 7×.
+2. Developer options → **USB debugging**.
+3. Connect and accept **Allow USB debugging?**.
+4. Check with `adb devices`: the phone should show as `device`. `unauthorized` means accept the
+   prompt on the phone. Android 7.0 (API 24) or later.
+
+Release builds need signing (§13).
+
+---
+
+## 13. Android Signing
+
+**IMPLEMENTED and VALIDATED.** `tools/mobile/android/release-signing.gradle`, applied by all three
+`app/build.gradle` files, sets the policy:
+
+| Build                                                          | Signing                                                                                                                                                                                                         |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Debug (`assembleDebug`, Run)                                   | Android debug keystore. Nothing to configure.                                                                                                                                                                   |
+| Release (`assembleRelease`, `bundleRelease`, `installRelease`) | **Requires** release credentials. **No debug-key fallback.** Without them `verifyReleaseSigning` fails the build before compiling: `Release signing is not configured for com.patheyaexpress.<app>. Missing: …` |
+
+Credentials, per field, in this order:
+
+1. **`apps/<app>/android/keystore.properties`** (gitignored; copy `keystore.properties.example`):
+   `storeFile`, `storePassword`, `keyAlias`, `keyPassword`. A relative `storeFile` resolves
+   against `android/app/`.
+2. **Environment variables (CI):** `PATHEYA_ANDROID_KEYSTORE_FILE`,
+   `PATHEYA_ANDROID_KEYSTORE_PASSWORD`, `PATHEYA_ANDROID_KEY_ALIAS`, `PATHEYA_ANDROID_KEY_PASSWORD`.
+
+Validation evidence: for each app, `bundleRelease` without credentials failed with the message above.
+With a throwaway key supplied through the environment variables, it produced an R8-minified AAB that
+passed `jarsigner -verify`. That key was created outside the repository, used only for this check,
+and never committed.
+
+**Creating the real upload keys (REQUIRES EXTERNAL CONFIGURATION, once per app):**
 
 ```bash
-cd apps/customer-app/android
-./gradlew assembleDebug            # app/build/outputs/apk/debug/app-debug.apk
-./gradlew installDebug             # install on the connected device/emulator
-./gradlew bundleRelease            # Play Store bundle (.aab) — needs release signing (§17)
+keytool -genkeypair -v -storetype PKCS12 -keyalg RSA -keysize 4096 -validity 10000 \
+  -keystore patheya-express-customer-release.jks -alias patheya-express-customer
 ```
 
-`gradlew` is committed **without the executable bit** (the projects were scaffolded on Windows), so
-on macOS/Linux `./gradlew` fails with "permission denied" until you run
-`chmod +x apps/<app>/android/gradlew` (Android Studio is not affected).
-
-Alternatively, the launcher builds, syncs and launches in one command (`pnpm customer:android`,
-`pnpm partner:android`, `pnpm delivery:android`). See
-[`tools/launcher/README.md`](../../tools/launcher/README.md).
+Store the `.jks` file and its passwords in the team's secret manager. Never commit them (`*.jks`
+and `*.keystore` are gitignored repo-wide). Enroll each app in **Play App Signing** (§22) so this
+key acts as the upload key, which Google can reset if it's lost. Use one key per app.
 
 ---
 
-## 16. Android Physical Device
+## 14. Permissions & Location
 
-1. **Enable Developer Options:** Settings → About phone → tap **Build number** seven times.
-2. **Enable USB debugging:** Settings → System → Developer options → **USB debugging** (the exact
-   menu path varies by manufacturer).
-3. Connect over USB, unlock the phone, and accept **"Allow USB debugging?"** (tick "Always allow from
-   this computer").
-4. Check it's connected:
+Only permissions the code actually needs are requested. These are the merged Android permissions,
+read from the built APKs:
 
-   ```bash
-   adb devices
-   # List of devices attached
-   # R5CX1234ABC    device
-   ```
+| App        | iOS usage strings                             | Android permissions (beyond INTERNET / push / VIBRATE / network state from plugins)                         | Why                                                                                                                                                                                                                                                                                       |
+| ---------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Customer   | Location (when in use), Camera, Photo Library | `ACCESS_COARSE_LOCATION`, `ACCESS_FINE_LOCATION`                                                            | "Nearby restaurants" / current-location use the WebView's `navigator.geolocation`. Capacitor only grants WebView geolocation when these are declared, and accepts coarse-only only on Android 12+, so FINE is needed for API 24–30. Profile, review and support uploads use a file input. |
+| Restaurant | Camera, Photo Library                         | —                                                                                                           | Logo/banner, menu photos, gallery and certificate uploads (file input; iOS offers "Take Photo"). No location use.                                                                                                                                                                         |
+| Delivery   | Location (when in use), Camera, Photo Library | `ACCESS_COARSE_LOCATION`, `ACCESS_FINE_LOCATION`, `CAMERA` (+ `android.hardware.camera` `required="false"`) | Live courier tracking via `@capacitor/geolocation` while delivering (foreground only). Mandatory pickup-parcel photo and onboarding selfie use `<input capture>`. Capacitor opens the camera directly only when `CAMERA` is declared.                                                     |
 
-   `device` means it's ready. `unauthorized` or `offline` → §18.
-
-5. Select the device in Android Studio and press **Run**.
-
-The device needs Android 7.0 (API 24) or later. The app loads data from the QA backend (§5), so the
-phone needs internet access.
+No app requests background location or background camera. On iOS, opening the camera without
+`NSCameraUsageDescription` terminates the app; Restaurant and Delivery lacked it before this release
+and now have it. Store declarations (§21, §22) must match this table.
 
 ---
 
-## 17. Android Signing
+## 15. Payments (Razorpay)
 
-| Build                                                | Signing                                                                                                                                                                                                                                       |
-| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Debug** (`assembleDebug`, Run from Android Studio) | Android's auto-generated debug keystore (`~/.android/debug.keystore`). Nothing to configure.                                                                                                                                                  |
-| **Release** (`assembleRelease`, `bundleRelease`)     | `apps/<app>/android/app/build.gradle` loads `apps/<app>/android/keystore.properties` if it exists and signs with it. **If the file is missing it silently falls back to the debug keystore.** Such a build cannot be uploaded to Google Play. |
+- **Provider:** Razorpay Checkout, **Customer app only** (`libs/shared/core/src/lib/payments/`). The
+  other apps carry an empty `razorpayKeyId` and never use it.
+- **What's in the frontend:** only the **key ID** (`rzp_test_…` / `rzp_live_…`), which is public by
+  design. The **key secret** and order creation/verification belong to the backend and are never
+  in this repository.
+- **Environment separation (IMPLEMENTED):** development, qa, staging and mobile use the Razorpay
+  test key. **Production holds the blocking placeholder `rzp_live_REPLACE_WITH_REAL_KEY`.** A test
+  key in production made checkout run in test mode, and it already failed the CI production-config
+  check.
+- **Enforcement (VALIDATED):** `scripts/verify-production-env.mjs` (CI `build` job,
+  `pnpm verify:prod-env`) rejects placeholders and `rzp_test_` keys in production. Customer
+  production builds stay **blocked until the live key ID is committed**, so CI's `customer-app`
+  build job is red until then.
+- **External action:** activate the Razorpay live account and generate the live API keys. Commit
+  the **live key ID** to `apps/customer-app/src/environments/environment.prod.ts`, and give the live
+  **key secret** to the production backend only. Then test a live payment end to end.
 
-Set up release signing per app:
+---
+
+## 16. Google Maps
+
+- **Usage:** Customer address form, Delivery onboarding/profile and the shared
+  `libs/shared/map-picker` load the **Google Maps JavaScript API inside the WebView**
+  (`@googlemaps/js-api-loader`, libraries `maps`, `geocoding`, `places`, `marker`). No native Maps
+  SDK is used, so there's no Android `com.google.android.geo.API_KEY` and no iOS Maps SDK.
+- **Behaviour without a key:** the Google provider reports itself unavailable and the map picker
+  doesn't load. That's acceptable for development, but **not for a store release**, which is why
+  `pnpm verify:mobile-release` requires the key.
+- **Configuration:** `maps.googleMapsApiKey` in each environment file. Development files contain a
+  browser key; `qa`, `mobile`, `staging` and `production` are empty.
+- **External action (Google Cloud):** create a production browser key. Enable **Maps JavaScript
+  API, Places API and Geocoding API** only (API restriction). Set an application restriction of
+  **Websites** listing the web origins plus the WebView origins `https://localhost` (Android) and
+  `capacitor://localhost` (iOS), and **verify on devices**, since WebView referrer handling differs
+  by platform. Set billing alerts and quotas. Restrict the committed development key the same way.
+
+---
+
+## 17. Push Notifications
+
+**Frontend (IMPLEMENTED in all three apps):** `PushNotificationsService`
+(`libs/shared/core/src/lib/mobile/`) requests permission, registers, and each app sends the token to
+`POST /notifications/push-token` after login. Notification taps route through the deep-link
+allow-list (§18). Android declares `POST_NOTIFICATIONS`; iOS declares `UIBackgroundModes:
+remote-notification`.
+
+**iOS (IMPLEMENTED):** `App/App.entitlements` (`aps-environment`) on the **Release** configuration
+of each app (§9). Debug builds don't receive push; that's an accepted trade-off so free-team device
+development keeps working. A developer on the paid team can test push in Debug by temporarily
+setting `CODE_SIGN_ENTITLEMENTS = App/App.entitlements` for Debug locally, without committing it.
+
+**Android (REQUIRES EXTERNAL CONFIGURATION):** FCM needs each app's
+`android/app/google-services.json`. Customer has one (Firebase project `patheyaexpress`, package
+`com.patheyaexpress.customer`). **Restaurant and Delivery have none.** Gradle builds fine without
+it, but push can't work. In the Firebase console, add Android apps `com.patheyaexpress.partner` and
+`com.patheyaexpress.delivery`, then download and commit their `google-services.json`. The file
+contains public client identifiers, not secrets. The release gate checks for it.
+
+**Backend (BLOCKED — outside this repository):** the backend stores tokens (`push_tokens`) but has
+**no sending implementation** (no FCM or APNs client). On iOS, `@capacitor/push-notifications`
+returns a raw **APNs device token**, not an FCM token. The backend must either send through APNs
+(an APNs auth key `.p8` from the Apple Developer account), or the apps must adopt the Firebase
+Messaging iOS SDK so iOS tokens become FCM tokens. That's an architecture decision for the backend
+team; nothing in this repository needs to change until it's made.
+
+---
+
+## 18. Deep Links
+
+| App                  | Scheme                                                                                   | Status                                                                                                                                                                                           |
+| -------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Customer             | `patheyaexpress://` (iOS `CFBundleURLSchemes`, Android `VIEW`/`BROWSABLE` intent filter) | IMPLEMENTED                                                                                                                                                                                      |
+| Restaurant, Delivery | none, **by design**                                                                      | Push-notification taps navigate in-app. Registering the same scheme in several apps would make iOS pick one of them unpredictably. If they ever need OS-level links, give them distinct schemes. |
+
+Every incoming URL goes through `validateDeepLink`
+(`libs/shared/mobile-security/src/lib/deep-link/deep-link-validator.ts`, unit-tested) before
+reaching the router. It's a strict allow-list:
+
+- routes `restaurants[/<id>[/offers]]`, `notifications[/<id>]`, `orders[/<id>]` and `assignments`;
+- IDs `[A-Za-z0-9_-]{1,64}`;
+- no query strings, userinfo or ports.
+
+Anything else is ignored. The handler is `App.addListener('appUrlOpen')` in `mobile.providers.ts`.
+On iOS, URLs arrive through `SceneDelegate` → `SceneDelegateProxy`, which still posts Capacitor's URL
+notification.
+
+The behaviour is identical in development, QA and production: the scheme and routes don't depend on
+the environment. Opening a custom-scheme link from Safari shows iOS's "Open in …?" confirmation,
+which is standard system behaviour for custom schemes and can't be suppressed. Avoiding it needs
+**universal links / Android App Links**, which aren't implemented: they need an
+`apple-app-site-association` and `assetlinks.json` hosted on a production domain (external), plus
+the Associated Domains entitlement under the paid team.
+
+Test on a device: `xcrun simctl openurl booted "patheyaexpress://restaurants"` (simulator) or
+`adb shell am start -a android.intent.action.VIEW -d "patheyaexpress://restaurants"`.
+
+---
+
+## 19. App Identity, Versioning, Icons & Splash
+
+**Identity (VALIDATED):** unique IDs per app (§1), checked in the built APK and `Info.plist`.
+Changing an ID after store publication creates a new store listing, so don't.
+
+**Versioning:** each app is versioned independently.
+
+|                                           | Android (`apps/<app>/android/app/build.gradle`) | iOS (`project.pbxproj`, App target)                                           | Web/Sentry                                       |
+| ----------------------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------ |
+| User-visible                              | `versionName "1.0"`                             | `MARKETING_VERSION = 1.0`                                                     | `releaseVersion: '1.0'` in each environment file |
+| Build number (must increase every upload) | `versionCode 1`                                 | `CURRENT_PROJECT_VERSION = 1` (or `xcodebuild … CURRENT_PROJECT_VERSION=<n>`) | —                                                |
+
+The three user-visible values must match; `pnpm verify:mobile-release` enforces that. Bump the build
+number for every upload to a store.
+
+**Icons & splash (BLOCKED — artwork missing):** all three apps still use **Capacitor's stock
+placeholder icon and splash** (identical to Capacitor's template; the repository has no brand
+artwork beyond web favicons). Placeholder icons aren't acceptable for store submission. Provide per
+app:
+
+- a 1024×1024 px square icon with no transparency or rounded corners (iOS);
+- an Android adaptive-icon foreground and background (432×432 px, important content within the
+  central 264 px);
+- a splash logo or full 2732×2732 px splash (light and optionally dark).
+
+Then generate every size from inside the app directory:
 
 ```bash
-cp apps/customer-app/android/keystore.properties.example apps/customer-app/android/keystore.properties
+cd apps/customer-app        # assets/icon-only.png, icon-foreground.png, icon-background.png, splash.png, splash-dark.png
+pnpm dlx @capacitor/assets generate --ios --android
 ```
 
-```properties
-# apps/<app>/android/keystore.properties — gitignored, never commit
-storeFile=../patheya-express-customer-release.jks   # path relative to android/app/
-storePassword=<from secret manager>
-keyAlias=patheya-express-customer
-keyPassword=<from secret manager>
-```
-
-- Store the keystore file and its passwords in the team's secret manager. **Losing the upload key
-  without Play App Signing means you can no longer update the app.**
-- **CI/CD:** keep the keystore as a base64 secret plus password secrets. Have the job write
-  `keystore.properties` and the `.jks` file before `bundleRelease`, and delete them afterwards. No
-  Android release pipeline exists in this repository yet.
-- Each app (customer/partner/delivery) should have its own key/alias.
+**Privacy manifest:** the app targets' own code (`AppDelegate`/`SceneDelegate`) uses no
+required-reason APIs. Capacitor and Sentry ship their own `PrivacyInfo.xcprivacy`, so no app-level
+manifest is required. The App Store privacy "nutrition label" is filled in App Store Connect (§21).
 
 ---
 
-## 18. Android Troubleshooting
+## 20. CI/CD
 
-| Problem                                                                       | Fix                                                                                                                                                                                                    |
-| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `adb devices` shows **unauthorized**                                          | Unlock the phone and accept the USB-debugging prompt. If no prompt appears: Developer options → **Revoke USB debugging authorizations**, then `adb kill-server && adb start-server` and reconnect.     |
-| **Device not detected**                                                       | Use a data-capable cable, set USB mode to File transfer, check USB debugging is on, and try `adb kill-server && adb start-server`.                                                                     |
-| **SDK location not found** / `ANDROID_HOME not set`                           | Install SDK Platform 36 (§14) and set `ANDROID_HOME`. Android Studio can also write `android/local.properties` (`sdk.dir=…`), which is gitignored.                                                     |
-| **JDK mismatch** (`Unsupported class file major version`, "requires Java 21") | Set Gradle JDK to 21 (§14 step 2). From the terminal, `JAVA_HOME` must point to JDK 21.                                                                                                                |
-| **Gradle sync/build failure after pulling**                                   | Run `pnpm install --frozen-lockfile` and `pnpm mobile:sync:<app>` first: `capacitor.settings.gradle` points at plugin folders inside `node_modules/.pnpm`. Then File → Sync Project with Gradle Files. |
-| **Capacitor sync problems**                                                   | Always use `pnpm mobile:sync:<app>`, never `npx cap sync` from the repository root. Check `apps/<app>/capacitor.config.ts` exists and the build succeeded.                                             |
-| **Plugin incompatibility / version mismatch warnings**                        | `@capacitor/core`, `cli`, `android` and `ios` must share one version (8.5.2). Plugins must be on major 8. Check with `pnpm list @capacitor/core @capacitor/android`.                                   |
-| **Stale build artifacts**                                                     | `cd apps/<app>/android && ./gradlew clean`, or in Android Studio: Build → Clean Project. Then re-sync.                                                                                                 |
-| `google-services.json not found … Push Notifications won't work` (Gradle log) | Expected for restaurant/delivery today (§21). Push needs that app's Firebase config file.                                                                                                              |
+`.github/workflows/ci.yml` (push to `main` and PRs; pnpm 11.5.3, Node 24, `pnpm install --frozen-lockfile`):
 
----
+| Job                                                    | What it does                                                                                                                                  |
+| ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lint` / `test`                                        | `nx affected` lint / test                                                                                                                     |
+| `build` (matrix: 4 apps)                               | `scripts/verify-production-env.mjs <app>` then `nx build <app> --configuration=production`                                                    |
+| **`android`** (matrix: customer, restaurant, delivery) | `nx run <app>:cap-sync --configuration=mobile`, then `./gradlew assembleDebug` on JDK 21 (temurin). Catches native/plugin/Gradle regressions. |
 
-## 19. Production Release Prerequisites
+**Not in CI, deliberately:**
 
-Status key: ✅ present in the repo · ⚠️ present but needs action · ❌ not configured yet.
+- iOS builds: they need macOS runners and Apple signing.
+- Store release pipelines: there's no signing material yet, and no repository pattern for one.
 
-### iOS (App Store / TestFlight)
+When a release pipeline is added, it needs these GitHub **secrets**, scoped to a protected
+environment:
 
-| Prerequisite                                                                                                                             | Status                                                                                          |
-| ---------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Apple Developer Program **organization** membership                                                                                      | ❌ Not configured in the repo. A Personal Team cannot release.                                  |
-| App IDs `com.patheyaexpress.customer` / `.partner` / `.delivery` registered under the org team                                           | ❌                                                                                              |
-| App Store Connect app records                                                                                                            | ❌                                                                                              |
-| Apple Distribution certificate + App Store provisioning (automatic signing is fine)                                                      | ❌                                                                                              |
-| `exportOptions.plist` with the org Team ID (from `.example`, gitignored)                                                                 | ⚠️ Template only                                                                                |
-| **Push Notifications** capability (`aps-environment` entitlement) + APNs key uploaded to the push provider                               | ❌ No entitlements file exists; the capability must be added in Xcode under a paid team.        |
-| UIScene lifecycle                                                                                                                        | ✅ Customer · ❌ Restaurant, Delivery                                                           |
-| Version: `MARKETING_VERSION`/`CURRENT_PROJECT_VERSION` in `project.pbxproj`, kept in sync with `releaseVersion` in the environment files | ⚠️ All `1.0` / `1`; bump per release                                                            |
-| App icons and launch images                                                                                                              | ⚠️ Capacitor placeholders ([`CAPACITOR.md` §10](./CAPACITOR.md#10-remaining-risks--follow-ups)) |
-| Privacy usage strings (location, camera, photo library — Customer)                                                                       | ✅ in `Info.plist`                                                                              |
-| App Privacy details and privacy policy URL in App Store Connect                                                                          | ❌ Outside the repo                                                                             |
-| Production web bundle: `pnpm exec nx run <app>:cap-sync --configuration=production`, then Product → Archive                              | ✅ Workflow exists                                                                              |
+| Platform | Secret                                                                                            | Use                                                                                                     |
+| -------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Android  | `PATHEYA_ANDROID_KEYSTORE_BASE64` (one per app)                                                   | Decode to a temp file; set `PATHEYA_ANDROID_KEYSTORE_FILE` to that path                                 |
+| Android  | `PATHEYA_ANDROID_KEYSTORE_PASSWORD`, `PATHEYA_ANDROID_KEY_ALIAS`, `PATHEYA_ANDROID_KEY_PASSWORD`  | Read directly by `release-signing.gradle`                                                               |
+| Android  | `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`                                                                | Upload AABs to Play (internal track first)                                                              |
+| iOS      | `APPLE_TEAM_ID`                                                                                   | `DEVELOPMENT_TEAM` for archive/export (never committed)                                                 |
+| iOS      | `APP_STORE_CONNECT_API_KEY_ID`, `APP_STORE_CONNECT_API_ISSUER_ID`, `APP_STORE_CONNECT_API_KEY_P8` | `xcodebuild -allowProvisioningUpdates -authenticationKey…` for automatic signing, and TestFlight upload |
 
-### Android (Google Play)
+Sequence:
 
-| Prerequisite                                                                                                 | Status                                     |
-| ------------------------------------------------------------------------------------------------------------ | ------------------------------------------ |
-| Google Play Console developer account + app entries                                                          | ❌ Not configured in the repo              |
-| Application IDs (`com.patheyaexpress.customer` / `.partner` / `.delivery`)                                   | ✅ `android/app/build.gradle`              |
-| Release keystore + `keystore.properties` per app                                                             | ⚠️ Template only (§17)                     |
-| **Play App Signing** enrolled (upload key = your keystore)                                                   | ❌ Done in Play Console                    |
-| `versionCode`/`versionName` bumped per release (`android/app/build.gradle`)                                  | ⚠️ `1` / `1.0`                             |
-| Firebase `google-services.json` for push (FCM)                                                               | ⚠️ Customer only · ❌ Restaurant, Delivery |
-| Release build (`./gradlew bundleRelease`) after `pnpm exec nx run <app>:cap-sync --configuration=production` | ⚠️ Not yet run (§21)                       |
-| App icons and splash                                                                                         | ⚠️ Placeholders                            |
-| Data safety form, content rating, privacy policy                                                             | ❌ Outside the repo                        |
-
-### Both — production configuration (`environment.prod.ts`)
-
-| Item                                                                    | Status                                                                                                                                          |
-| ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `apiBaseUrl`/`socketUrl`/`mediaBaseUrl` point at the production backend | ⚠️ Today they are the same origin as QA/mobile (`patheya-express-api-gateway-sg.onrender.com`). Confirm this is the intended production origin. |
-| `razorpayKeyId`                                                         | ⚠️ **Customer uses a test key (`rzp_test_…`)**. Replace with the live key ID before launch; the live key secret goes on the backend.            |
-| `maps.googleMapsApiKey`                                                 | ⚠️ Empty in the mobile/qa/staging/production configs; set a restricted key if map features are required.                                        |
-| `sentryDsn`                                                             | ⚠️ Empty in every environment, so crash reporting is off. Set per-app DSNs.                                                                     |
-| Never ship with `CAP_SERVER_URL` set                                    | Check before every release sync                                                                                                                 |
+1. `pnpm verify:mobile-release`
+2. `nx run <app>:cap-sync --configuration=production`
+3. Android `bundleRelease` / iOS `xcodebuild archive` + `-exportArchive` (`exportOptions.plist`)
+4. Upload
 
 ---
 
-## 20. Pre-Launch Checklist
+## 21. TestFlight & App Store Release
 
-**Environment**
+**Repository side (IMPLEMENTED):** bundle IDs; UIScene; push entitlement on Release; usage strings
+(§14); `exportOptions.plist.example`; production configuration gate; versioning; deployment target
+iOS 15.
 
-- [ ] Node 24, pnpm 11.5.3 (`node -v`, `pnpm -v`)
-- [ ] `pnpm run doctor` is clean (ignore the CocoaPods line, §21)
+**External (BLOCKED until the accounts exist), per app:**
 
-**Dependencies**
+1. Join the Apple Developer Program (organization).
+2. Register App IDs `com.patheyaexpress.customer`, `.partner` and `.delivery`, with the **Push
+   Notifications** capability.
+3. Create an APNs auth key (`.p8`) for the backend (§17).
+4. Create App Store Connect app records.
+5. Set the organization team in Xcode, locally for archiving or via CI's `APPLE_TEAM_ID`.
+6. Run `pnpm verify:mobile-release` and fix everything it reports.
+7. Run `pnpm exec nx run <app>:cap-sync --configuration=production`.
+8. Bump `CURRENT_PROJECT_VERSION`, and `MARKETING_VERSION` plus `releaseVersion` for user-visible
+   releases.
+9. Xcode: select **Any iOS Device** → **Product → Archive** → **Distribute App → App Store
+   Connect**. Test in TestFlight on physical devices.
+10. In App Store Connect: privacy nutrition labels (location, photos/camera uploads, contact and
+    account data, purchases, crash data via Sentry), privacy policy URL, screenshots, review notes
+    (test accounts for partner and delivery logins).
 
-- [ ] `pnpm install --frozen-lockfile` succeeds without lockfile changes
-- [ ] `@capacitor/core|cli|ios|android` all 8.5.2; plugins on major 8
-- [ ] `@sentry/capacitor` 4.4.0 and `sentry-cocoa` 9.28.0 in every `Package.resolved`
+---
 
-**Build**
+## 22. Google Play Release
 
-- [ ] `pnpm mobile:build` succeeds
-- [ ] `pnpm exec nx run <app>:cap-sync --configuration=production` for release builds
-- [ ] No unexpected diffs in `Package.swift`, `capacitor.settings.gradle`, `Package.resolved`
+**Repository side (IMPLEMENTED):**
 
-**Configuration**
+- application IDs;
+- target SDK 36;
+- R8 release builds;
+- mandatory release signing (§13);
+- minimal permissions (§14);
+- AAB output (`bundleRelease`).
 
-- [ ] `environment.prod.ts` API/socket/media origins are production
-- [ ] `CAP_SERVER_URL` not set
-- [ ] `releaseVersion` matches native versions
+**Separate Play Console apps:** yes. Customer, Restaurant (Partner) and Delivery are three distinct
+packages and need three Play Console entries, each with its own listing, Data safety form and
+content rating.
 
-**Signing**
+**External (BLOCKED until the account exists), per app:**
 
-- [ ] iOS: organization team, distribution signing, `exportOptions.plist` (not committed)
-- [ ] Android: release keystore in the secret manager, `keystore.properties` present only locally/in CI
+1. Create the Google Play Console developer account and the app entries.
+2. Create the upload keystore (§13) and enroll in **Play App Signing**.
+3. Firebase: add `google-services.json` for Restaurant and Delivery (§17).
+4. Run `pnpm verify:mobile-release` and then the production sync.
+5. Bump `versionCode` (and `versionName` + `releaseVersion` for user-visible releases).
+6. Run `./gradlew bundleRelease` with release credentials and upload to **Internal testing**. Then
+   Closed testing, then Production.
+7. **Data safety:** approximate and precise location (Customer: app functionality; Delivery: live
+   tracking shared with customers while delivering), photos/camera uploads, personal info and
+   account data, purchase history (Customer), crash logs (Sentry), push device tokens. Data is
+   encrypted in transit (HTTPS).
+8. Upload the store listing assets: final icon (§19), feature graphic and screenshots.
+
+---
+
+## 23. Troubleshooting
+
+### iOS
+
+| Problem                                                                                                     | Fix                                                                                                                                          |
+| ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| "Signing … requires a development team"                                                                     | Signing & Capabilities → select a Team (§8).                                                                                                 |
+| "Personal development teams … do not support the Push Notifications capability" on **Archive/Release**      | Expected: Release requires the paid organization team (§9). Use Debug (⌘R) for device development.                                           |
+| "Failed to register bundle identifier" / "No profiles for com.patheyaexpress.…"                             | The ID belongs to another team, or a free team hit its limits. Join the owning team; don't change the ID.                                    |
+| "Untrusted Developer"                                                                                       | Settings → General → VPN & Device Management → Trust.                                                                                        |
+| "Developer Mode disabled" / device unavailable                                                              | §8 step 8.                                                                                                                                   |
+| "Unable to launch … because the device was not, or could not be, unlocked"                                  | Unlock the iPhone and keep it unlocked while launching.                                                                                      |
+| iPhone not listed                                                                                           | Unlock, reconnect, accept Trust, check Window → Devices and Simulators, `xcrun devicectl list devices`.                                      |
+| "UIScene life cycle is required for apps built with this SDK"                                               | The app is missing the §10 files; restore them from Git.                                                                                     |
+| Swift packages fail to resolve                                                                              | `pnpm install --frozen-lockfile && pnpm mobile:sync:<app>`, then File → Packages → Resolve Package Versions.                                 |
+| "…xcframework.zip already exists in file system" / missing `Sentry.xcframework` / "No such module 'Sentry'" | Stale artifacts after a version change: File → Packages → **Reset Package Caches**, then ⇧⌘K.                                                |
+| Persistent odd build errors (DerivedData corruption)                                                        | Quit Xcode, delete this project's `App-…` folder under the DerivedData path from Xcode → Settings → Locations, reopen. Troubleshooting only. |
+| `Cannot find 'PrivateSentrySDKOnly' in scope`                                                               | `sentry-cocoa` resolved to 9.29+. Check `pnpm list @sentry/capacitor` shows 4.4.0, then resolve again (§11).                                 |
+| `pod: command not found`                                                                                    | CocoaPods isn't used. Pull the latest launcher; nothing in the repo calls `pod`.                                                             |
+| `xcodebuild` requires Xcode but the active developer directory is Command Line Tools                        | §3.                                                                                                                                          |
+| Disk full during builds                                                                                     | Each DerivedData folder is around 4 GB with all Swift package artifacts; delete old ones.                                                    |
+
+### Android
+
+| Problem                                                          | Fix                                                                                                                                             |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Release signing is not configured for …`                        | Expected without credentials: provide `keystore.properties` or the `PATHEYA_ANDROID_*` variables (§13), or use `assembleDebug`.                 |
+| `adb devices` → `unauthorized`                                   | Accept the prompt on the phone. Otherwise: Developer options → Revoke USB debugging authorizations; `adb kill-server && adb start-server`.      |
+| Device not detected                                              | Use a data cable and File-transfer mode, check USB debugging, restart adb.                                                                      |
+| "SDK location not found"                                         | Install Platform 36 and set `ANDROID_HOME` (or Android Studio writes the gitignored `local.properties`).                                        |
+| JDK mismatch / "Unsupported class file major version"            | Set Gradle JDK and `JAVA_HOME` to 21.                                                                                                           |
+| Gradle failure after pulling                                     | `pnpm install --frozen-lockfile && pnpm mobile:sync:<app>` (plugin paths point into `node_modules/.pnpm`), then Sync Project with Gradle Files. |
+| Capacitor version mismatch warnings                              | core/cli/android/ios must all be 8.5.2; plugins on major 8.                                                                                     |
+| Stale artifacts                                                  | `./gradlew clean` (or Build → Clean Project), then re-sync.                                                                                     |
+| "google-services.json not found … Push Notifications won't work" | Restaurant/Delivery today: §17.                                                                                                                 |
+| Location never prompts (Customer)                                | Requires a build that includes the location permissions (§14). Re-sync and reinstall.                                                           |
+
+---
+
+## 24. Production Checklist
+
+**Environment & dependencies**
+
+- [ ] Node 24, pnpm 11.5.3; `pnpm run doctor` clean
+- [ ] `pnpm install --frozen-lockfile` with no lockfile changes; Capacitor core 8.5.2 ×4; `@sentry/capacitor` 4.4.0 / `sentry-cocoa` 9.28.0
+
+**Configuration (all enforced by `pnpm verify:mobile-release`)**
+
+- [ ] Production API deployed at `https://api.patheyaexpress.com` and reachable (HTTPS, WebSocket)
+- [ ] Live Razorpay key ID (Customer); key secret on the backend only
+- [ ] Sentry DSN per app · restricted Google Maps key
+- [ ] `releaseVersion` = `versionName` = `MARKETING_VERSION`; build numbers bumped
+- [ ] `CAP_SERVER_URL` not set; production sync used
 
 **iOS**
 
-- [ ] Every shipped app has the UIScene migration (§11)
-- [ ] Push Notifications capability added
-- [ ] Version/build numbers bumped
-- [ ] Archive and TestFlight install on a physical device
+- [ ] Organization team; App IDs with Push; App Store Connect records
+- [ ] Archive (Release) signs with distribution + `aps-environment`
+- [ ] TestFlight install and smoke test on physical devices (all three apps)
 
 **Android**
 
-- [ ] `bundleRelease` signed with the release key (not the debug fallback)
-- [ ] Installed and tested on a physical device (§16)
-- [ ] `versionCode` bumped
+- [ ] Release keystores in the secret manager; Play App Signing enrolled
+- [ ] `google-services.json` for all three apps
+- [ ] `bundleRelease` signed with the release key; internal-track install and smoke test on physical devices
 
-**API/backend**
+**Features on device**
 
-- [ ] Production backend healthy and reachable from mobile networks (HTTPS)
-- [ ] CORS/WebSocket origins allow the Capacitor origins (`capacitor://localhost` on iOS, `https://localhost` on Android)
+- [ ] Payments: live end-to-end payment (Customer)
+- [ ] Push: backend sender implemented; notification received on iOS and Android
+- [ ] Deep links: `patheyaexpress://restaurants/<id>` opens and routes (Customer)
+- [ ] Location: Customer "nearby"; Delivery live tracking; permission texts correct
+- [ ] Camera: Delivery pickup photo and selfie; Restaurant uploads
+- [ ] Sentry: a test event arrives from each app and platform
 
-**Payments**
+**Security & store**
 
-- [ ] Live Razorpay key ID in `environment.prod.ts` (Customer); live key secret configured only on the backend
-- [ ] End-to-end live payment tested
-
-**Push notifications**
-
-- [ ] iOS: APNs key and `aps-environment` entitlement · Android: `google-services.json` per app
-- [ ] Notification received on physical iOS and Android devices
-
-**Deep links**
-
-- [ ] `patheyaexpress://` opens the Customer app and routes correctly on iOS (through `SceneDelegate`) and Android
-
-**Location**
-
-- [ ] Permission prompt text is correct, and nearby restaurants load on device
-
-**Sentry**
-
-- [ ] Production DSN set per app; a test event arrives in Sentry from each platform
-
-**Production security**
-
-- [ ] No secrets in environment files or the repo; Maps key restricted; `allowMixedContent` stays `false`
-
-**Store release**
-
-- [ ] Icons/splash replaced, store listings, privacy declarations, screenshots
+- [ ] No secrets committed (`.gitignore` covers signing material); keys restricted
+- [ ] Final icons and splash (§19); listings; privacy declarations (§21, §22)
 
 ---
 
-## 21. Known Current Limitations
+## 25. External Actions Register
 
-Verified facts as of this document:
+Everything below needs an account, credential or deployment outside this repository. Each entry has a
+defined place in the repository, so none of it needs code changes.
 
-- **Customer iOS is validated on a physical iPhone.** A signed debug build was installed and launched
-  on an iPhone 16 Pro Max (Xcode 27.0, iOS SDK 27.0, development-signed with a Personal Team) and
-  kept running. It also built for the generic iOS device and the iOS Simulator, with
-  `capacitor-swift-pm` 8.5.2 and `sentry-cocoa` 9.28.0.
-- **Restaurant and Delivery iOS** compile (generic iOS device build) but **have not been migrated to
-  UIScene**, so they will fail to launch on a physical device with "UIScene life cycle is required"
-  until §11's migration is applied to them.
-- **Android has not been built or run** in this repository on a real toolchain: no `gradlew` build,
-  emulator or physical-device launch has been verified yet. Treat §14–§18 as the configured path,
-  not a proven one.
-- **`pnpm <app>:ios` (launcher) requires CocoaPods.** The launcher's environment validation has a
-  blocking "CocoaPods" check, so `pnpm customer:ios`, `pnpm partner:ios` and `pnpm delivery:ios`
-  stop at validation on a Mac without `pod`, even though the projects use SPM. Use
-  `pnpm mobile:sync:<app>` + `pnpm mobile:ios:<app>` until the launcher check is updated. Do not
-  install CocoaPods to get past it.
-- **No Development Team is committed** to the iOS projects. Each developer selects their own (§10).
-- **Production distribution is not configured:** no Apple Developer Program team, App Store Connect
-  records, Play Console, release keystores or push credentials are set up (§19).
-- **Push notifications:** iOS has no Push capability/entitlement in any app; Android has
-  `google-services.json` for Customer only.
-- **Sentry is off** in every environment (empty `sentryDsn`).
-- **Customer payments use a Razorpay test key** in every environment, including production.
-- **Native versions are all `1.0` (build `1`)** and must be bumped manually in both native projects
-  and `releaseVersion`.
+| #   | Action                                                                                                          | Owner                                | Repository slot                                                          | Blocks                                                    |
+| --- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------ | --------------------------------------------------------- |
+| 1   | Deploy the production backend + DNS for `api.patheyaexpress.com` (and staging `api.staging.patheyaexpress.com`) | Backend/infra                        | `environment.prod.ts` / `.staging.ts` (already set)                      | All production/staging builds                             |
+| 2   | Razorpay live account → live key ID                                                                             | Business/payments                    | `apps/customer-app/src/environments/environment.prod.ts` `razorpayKeyId` | Customer production build (CI `build` job red until done) |
+| 3   | Sentry projects (one per app) → DSNs                                                                            | Engineering                          | `sentryDsn` in each `environment.prod.ts`                                | `verify:mobile-release`                                   |
+| 4   | Google Cloud production Maps key (restricted, §16)                                                              | Engineering                          | `maps.googleMapsApiKey` in each `environment.prod.ts`                    | `verify:mobile-release`                                   |
+| 5   | Firebase Android apps for `com.patheyaexpress.partner` and `.delivery`                                          | Engineering                          | `apps/<app>/android/app/google-services.json`                            | Android push; `verify:mobile-release`                     |
+| 6   | Backend push sender (APNs and/or FCM) + decision on iOS token type                                              | Backend                              | —                                                                        | Push delivery (all apps)                                  |
+| 7   | Apple Developer Program organization team, App IDs with Push, APNs key, App Store Connect records               | Business/engineering                 | Team in Xcode / `APPLE_TEAM_ID`; `exportOptions.plist` (gitignored)      | TestFlight, App Store, iOS push                           |
+| 8   | Android upload keystores (×3) + Play Console apps + Play App Signing                                            | Business/engineering                 | `keystore.properties` or `PATHEYA_ANDROID_*` secrets                     | Google Play                                               |
+| 9   | Final brand icons and splash artwork (×3 apps)                                                                  | Design                               | `apps/<app>/assets/` → `@capacitor/assets`                               | Store submission                                          |
+| 10  | QA/demo web deployments (e.g. Vercel) build with `--configuration=qa`, not the default `production`             | Whoever owns the deployment settings | Hosting settings                                                         | Web demo against QA backend                               |
+| 11  | Restrict the committed development Google Maps key (all four apps' `environment.ts`)                            | Engineering                          | Google Cloud console                                                     | Key misuse risk                                           |

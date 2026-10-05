@@ -34,7 +34,7 @@ Examples:
   node tools/launcher/cli.mjs customer android --profile=pixel
   node tools/launcher/cli.mjs partner ios --device=00008030-000C1D2E3F4G5H6I
 
-Also see: pnpm doctor — full diagnostic report across all tooling, apps, and environments.
+Also see: pnpm run doctor — full diagnostic report across all tooling, apps, and environments.
 `);
 }
 

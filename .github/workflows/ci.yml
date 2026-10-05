@@ -77,3 +77,33 @@ jobs:
         run: node scripts/verify-production-env.mjs ${{ matrix.app }}
       - name: Build ${{ matrix.app }} (production configuration)
         run: pnpm exec nx build ${{ matrix.app }} --configuration=production
+
+  # Compiles each Capacitor Android shell exactly as a developer would (mobile build + cap sync +
+  # Gradle debug build) so native/plugin/Gradle regressions surface in CI. Debug only: release
+  # builds require signing secrets and refuse to fall back to the debug key — see
+  # docs/mobile/README.md. iOS needs a macOS runner and Apple signing, so it is not built here.
+  android:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [customer-app, restaurant-app, delivery-app]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - run: pnpm install --frozen-lockfile
+      - name: Build + Capacitor sync ${{ matrix.app }} (mobile configuration)
+        run: pnpm exec nx run ${{ matrix.app }}:cap-sync --configuration=mobile
+      - name: Gradle assembleDebug (${{ matrix.app }})
+        working-directory: apps/${{ matrix.app }}/android
+        run: ./gradlew assembleDebug --no-daemon

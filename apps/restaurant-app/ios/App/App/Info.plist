@@ -24,10 +24,35 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- lib-file-upload (logo/banner, menu item photos, gallery, onboarding certificates) uses a plain
+	     &lt;input type="file"&gt;; iOS's picker offers "Take Photo", which terminates the app without
+	     NSCameraUsageDescription. -->
+	<key>NSCameraUsageDescription</key>
+	<string>Patheya Express Partner uses your camera to let you take photos of your restaurant, menu items and business documents for upload.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Patheya Express Partner uses your photo library to let you choose photos of your restaurant, menu items and business documents for upload.</string>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>Default Configuration</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
 	<!-- Required for @capacitor/push-notifications to deliver silent/background pushes. The
-	     "Push Notifications" capability itself (which generates the aps-environment entitlement)
-	     still has to be added in Xcode — see docs/mobile/CAPACITOR.md for that manual step, since
-	     it can't be done from this Windows checkout. -->
+	     aps-environment entitlement lives in App/App.entitlements (Release configuration only, so
+	     free Personal Team debug builds still sign) — see docs/mobile/README.md "Push Notifications". -->
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

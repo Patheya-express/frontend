@@ -197,15 +197,14 @@ http://localhost:3000/api/v1
 
 Production API
 
-The current production API domain is:
+The production API origin (apiBaseUrl/socketUrl/mediaBaseUrl in environment.prod.ts) is the
+backend's production ingress host (patheya-express-platform k8s/overlays/production):
 
-https://api.patheyaexpress.in/api
+https://api.patheyaexpress.com
 
-Production Realtime
-
-The current production realtime domain is:
-
-https://api.patheyaexpress.in
+Staging uses https://api.staging.patheyaexpress.com; QA and native `mobile` builds use the deployed
+QA backend. Full environment matrix and the store-release configuration gate
+(pnpm verify:mobile-release): docs/mobile/README.md §5.
 
 Do not hardcode these values inside components or services.
 
@@ -510,7 +509,7 @@ pnpm install --frozen-lockfile
 pnpm mobile:sync:customer
 pnpm mobile:ios:customer
 
-Then select your Development Team and device and build/run through Xcode. Signing, Developer Mode,
+(or `pnpm customer:ios` via the launcher). Then select your Development Team and device and build/run through Xcode. Signing, Developer Mode,
 the UIScene requirement and troubleshooting: docs/mobile/README.md.
 
 Windows developers cannot perform the final native iOS build locally.

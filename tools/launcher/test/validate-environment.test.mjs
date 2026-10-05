@@ -1,6 +1,6 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { runChecks, buildToolChecks, buildAppChecks } from '../lib/validate-environment.mjs';
+import { runChecks, buildToolChecks, buildAppChecks, anyIosProjectUsesCocoaPods } from '../lib/validate-environment.mjs';
 
 async function silently(fn) {
   const originalLog = console.log;
@@ -117,6 +117,14 @@ describe('buildToolChecks / buildAppChecks: shape smoke tests', () => {
     const descriptors = buildToolChecks({ platform: 'all' });
     assert.equal(descriptors.find((d) => d.label.startsWith('Java')).shouldRun, true);
     assert.equal(descriptors.find((d) => d.label === 'Xcode').shouldRun, true);
+  });
+
+  test('CocoaPods is only checked when an iOS project actually uses it (SPM projects never need pod)', () => {
+    assert.equal(anyIosProjectUsesCocoaPods(), false, 'no app in this workspace has an ios/App/Podfile');
+    const spm = buildToolChecks({ platform: 'ios', usesCocoaPods: false });
+    assert.equal(spm.find((d) => d.label === 'CocoaPods').shouldRun, false);
+    const pods = buildToolChecks({ platform: 'ios', usesCocoaPods: true });
+    assert.equal(pods.find((d) => d.label === 'CocoaPods').shouldRun, process.platform === 'darwin');
   });
 
   test('buildAppChecks scopes native-project checks to platforms the app actually supports', () => {

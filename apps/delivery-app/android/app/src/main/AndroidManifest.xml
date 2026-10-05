@@ -44,6 +44,11 @@
          @capacitor/geolocation when a delivery partner has an active out-for-delivery order. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- Mandatory pickup-parcel photo and onboarding selfie use <input capture>; Capacitor's
+         BridgeWebChromeClient only opens the camera directly (instead of a file picker) when CAMERA is
+         declared, and requests it at runtime. The camera is not required to install the app. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
     <!-- Required on Android 13+ (API 33) to show push notifications at all — the OS treats this as
          a runtime-requestable permission; @capacitor/push-notifications requests it via
          PushNotifications.requestPermissions(), which no-ops without this declaration. -->

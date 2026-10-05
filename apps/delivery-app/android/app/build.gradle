@@ -1,15 +1,5 @@
 apply plugin: 'com.android.application'
 
-// Release signing — real values live in `android/keystore.properties` (gitignored, per-machine/CI
-// secret manager only). See `keystore.properties.example` for the fields this file must define.
-// Builds without it fall back to the Android debug keystore, so `assembleRelease` still works
-// locally; it just won't produce a Play Store-uploadable, consistently-signed artifact.
-def keystorePropertiesFile = rootProject.file("keystore.properties")
-def keystoreProperties = new Properties()
-if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
-}
-
 android {
     namespace = "com.patheyaexpress.delivery"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -26,19 +16,8 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
-    signingConfigs {
-        release {
-            if (keystorePropertiesFile.exists()) {
-                storeFile file(keystoreProperties['storeFile'])
-                storePassword keystoreProperties['storePassword']
-                keyAlias keystoreProperties['keyAlias']
-                keyPassword keystoreProperties['keyPassword']
-            }
-        }
-    }
     buildTypes {
         release {
-            signingConfig keystorePropertiesFile.exists() ? signingConfigs.release : signingConfigs.debug
             // M1: R8 shrinking/obfuscation for release builds. Safe without hand-written keep
             // rules — see proguard-rules.pro for why (capacitor-android's own consumer ProGuard
             // rules already keep every Capacitor plugin class; the one non-@capacitor plugin in
@@ -49,6 +28,10 @@ android {
         }
     }
 }
+
+// Release signing (keystore.properties or PATHEYA_ANDROID_* env vars; no debug-key fallback) —
+// shared by all three shells, see tools/mobile/android/release-signing.gradle.
+apply from: "${rootDir}/../../../tools/mobile/android/release-signing.gradle"
 
 repositories {
     flatDir{

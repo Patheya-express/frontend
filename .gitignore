@@ -71,6 +71,18 @@ apps/*/android/keystore.properties
 apps/*/android/**/*.keystore
 apps/*/android/**/*.jks
 apps/*/ios/exportOptions.plist
+# Signing material anywhere in the repo (Android keystores, Apple certificates/keys/profiles) and
+# local env overrides — supplied via keystore.properties / CI secrets only, never committed.
+*.jks
+*.keystore
+*.p12
+*.p8
+*.cer
+*.mobileprovision
+*.provisionprofile
+.env
+.env.local
+.env.*.local
 apps/*/ios/App/Pods/
 apps/*/ios/App/build/
 apps/*/ios/App/DerivedData/

@@ -1,19 +1,18 @@
 import type { AppEnvironment } from '@patheya-express-frontend/core';
 
 /**
- * QA build (`nx build customer-app --configuration=qa`).
- * Replace these placeholder origins with the real QA deployment's values (Render backend URL) —
- * this file is deliberately not a secret and is safe to commit with the real QA origin.
+ * Staging build (`nx build customer-app --configuration=staging`). Origin is the backend's staging
+ * ingress host (patheya-express-platform k8s/overlays/staging) — never the QA or production origin.
  */
 
 export const environment: AppEnvironment = {
   production: true,
 
-  apiBaseUrl: 'https://patheya-express-api-gateway-qa.onrender.com',
+  apiBaseUrl: 'https://api.staging.patheyaexpress.com',
 
-  socketUrl: 'https://patheya-express-api-gateway-qa.onrender.com',
+  socketUrl: 'https://api.staging.patheyaexpress.com',
 
-  mediaBaseUrl: 'https://patheya-express-api-gateway-qa.onrender.com',
+  mediaBaseUrl: 'https://api.staging.patheyaexpress.com',
 
   razorpayKeyId: 'rzp_test_Sop8avBtckAdw2',
 

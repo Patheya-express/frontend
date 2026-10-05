@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import * as log from './log.mjs';
 import { commandExists, runCapture } from './exec.mjs';
-import { repoRoot, environmentFilePath, readEnvironmentFile } from './registry.mjs';
+import { APPS, repoRoot, environmentFilePath, readEnvironmentFile } from './registry.mjs';
 
 const MIN_NODE_MAJOR = 20;
 
@@ -18,7 +18,7 @@ export const DOCS = {
   gh: 'https://cli.github.com/',
   secrets: 'infrastructure/docs/secrets-guide.md',
   environment: 'infrastructure/docs/environment-guide.md',
-  mobile: 'docs/mobile/CAPACITOR.md',
+  mobile: 'docs/mobile/README.md',
   localDev: 'infrastructure/docs/local-development-guide.md',
 };
 
@@ -41,7 +41,19 @@ function check({ label, severity = 'error', shouldRun = true, run }) {
  * mappings anywhere") so both validateEnvironment (one app) and doctor (every app) can build their
  * check list from the same source instead of two copies drifting apart.
  */
-export function buildToolChecks({ platform }) {
+/**
+ * The iOS shells resolve their native dependencies with Swift Package Manager
+ * (`ios/App/CapApp-SPM`), not CocoaPods — see docs/mobile/README.md. CocoaPods is only a real
+ * prerequisite if an app's iOS project actually has a `Podfile`, so that's what gates the check
+ * (rather than demanding `pod` on every Mac and failing a correctly set-up SPM machine).
+ */
+export function anyIosProjectUsesCocoaPods() {
+  return Object.values(APPS).some(
+    (app) => app.platforms.ios && existsSync(join(repoRoot, 'apps', app.project, 'ios', 'App', 'Podfile')),
+  );
+}
+
+export function buildToolChecks({ platform, usesCocoaPods = anyIosProjectUsesCocoaPods() }) {
   // 'all' (used by doctor.mjs, which has no single target platform to check against) runs every
   // platform-specific check at once rather than none of them.
   const isAndroid = platform === 'android' || platform === 'all';
@@ -183,7 +195,7 @@ export function buildToolChecks({ platform }) {
 
     check({
       label: 'CocoaPods',
-      shouldRun: isIos && isMac,
+      shouldRun: isIos && isMac && usesCocoaPods,
       run: async () => {
         const available = await commandExists('pod');
         return { ok: available, detail: available ? null : 'pod not found. `sudo gem install cocoapods`.', docs: DOCS.cocoapods };

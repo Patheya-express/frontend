@@ -50,6 +50,12 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- "Nearby restaurants" / current-location label use the WebView's navigator.geolocation (no
+         native plugin). Capacitor's BridgeWebChromeClient only grants WebView geolocation when these
+         are declared, and accepts an approximate-only grant on Android 12+ — FINE is still required
+         for Android 7–11 (minSdk 24). Foreground only; requested at runtime on first use. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <!-- Required on Android 13+ (API 33) to show push notifications at all — the OS treats this as
          a runtime-requestable permission; @capacitor/push-notifications requests it via
          PushNotifications.requestPermissions(), which no-ops without this declaration. -->
