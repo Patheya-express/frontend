@@ -34,12 +34,12 @@ export class PresenceService extends BaseService {
   /**
    * Mark delivery partner online.
    *
-   * Marks the authenticated delivery partner as online and available for realtime presence tracking. Rejected until onboarding/verification is complete and the account is active (EDPH-1 online protection).
+   * Marks the authenticated delivery partner as online and available for realtime presence tracking. Rejected until onboarding/verification is complete and the account is active (EDPH-1 online protection). Also the always-on presence heartbeat: the client calls this every ~60s while online, and an optional location on each call keeps dispatch's radius filter fresh for the whole online session (see MarkOnlineDto).
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `presenceControllerMarkOnline()` instead.
    *
-   * This method doesn't expect any request body.
+   * This method sends `application/json` and handles request body of type `application/json`.
    */
   presenceControllerMarkOnline$Response(params?: PresenceControllerMarkOnline$Params, context?: HttpContext): Promise<StrictHttpResponse<void>> {
     const obs = presenceControllerMarkOnline(this.http, this.rootUrl, params, context);
@@ -49,12 +49,12 @@ export class PresenceService extends BaseService {
   /**
    * Mark delivery partner online.
    *
-   * Marks the authenticated delivery partner as online and available for realtime presence tracking. Rejected until onboarding/verification is complete and the account is active (EDPH-1 online protection).
+   * Marks the authenticated delivery partner as online and available for realtime presence tracking. Rejected until onboarding/verification is complete and the account is active (EDPH-1 online protection). Also the always-on presence heartbeat: the client calls this every ~60s while online, and an optional location on each call keeps dispatch's radius filter fresh for the whole online session (see MarkOnlineDto).
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `presenceControllerMarkOnline$Response()` instead.
    *
-   * This method doesn't expect any request body.
+   * This method sends `application/json` and handles request body of type `application/json`.
    */
   presenceControllerMarkOnline(params?: PresenceControllerMarkOnline$Params, context?: HttpContext): Promise<void> {
     const resp = this.presenceControllerMarkOnline$Response(params, context);

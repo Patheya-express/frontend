@@ -19,9 +19,13 @@ export class MetricsService extends BaseService {
   }
 
   /** Path part for operation `metricsControllerGetMetrics()` */
-  static readonly MetricsControllerGetMetricsPath = '/metrics';
+  static readonly MetricsControllerGetMetricsPath = '/api/v1/metrics';
 
   /**
+   * Prometheus metrics exposition.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `metricsControllerGetMetrics()` instead.
    *
@@ -33,6 +37,10 @@ export class MetricsService extends BaseService {
   }
 
   /**
+   * Prometheus metrics exposition.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `metricsControllerGetMetrics$Response()` instead.
    *

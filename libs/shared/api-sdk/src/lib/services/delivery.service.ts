@@ -153,12 +153,12 @@ export class DeliveryService extends BaseService {
   /**
    * Set delivery partner available.
    *
-   *
+   * Optionally report the partner's current location alongside going available — dispatch's 5km radius filter can only offer this partner orders once a location is on file (see GoAvailableDto).
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `deliveryControllerGoAvailable()` instead.
    *
-   * This method doesn't expect any request body.
+   * This method sends `application/json` and handles request body of type `application/json`.
    */
   deliveryControllerGoAvailable$Response(params?: DeliveryControllerGoAvailable$Params, context?: HttpContext): Promise<StrictHttpResponse<DeliveryPartnerResponseDto>> {
     const obs = deliveryControllerGoAvailable(this.http, this.rootUrl, params, context);
@@ -168,12 +168,12 @@ export class DeliveryService extends BaseService {
   /**
    * Set delivery partner available.
    *
-   *
+   * Optionally report the partner's current location alongside going available — dispatch's 5km radius filter can only offer this partner orders once a location is on file (see GoAvailableDto).
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `deliveryControllerGoAvailable$Response()` instead.
    *
-   * This method doesn't expect any request body.
+   * This method sends `application/json` and handles request body of type `application/json`.
    */
   deliveryControllerGoAvailable(params?: DeliveryControllerGoAvailable$Params, context?: HttpContext): Promise<DeliveryPartnerResponseDto> {
     const resp = this.deliveryControllerGoAvailable$Response(params, context);
