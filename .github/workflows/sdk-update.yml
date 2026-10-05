@@ -46,11 +46,15 @@ jobs:
             --output libs/shared/api-sdk/openapi.json \
             --clobber
 
+      # Generate from the release document downloaded above, not ng-openapi-gen.json's
+      # local-development URL (the CLI --input overrides the config file's input).
       - name: Regenerate SDK
-        run: pnpm run generate:sdk
+        run: pnpm run generate:sdk --input openapi.json
 
       - uses: peter-evans/create-pull-request@v7
         with:
+          # Only the generated SDK — never the downloaded openapi.json input.
+          add-paths: libs/shared/api-sdk/src/lib
           branch: ci/sdk-update
           delete-branch: true
           commit-message: "chore(api-sdk): regenerate from updated backend OpenAPI document"
