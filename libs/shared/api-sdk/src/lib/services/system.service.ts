@@ -28,6 +28,10 @@ export class SystemService extends BaseService {
   static readonly SystemControllerTestRedisPath = '/api/v1/system/redis-test';
 
   /**
+   * Redis connectivity smoke test.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `systemControllerTestRedis()` instead.
    *
@@ -39,6 +43,10 @@ export class SystemService extends BaseService {
   }
 
   /**
+   * Redis connectivity smoke test.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `systemControllerTestRedis$Response()` instead.
    *
@@ -53,6 +61,10 @@ export class SystemService extends BaseService {
   static readonly SystemControllerQueueTestPath = '/api/v1/system/queue-test';
 
   /**
+   * BullMQ queue connectivity smoke test.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `systemControllerQueueTest()` instead.
    *
@@ -64,6 +76,10 @@ export class SystemService extends BaseService {
   }
 
   /**
+   * BullMQ queue connectivity smoke test.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `systemControllerQueueTest$Response()` instead.
    *
@@ -78,6 +94,10 @@ export class SystemService extends BaseService {
   static readonly SystemControllerQueueHealthPath = '/api/v1/system/queue-health';
 
   /**
+   * Queue module load status.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `systemControllerQueueHealth()` instead.
    *
@@ -89,6 +109,10 @@ export class SystemService extends BaseService {
   }
 
   /**
+   * Queue module load status.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `systemControllerQueueHealth$Response()` instead.
    *
@@ -103,6 +127,10 @@ export class SystemService extends BaseService {
   static readonly SystemControllerPresenceTestPath = '/api/v1/system/presence-test/{partnerId}';
 
   /**
+   * Presence status smoke test for a delivery partner.
+   *
+   *
+   *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `systemControllerPresenceTest()` instead.
    *
@@ -114,6 +142,10 @@ export class SystemService extends BaseService {
   }
 
   /**
+   * Presence status smoke test for a delivery partner.
+   *
+   *
+   *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `systemControllerPresenceTest$Response()` instead.
    *

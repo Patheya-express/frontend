@@ -13,7 +13,10 @@ import { adminDispatchControllerAssignOrderToPartner } from '../fn/admin-dispatc
 import { AdminDispatchControllerAssignOrderToPartner$Params } from '../fn/admin-dispatch/admin-dispatch-controller-assign-order-to-partner';
 import { adminDispatchControllerGetAvailablePartners } from '../fn/admin-dispatch/admin-dispatch-controller-get-available-partners';
 import { AdminDispatchControllerGetAvailablePartners$Params } from '../fn/admin-dispatch/admin-dispatch-controller-get-available-partners';
+import { adminDispatchControllerGetDispatchDebugInfo } from '../fn/admin-dispatch/admin-dispatch-controller-get-dispatch-debug-info';
+import { AdminDispatchControllerGetDispatchDebugInfo$Params } from '../fn/admin-dispatch/admin-dispatch-controller-get-dispatch-debug-info';
 import { DeliveryAssignmentResponseDto } from '../models/delivery-assignment-response-dto';
+import { DispatchDebugInfoResponseDto } from '../models/dispatch-debug-info-response-dto';
 import { PaginatedAvailableDeliveryPartnersResponseDto } from '../models/paginated-available-delivery-partners-response-dto';
 
 @Injectable({ providedIn: 'root' })
@@ -86,6 +89,39 @@ export class AdminDispatchService extends BaseService {
   adminDispatchControllerAssignOrderToPartner(params: AdminDispatchControllerAssignOrderToPartner$Params, context?: HttpContext): Promise<DeliveryAssignmentResponseDto> {
     const resp = this.adminDispatchControllerAssignOrderToPartner$Response(params, context);
     return resp.then((r: StrictHttpResponse<DeliveryAssignmentResponseDto>): DeliveryAssignmentResponseDto => r.body);
+  }
+
+  /** Path part for operation `adminDispatchControllerGetDispatchDebugInfo()` */
+  static readonly AdminDispatchControllerGetDispatchDebugInfoPath = '/api/v1/admin/orders/{orderId}/dispatch-debug';
+
+  /**
+   * Debug an order's dispatch state (support/debugging only).
+   *
+   * Enterprise Dispatch Engine Enhancement — a read-only snapshot of an order's dispatch history: current cycle, total attempts, last attempt time, and partners who did not accept. Not consumed by any frontend; exists for support engineers.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `adminDispatchControllerGetDispatchDebugInfo()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  adminDispatchControllerGetDispatchDebugInfo$Response(params: AdminDispatchControllerGetDispatchDebugInfo$Params, context?: HttpContext): Promise<StrictHttpResponse<DispatchDebugInfoResponseDto>> {
+    const obs = adminDispatchControllerGetDispatchDebugInfo(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Debug an order's dispatch state (support/debugging only).
+   *
+   * Enterprise Dispatch Engine Enhancement — a read-only snapshot of an order's dispatch history: current cycle, total attempts, last attempt time, and partners who did not accept. Not consumed by any frontend; exists for support engineers.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `adminDispatchControllerGetDispatchDebugInfo$Response()` instead.
+   *
+   * This method doesn't expect any request body.
+   */
+  adminDispatchControllerGetDispatchDebugInfo(params: AdminDispatchControllerGetDispatchDebugInfo$Params, context?: HttpContext): Promise<DispatchDebugInfoResponseDto> {
+    const resp = this.adminDispatchControllerGetDispatchDebugInfo$Response(params, context);
+    return resp.then((r: StrictHttpResponse<DispatchDebugInfoResponseDto>): DispatchDebugInfoResponseDto => r.body);
   }
 
 }

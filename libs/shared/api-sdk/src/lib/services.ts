@@ -3,7 +3,6 @@
 
 export { HealthService } from './services/health.service';
 export { AuthService } from './services/auth.service';
-export { AuditService } from './services/audit.service';
 export { UsersService } from './services/users.service';
 export { RestaurantsService } from './services/restaurants.service';
 export { CuisinesService } from './services/cuisines.service';
@@ -18,8 +17,7 @@ export { RestaurantComplianceService } from './services/restaurant-compliance.se
 export { RestaurantSettingsService } from './services/restaurant-settings.service';
 export { BranchOperatingHoursService } from './services/branch-operating-hours.service';
 export { RestaurantHolidaysService } from './services/restaurant-holidays.service';
-export { OffersService } from './services/offers.service';
-export { NotificationsService } from './services/notifications.service';
+export { AuditService } from './services/audit.service';
 export { RestaurantOnboardingService } from './services/restaurant-onboarding.service';
 export { MenuService } from './services/menu.service';
 export { OrdersService } from './services/orders.service';
@@ -37,21 +35,23 @@ export { DeliveryComplianceService } from './services/delivery-compliance.servic
 export { DeliveryComplianceAdminService } from './services/delivery-compliance-admin.service';
 export { DeliveryProfileService } from './services/delivery-profile.service';
 export { DeliveryProofService } from './services/delivery-proof.service';
-export { PresenceService } from './services/presence.service';
-export { PaymentsService } from './services/payments.service';
-export { AddressesService } from './services/addresses.service';
-export { CouponsService } from './services/coupons.service';
+export { NotificationsService } from './services/notifications.service';
 export { MetricsService } from './services/metrics.service';
 export { SystemService } from './services/system.service';
+export { PresenceService } from './services/presence.service';
+export { PaymentsService } from './services/payments.service';
 export { DispatchService } from './services/dispatch.service';
 export { AdminService } from './services/admin.service';
 export { AdminDispatchService } from './services/admin-dispatch.service';
 export { CustomerService } from './services/customer.service';
+export { OffersService } from './services/offers.service';
 export { CartService } from './services/cart.service';
+export { AddressesService } from './services/addresses.service';
 export { TrackingService } from './services/tracking.service';
 export { FavoritesService } from './services/favorites.service';
 export { SearchService } from './services/search.service';
 export { WalletService } from './services/wallet.service';
 export { SupportTicketsService } from './services/support-tickets.service';
 export { HelpCenterFaQsService } from './services/help-center-fa-qs.service';
+export { CouponsService } from './services/coupons.service';
 export { RestaurantReportsService } from './services/restaurant-reports.service';

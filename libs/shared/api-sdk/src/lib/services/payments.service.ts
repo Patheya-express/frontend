@@ -103,7 +103,7 @@ export class PaymentsService extends BaseService {
   /**
    * Verify payment.
    *
-   * Verifies the Razorpay payment signature and marks the payment as successful.
+   * Verifies the Razorpay payment signature and marks the payment as successful. Requires the caller to be the customer who owns the order being paid for.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `paymentsControllerVerifyPayment()` instead.
@@ -118,7 +118,7 @@ export class PaymentsService extends BaseService {
   /**
    * Verify payment.
    *
-   * Verifies the Razorpay payment signature and marks the payment as successful.
+   * Verifies the Razorpay payment signature and marks the payment as successful. Requires the caller to be the customer who owns the order being paid for.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `paymentsControllerVerifyPayment$Response()` instead.

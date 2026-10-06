@@ -40,7 +40,7 @@ export interface OrderResponseDto {
   restaurantId: string;
 
   /**
-   * Only populated by endpoints that already join the restaurant (e.g. order history)
+   * Only populated by endpoints that already join the restaurant (e.g. order history, order placement)
    */
   restaurantName?: string;
   status: 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'READY_FOR_PICKUP' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'CANCELLED';

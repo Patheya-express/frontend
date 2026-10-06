@@ -26,4 +26,4 @@ export function metricsControllerGetMetrics(http: HttpClient, rootUrl: string, p
   );
 }
 
-metricsControllerGetMetrics.PATH = '/metrics';
+metricsControllerGetMetrics.PATH = '/api/v1/metrics';
