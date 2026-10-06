@@ -50,18 +50,6 @@ h1 {
   }
 }
 
-.order-list-clear-filters {
-  border: none;
-  background: none;
-  color: var(--color-primary);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-
-  &:hover {
-    text-decoration: underline;
-  }
-}
 
 .order-list-reorder-message {
   margin: 0 0 var(--space-4);

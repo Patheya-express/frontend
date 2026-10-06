@@ -95,7 +95,7 @@
           <dt>Created</dt>
           <dd>{{ formattedDate(selected.createdAt) }}</dd>
         </dl>
-        <button type="button" class="admin-users-details-close" (click)="closeDetails()">Close</button>
+        <lib-secondary-button size="sm" (buttonClick)="closeDetails()">Close</lib-secondary-button>
       </div>
     </div>
   }

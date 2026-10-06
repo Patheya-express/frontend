@@ -13,8 +13,6 @@ on:
     paths:
       - "apps/**"
       - "libs/**"
-      - "infrastructure/docker/**"
-      - "infrastructure/kubernetes/**"
       - "pnpm-lock.yaml"
 
 permissions:

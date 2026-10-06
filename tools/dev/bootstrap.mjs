@@ -39,7 +39,7 @@ import { join } from 'node:path';
 import { spawn as nodeSpawn } from 'node:child_process';
 import * as log from '../launcher/lib/log.mjs';
 import { repoRoot, resolveApp, resolveEnvironment, APPS } from '../launcher/lib/registry.mjs';
-import { parseDevArgs } from './lib/args.mjs';
+import { parseDevArgs, resolveDevApps, DEV_APP_NAMES } from './lib/args.mjs';
 import { ensureEnvFile, ensureLocalSecrets } from './lib/env-file.mjs';
 import { extractDatabaseUrl, parseDatabaseUrl, probeTcpPort, buildSchemaCheckCommand, isSchemaPresent } from './lib/db-verify.mjs';
 
@@ -79,9 +79,12 @@ function sleep(ms) {
 
 function printUsage() {
   console.log(`
-Usage: node tools/dev/bootstrap.mjs [app] [options]
+Usage: node tools/dev/bootstrap.mjs [apps] [options]
 
-  app   customer | partner | delivery | admin | none   (default: customer)
+  apps  ${DEV_APP_NAMES.join(' | ')}   (default: customer-app)
+        Several apps: comma-separated (customer-app,delivery-app) or space-separated.
+        The backend is prepared once; each selected app then starts on its own port.
+        Launcher aliases (${Object.keys(APPS).join(', ')}) are still accepted.
         "none" prepares the backend/dependencies only — no Angular app is started.
 
 Options:
@@ -99,7 +102,8 @@ Options:
 
 Canonical commands (see DEVELOPMENT.md):
   pnpm run setup          First-time full-stack setup (this script, --setup, customer)
-  pnpm run dev            Daily full-stack startup (this script, customer)
+  pnpm run dev            Daily full-stack startup (this script, customer-app)
+  pnpm run dev customer-app,delivery-app   Same, launching only the listed apps
   pnpm run dev:backend-only   Infrastructure + backend health only, no frontend app
 `);
 }
@@ -517,20 +521,19 @@ async function main() {
   console.log(`\nPatheya Express Developer Setup\n${'─'.repeat(50)}`);
   log.detail(`Workspace: ${join(repoRoot, '..')}`);
 
-  const wantsFrontend = !args.backendOnly && args.appAlias !== 'none';
-  let app = null;
-  if (wantsFrontend) {
-    try {
-      app = resolveApp(args.appAlias);
-    } catch {
-      log.failWithGuidance({
-        rootCause: `Unknown app "${args.appAlias}".`,
-        suggestedFix: `Use one of: ${Object.keys(APPS).join(', ')}, none.`,
-      });
-      process.exitCode = 1;
-      return;
-    }
+  // Every selection is validated before anything starts — `customer-app,foo` must never silently
+  // launch Customer and drop `foo`. Validated even under --backend-only so a typo never goes unseen.
+  const selection = resolveDevApps(args.appSelections);
+  if (selection.invalid.length > 0) {
+    log.failWithGuidance({
+      rootCause: `Unknown app${selection.invalid.length === 1 ? '' : 's'} ${selection.invalid.map((name) => `"${name}"`).join(', ')}.`,
+      suggestedFix: `Use one or more of: ${DEV_APP_NAMES.join(', ')} (comma-separated, e.g. pnpm run dev customer-app,delivery-app).`,
+    });
+    process.exitCode = 1;
+    return;
   }
+  const wantsFrontend = !args.backendOnly && selection.aliases.length > 0;
+  const apps = wantsFrontend ? selection.aliases.map((alias) => resolveApp(alias)) : [];
 
   const backendPresent = existsSync(BACKEND_REPO);
   if (!args.skipInfrastructure && !backendPresent) {
@@ -617,7 +620,7 @@ async function main() {
     // detectBackend() already contains every rule this task requires: it runs `docker compose up
     // -d` (which starts api-gateway itself — see docker-compose.yml) and NEVER also spawns a host
     // `pnpm --filter api-gateway start:dev`, so there is exactly one process on :3000 either way.
-    const probeApp = app ?? resolveApp('customer');
+    const probeApp = apps[0] ?? resolveApp('customer');
     const environment = resolveEnvironment('local');
     const backendResult = await detectBackend({
       app: probeApp,
@@ -671,10 +674,23 @@ async function main() {
     return;
   }
 
+  // One unchanged launcher invocation per selected app, all started together (each app has its own
+  // registry defaultPort, so they never contend for one). Every child inherits this terminal's
+  // stdio and process group exactly like the single-app case always has, so Ctrl+C reaches every
+  // launcher and its `nx serve` directly — no separate process manager or signal relay needed.
   log.section('Step 4 — Frontend');
-  log.ok(`Starting ${app.displayName}…`);
-  const launch = await runInherit('node', ['tools/launcher/cli.mjs', app.alias, 'web'], { cwd: repoRoot });
-  process.exitCode = launch.code === 0 || launch.code === null ? 0 : 1;
+  const launches = apps.map((app) => {
+    log.ok(`Starting ${app.displayName}…`);
+    return runInherit('node', ['tools/launcher/cli.mjs', app.alias, 'web'], { cwd: repoRoot }).then((launch) => {
+      const ok = launch.code === 0 || launch.code === null;
+      if (!ok && apps.length > 1) {
+        log.fail(`${app.displayName} exited with code ${launch.code}.`);
+      }
+      return ok;
+    });
+  });
+  const results = await Promise.all(launches);
+  process.exitCode = results.every(Boolean) ? 0 : 1;
 }
 
 main().catch((error) => {

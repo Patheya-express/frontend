@@ -1,5 +1,10 @@
 @if (visible()) {
-  <div class="checkout-bar" [class.checkout-bar--native]="isNative">
+  <div
+    class="checkout-bar"
+    [class.checkout-bar--native]="isNative"
+    [class.mobile-anim-fab-enter]="shouldShow()"
+    [class.mobile-anim-fab-leave]="!shouldShow()"
+  >
     <span class="checkout-bar-summary">
       {{ totalItems() }} {{ totalItems() === 1 ? 'item' : 'items' }} · ₹{{ subtotal() }}
     </span>

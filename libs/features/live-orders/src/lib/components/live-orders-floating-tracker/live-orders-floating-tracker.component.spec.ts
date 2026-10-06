@@ -77,6 +77,16 @@ describe('LiveOrdersFloatingTrackerComponent', () => {
     return fixture.nativeElement.querySelector('.live-orders-tracker__bar') as HTMLAnchorElement;
   }
 
+  /** The tracker now defers DOM removal by one leave-animation duration (see the component's
+   *  `visible` doc comment) instead of disappearing the instant `shouldShow()` goes false — a real
+   *  timer, not a microtask, so `settle()`'s Promise-flushing alone doesn't advance it. Tests that
+   *  assert the tracker is gone after becoming hidden wait this out first. 200ms comfortably
+   *  clears MOBILE_MOTION_DURATIONS_MS.fast (180ms). */
+  async function awaitLeaveAnimation(fixture: { detectChanges(): void }): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    fixture.detectChanges();
+  }
+
   beforeEach(() => {
     trackedOrders = signal<OrderResponseDto[]>([]);
     totalItems = signal(0);
@@ -258,6 +268,7 @@ describe('LiveOrdersFloatingTrackerComponent', () => {
 
     trackedOrders.set([]);
     await settle(fixture);
+    await awaitLeaveAnimation(fixture);
 
     expect(fixture.nativeElement.querySelector('.live-orders-tracker')).toBeNull();
   });
@@ -325,6 +336,7 @@ describe('LiveOrdersFloatingTrackerComponent', () => {
 
     await router.navigateByUrl('/checkout');
     fixture.detectChanges();
+    await awaitLeaveAnimation(fixture);
 
     expect(fixture.nativeElement.querySelector('.live-orders-tracker')).toBeNull();
   });
@@ -336,6 +348,7 @@ describe('LiveOrdersFloatingTrackerComponent', () => {
 
     await router.navigateByUrl('/orders/1');
     fixture.detectChanges();
+    await awaitLeaveAnimation(fixture);
 
     expect(fixture.nativeElement.querySelector('.live-orders-tracker')).toBeNull();
   });

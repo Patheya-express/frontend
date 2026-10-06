@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { AutoFocusDirective } from '../directives/auto-focus.directive';
+import { FocusTrapDirective } from '../directives/focus-trap.directive';
 import { SwipeDirective, type MobileSwipeEvent } from '../directives/swipe.directive';
 
 /**
@@ -9,15 +10,21 @@ import { SwipeDirective, type MobileSwipeEvent } from '../directives/swipe.direc
  * around whatever content it's given, so it's also usable standalone for a sheet that isn't
  * going through the overlay stack (e.g. a permanently-mounted sheet in a custom layout).
  *
+ * Default (unnamed) projected content scrolls internally. The two named slots below are optional
+ * — sheets that don't need a non-scrolling header/footer (the common case) can ignore them
+ * entirely and project everything into the default slot, exactly as before this pair was added.
+ *
  * @example
  * <lib-bottom-sheet (dismissed)="close()">
- *   <p>Sheet content</p>
+ *   <header sheetHeader>Title</header>
+ *   <p>Scrollable sheet content</p>
+ *   <footer sheetFooter>Actions</footer>
  * </lib-bottom-sheet>
  */
 @Component({
   selector: 'lib-bottom-sheet',
   standalone: true,
-  imports: [SwipeDirective, AutoFocusDirective],
+  imports: [SwipeDirective, AutoFocusDirective, FocusTrapDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     role: 'dialog',
@@ -32,13 +39,16 @@ import { SwipeDirective, type MobileSwipeEvent } from '../directives/swipe.direc
       (swiped)="onSwipe($event)"
       tabindex="-1"
       [mobileAutoFocus]="true"
+      libFocusTrap
     >
       @if (showHandle()) {
         <div class="mobile-bottom-sheet__handle" aria-hidden="true"></div>
       }
+      <ng-content select="[sheetHeader]" />
       <div class="mobile-bottom-sheet__content">
         <ng-content />
       </div>
+      <ng-content select="[sheetFooter]" />
     </div>
   `,
   styles: `

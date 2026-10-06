@@ -2,6 +2,13 @@
 
 * {
   box-sizing: border-box;
+  // The browser/WebView's default gray flash on tap is redundant with (and visually clashes
+  // with) this app's own deliberate press feedback: RippleDirective's expanding-circle effect on
+  // Primary/Secondary/Icon buttons and ListTile, plus the scale/opacity `:active` transitions
+  // every other tappable element already defines. Keyboard focus is a separate mechanism
+  // (`:focus-visible` outlines, used throughout — see any `focus-visible` rule in this app) and is
+  // completely unaffected by this; this only ever applies to a touch/mouse tap.
+  -webkit-tap-highlight-color: transparent;
 }
 
 html,
@@ -30,4 +37,15 @@ p {
 button,
 input {
   font-family: inherit;
+}
+
+// Mobile-native form-control floor: a native input/textarea/select rendered under 16px makes iOS
+// Safari (and some Android WebViews) zoom the viewport in on focus. --font-size-base (15px) is
+// fine for body text but too small here. This is a floor, not a typography change — component
+// styles that already set their own (larger) font-size on these elements are unaffected; this
+// only backstops the ones that don't.
+input,
+textarea,
+select {
+  font-size: max(16px, var(--font-size-base));
 }

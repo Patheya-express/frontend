@@ -1,11 +1,13 @@
 import { ChangeDetectionStrategy, Component, Input, inject } from '@angular/core';
 import { HapticsService } from '@patheya-express-frontend/core';
+import { QuantityStepperComponent } from '@patheya-express-frontend/ui';
 import type { CartItem } from '../../models/cart-item.model';
 import { CartFacade } from '../../facades/cart.facade';
 
 @Component({
   selector: 'lib-cart-item',
   standalone: true,
+  imports: [QuantityStepperComponent],
   templateUrl: './cart-item.component.html',
   styleUrl: './cart-item.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

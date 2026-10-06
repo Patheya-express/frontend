@@ -50,7 +50,9 @@
   cursor: pointer;
   transition: background var(--transition-fast);
 
-  &:hover {
-    background: var(--color-primary-hover);
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      background: var(--color-primary-hover);
+    }
   }
 }

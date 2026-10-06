@@ -1,12 +1,13 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import type { MenuAddonOptionResponseDto } from '@patheya-express-frontend/api-sdk';
+import { PrimaryButtonComponent, SecondaryButtonComponent } from '@patheya-express-frontend/ui';
 import { MenuManagementFacade } from '../../facades/menu-management.facade';
 
 @Component({
   selector: 'lib-addon-option-form',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, PrimaryButtonComponent, SecondaryButtonComponent],
   templateUrl: './addon-option-form.component.html',
   styleUrl: './addon-option-form.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

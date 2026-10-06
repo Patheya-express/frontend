@@ -21,7 +21,7 @@
     </label>
 
     @if (hasActiveFilters()) {
-      <button type="button" class="order-list-clear-filters" (click)="clearFilters()">Clear filters</button>
+      <lib-link-button (buttonClick)="clearFilters()">Clear filters</lib-link-button>
     }
   </div>
 

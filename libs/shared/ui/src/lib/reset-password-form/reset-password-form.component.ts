@@ -7,6 +7,7 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
+import { PrimaryButtonComponent } from '../buttons/primary-button.component';
 
 export interface ResetPasswordFormValue {
   newPassword: string;
@@ -22,7 +23,7 @@ function passwordsMatchValidator(group: AbstractControl): ValidationErrors | nul
 @Component({
   selector: 'lib-reset-password-form',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, PrimaryButtonComponent],
   templateUrl: './reset-password-form.component.html',
   styleUrl: './reset-password-form.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

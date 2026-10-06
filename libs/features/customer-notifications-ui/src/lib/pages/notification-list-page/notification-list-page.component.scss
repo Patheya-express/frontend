@@ -91,15 +91,6 @@
   background: var(--color-surface);
 }
 
-.clear-filters-btn {
-  border: none;
-  background: none;
-  color: var(--color-text-subtle);
-  font-size: var(--font-size-sm);
-  text-decoration: underline;
-  cursor: pointer;
-}
-
 .notification-list {
   display: flex;
   flex-direction: column;

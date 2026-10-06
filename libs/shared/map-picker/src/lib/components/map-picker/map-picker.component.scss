@@ -30,7 +30,9 @@
     padding: var(--space-2) var(--space-3);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm);
-    font-size: var(--font-size-sm);
+    // Floored at 16px, not just --font-size-sm (13px) — anything smaller makes iOS Safari (and
+    // some Android WebViews) zoom the viewport in on focus.
+    font-size: max(16px, var(--font-size-base));
     font-family: inherit;
     width: 100%;
   }
@@ -41,22 +43,15 @@
   color: var(--color-text-muted);
 }
 
+// Sizing/color/positioning only — the spin animation itself comes from the shared `.mobile-spinner`
+// utility class (theme.scss's global keyframes), sized via `font-size` (it's a `1em` box) rather
+// than a second bespoke keyframe.
 .map-picker-search-spinner {
   position: absolute;
   right: var(--space-3);
   top: 34px;
-  width: 14px;
-  height: 14px;
-  border: 2px solid var(--color-border);
-  border-top-color: var(--color-primary);
-  border-radius: 50%;
-  animation: map-picker-spin 0.6s linear infinite;
-}
-
-@keyframes map-picker-spin {
-  to {
-    transform: rotate(360deg);
-  }
+  font-size: 14px;
+  color: var(--color-primary);
 }
 
 .map-picker-search-results {

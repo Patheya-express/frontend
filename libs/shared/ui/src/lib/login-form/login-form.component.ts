@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, Output } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { PrimaryButtonComponent } from '../buttons/primary-button.component';
 
 export interface LoginFormValue {
   email: string;
@@ -13,7 +14,7 @@ export interface LoginFormValue {
 @Component({
   selector: 'lib-login-form',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, PrimaryButtonComponent],
   templateUrl: './login-form.component.html',
   styleUrl: './login-form.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

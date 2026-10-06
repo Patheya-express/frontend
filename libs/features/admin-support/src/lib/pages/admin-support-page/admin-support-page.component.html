@@ -151,7 +151,7 @@
           <button type="submit" [disabled]="facade.actionBusy()">Send</button>
         </form>
 
-        <button type="button" class="admin-support-details-close" (click)="closeDetail()">Close</button>
+        <lib-secondary-button class="admin-support-details-close" size="sm" (buttonClick)="closeDetail()">Close</lib-secondary-button>
       </div>
     </div>
   }

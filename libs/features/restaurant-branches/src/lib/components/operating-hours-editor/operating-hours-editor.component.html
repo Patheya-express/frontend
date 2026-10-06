@@ -63,8 +63,8 @@
   </div>
 
   <div class="hours-editor-actions">
-    <button type="button" class="hours-editor-save" [disabled]="saving || !dirty" (click)="onSave()">
-      {{ saving ? 'Saving…' : 'Save Operating Hours' }}
-    </button>
+    <lib-primary-button [disabled]="saving || !dirty" [loading]="saving" (buttonClick)="onSave()">
+      Save Operating Hours
+    </lib-primary-button>
   </div>
 </div>

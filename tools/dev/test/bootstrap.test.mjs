@@ -328,4 +328,60 @@ describe('bootstrap.mjs guard rails', () => {
     assert.match(result.stderr, /customer/);
     assert.doesNotMatch(result.stdout + result.stderr, /Docker/);
   });
+
+  test('one invalid app in a comma-separated list fails the whole run, naming it and every supported app', async () => {
+    const result = await runCapture(process.execPath, [bootstrapPath, 'customer-app,foo']);
+    assert.equal(result.code, 1);
+    assert.match(result.stderr, /Unknown app "foo"/);
+    assert.match(result.stderr, /customer-app, restaurant-app, delivery-app, admin-app/);
+    assert.doesNotMatch(result.stdout + result.stderr, /Docker|Starting/);
+  });
+});
+
+/**
+ * package.json → bootstrap argument forwarding, through the real pnpm. Uses a selection that fails
+ * validation on purpose, so the run proves pnpm delivered the developer's arguments to bootstrap.mjs
+ * (the error names them) while still stopping before Docker or any dev server.
+ */
+describe('pnpm run dev argument forwarding', () => {
+  const frontendRoot = join(__dirname, '..', '..', '..');
+  const scripts = JSON.parse(readFileSync(join(frontendRoot, 'package.json'), 'utf8')).scripts;
+
+  test('the dev script hardcodes no app (so forwarded apps become the selection); setup/backend-only unchanged', () => {
+    assert.equal(scripts.dev, 'node tools/dev/bootstrap.mjs');
+    assert.equal(scripts['dev:backend-only'], 'node tools/dev/bootstrap.mjs none --backend-only');
+    assert.equal(scripts.setup, 'node tools/dev/bootstrap.mjs customer --setup');
+  });
+
+  test('pnpm run dev <a>,<b> forwards the comma-separated list without "--"', async () => {
+    const result = await runCapture('pnpm', ['run', 'dev', 'customer-app,delivery-app,not-an-app'], { cwd: frontendRoot });
+    assert.equal(result.code, 1);
+    assert.match(result.stderr, /Unknown app "not-an-app"\./);
+  });
+
+  test('pnpm run dev <a> <b> forwards space-separated apps too', async () => {
+    const result = await runCapture('pnpm', ['run', 'dev', 'customer-app', 'bad-one', 'bad-two'], { cwd: frontendRoot });
+    assert.equal(result.code, 1);
+    assert.match(result.stderr, /Unknown apps "bad-one", "bad-two"\./);
+  });
+});
+
+describe('multi-app frontend launch (source-level)', () => {
+  test('each selected app goes through the existing launcher CLI with inherited stdio, never detached', () => {
+    assert.match(codeOnly, /apps\.map\(\(app\) => \{[\s\S]*?runInherit\('node', \['tools\/launcher\/cli\.mjs', app\.alias, 'web'\], \{ cwd: repoRoot \}\)/);
+    assert.match(codeOnly, /await Promise\.all\(launches\)/);
+    // The only detached spawn in this file is the Docker Desktop GUI app — launched apps must stay
+    // attached to the terminal so Ctrl+C reaches them.
+    assert.equal(codeOnly.match(/detached: true/g)?.length, 1);
+    assert.match(codeOnly, /nodeSpawn\(dockerDesktop, \[\], \{ detached: true/);
+  });
+
+  test('backend preparation still happens once, before any app launches', () => {
+    assert.equal(codeOnly.match(/await detectBackend\(/g)?.length, 1);
+    assert.ok(codeOnly.indexOf('await detectBackend(') < codeOnly.indexOf("log.section('Step 4 — Frontend')"));
+  });
+
+  test('app selection is validated before any infrastructure step', () => {
+    assert.ok(codeOnly.indexOf('selection.invalid.length > 0') < codeOnly.indexOf('existsSync(BACKEND_REPO)'));
+  });
 });

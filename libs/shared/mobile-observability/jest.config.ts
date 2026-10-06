@@ -1,3 +1,4 @@
+/** @jest-config-loader ts-node */
 import type { Config } from 'jest';
 import { readFileSync } from 'fs';
 import { join } from 'path';

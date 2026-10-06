@@ -1,11 +1,13 @@
 <!-- One order visible at a time (LiveOrdersFacade.trackedOrders is already newest-first, capped at
      3); no tracker at all until there's an active order, and no loading skeleton — it simply
      appears the moment one is known, and disappears the moment none remain. -->
-@if (visible() && selectedOrder(); as order) {
+@if (visible() && displayOrder(); as order) {
   <div
     class="live-orders-tracker"
     [class.live-orders-tracker--native]="isNative"
     [class.live-orders-tracker--above-cart-bar]="aboveCartBar()"
+    [class.mobile-anim-fab-enter]="shouldShow()"
+    [class.mobile-anim-fab-leave]="!shouldShow()"
   >
     <a
       class="live-orders-tracker__bar"

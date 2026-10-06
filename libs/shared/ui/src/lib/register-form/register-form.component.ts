@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { PrimaryButtonComponent } from '../buttons/primary-button.component';
 
 export interface RegisterFormValue {
   firstName: string;
@@ -11,7 +12,7 @@ export interface RegisterFormValue {
 @Component({
   selector: 'lib-register-form',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, PrimaryButtonComponent],
   templateUrl: './register-form.component.html',
   styleUrl: './register-form.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

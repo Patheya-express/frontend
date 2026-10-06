@@ -29,9 +29,9 @@
   <p class="addon-group-form-hint">Minimum Selection of 0 makes this group optional; 1 or more makes it required.</p>
 
   <div class="addon-group-form-actions">
-    <button type="button" class="addon-group-form-cancel" [disabled]="isProcessing" (click)="cancel()">Cancel</button>
-    <button type="submit" class="addon-group-form-submit" [disabled]="form.invalid || isProcessing">
-      {{ isProcessing ? 'Saving…' : 'Save' }}
-    </button>
+    <lib-secondary-button [disabled]="isProcessing" (buttonClick)="cancel()">Cancel</lib-secondary-button>
+    <lib-primary-button type="submit" [disabled]="form.invalid || isProcessing" [loading]="isProcessing">
+      Save
+    </lib-primary-button>
   </div>
 </form>
