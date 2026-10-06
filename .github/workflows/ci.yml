@@ -54,13 +54,24 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - uses: nrwl/nx-set-shas@v4
       - name: nx affected -- test
-        run: pnpm exec nx affected --target=test --ci --code-coverage
+        run: pnpm exec nx affected --target=test --ci --coverage
 
-  build:
+  # Job id is `web-build`, not `build`, so its checks (`web-build (<app>)`) are unambiguous required
+  # status check names.
+  web-build:
     runs-on: ubuntu-latest
     strategy:
+      # One app's failure must not cancel (and so hide) the other apps' results.
+      fail-fast: false
       matrix:
         app: [customer-app, restaurant-app, admin-app, delivery-app]
+    env:
+      # CI-only validation value — NOT a credential. Exercises the real build-time injection path
+      # (environment.prod.ts carries a placeholder that verify-production-env.mjs rejects). This
+      # build is never uploaded or deployed, and verify-production-build.mjs --release (the deploy
+      # gate in frontend-deploy-web.yml) rejects any bundle carrying it. The live key ID exists only
+      # as the `production` environment's RAZORPAY_LIVE_KEY_ID secret.
+      CI_RAZORPAY_LIVE_KEY_ID: rzp_live_CIVALIDATIONONLY
     steps:
       - uses: actions/checkout@v4
         with:
@@ -73,10 +84,16 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Inject CI validation build-time configuration
+        env:
+          RAZORPAY_LIVE_KEY_ID: ${{ env.CI_RAZORPAY_LIVE_KEY_ID }}
+        run: node scripts/inject-production-env.mjs ${{ matrix.app }}
       - name: Verify ${{ matrix.app }} production environment config
         run: node scripts/verify-production-env.mjs ${{ matrix.app }}
       - name: Build ${{ matrix.app }} (production configuration)
         run: pnpm exec nx build ${{ matrix.app }} --configuration=production
+      - name: Verify ${{ matrix.app }} production build output
+        run: node scripts/verify-production-build.mjs ${{ matrix.app }}
 
   # Compiles each Capacitor Android shell exactly as a developer would (mobile build + cap sync +
   # Gradle debug build) so native/plugin/Gradle regressions surface in CI. Debug only: release
