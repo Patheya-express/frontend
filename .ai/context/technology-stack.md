@@ -56,7 +56,7 @@ Direct use of Angular HttpClient is prohibited unless explicitly approved as an 
 
 | Technology | Purpose |
 | --- | --- |
-| Vercel | Platform used for hosting and deploying frontend applications in supported environments. |
+| AWS S3 + CloudFront | Static hosting for the production web builds, deployed by GitHub Actions (frontend-deploy-web.yml) through AWS OIDC. |
 | Docker (when applicable) | Containerization technology used for consistent environments when deployment packaging requires it. |
 | GitHub | Platform used for source control integration and repository-based delivery workflows. |
 

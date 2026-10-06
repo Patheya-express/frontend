@@ -216,7 +216,7 @@ in DNS yet.** Production and staging builds won't reach a backend until that dep
 
 > **Web deployments share these files.** `production` is each app's default build configuration. Any
 > web deployment that builds the default configuration but is meant to run against the QA backend
-> (for example a demo site on Vercel) must build with `--configuration=qa`. Otherwise its next
+> (for example a QA demo site) must build with `--configuration=qa`. Otherwise its next
 > deploy will point at the production origin.
 
 ### Configuration gates
@@ -802,5 +802,5 @@ defined place in the repository, so none of it needs code changes.
 | 7   | Apple Developer Program organization team, App IDs with Push, APNs key, App Store Connect records               | Business/engineering                 | Team in Xcode / `APPLE_TEAM_ID`; `exportOptions.plist` (gitignored)      | TestFlight, App Store, iOS push                           |
 | 8   | Android upload keystores (×3) + Play Console apps + Play App Signing                                            | Business/engineering                 | `keystore.properties` or `PATHEYA_ANDROID_*` secrets                     | Google Play                                               |
 | 9   | Final brand icons and splash artwork (×3 apps)                                                                  | Design                               | `apps/<app>/assets/` → `@capacitor/assets`                               | Store submission                                          |
-| 10  | QA/demo web deployments (e.g. Vercel) build with `--configuration=qa`, not the default `production`             | Whoever owns the deployment settings | Hosting settings                                                         | Web demo against QA backend                               |
+| 10  | QA/demo web deployments build with `--configuration=qa`, not the default `production`                         | Whoever owns the deployment settings | Hosting settings                                                         | Web demo against QA backend                               |
 | 11  | Restrict the committed development Google Maps key (all four apps' `environment.ts`)                            | Engineering                          | Google Cloud console                                                     | Key misuse risk                                           |
