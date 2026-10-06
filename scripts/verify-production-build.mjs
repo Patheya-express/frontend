@@ -25,6 +25,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, '..');
 
 const PRODUCTION_API_ORIGIN = 'https://api.patheyaexpress.com';
+/** The origin as a complete quoted string value (how environment.prod.ts's apiBaseUrl etc. land in
+ *  the bundle) — not a substring, which `https://api.patheyaexpress.com.example` would also match. */
+const PRODUCTION_API_ORIGIN_LITERAL = /(["'`])https:\/\/api\.patheyaexpress\.com\1/;
 
 /** Injected by ci.yml for build validation only — never a real credential, never deployed. */
 const CI_VALIDATION_RAZORPAY_KEY_ID = 'rzp_live_CIVALIDATIONONLY';
@@ -82,7 +85,7 @@ function main() {
     }
   }
 
-  if (!contents.some(({ text }) => text.includes(PRODUCTION_API_ORIGIN))) {
+  if (!contents.some(({ text }) => PRODUCTION_API_ORIGIN_LITERAL.test(text))) {
     problems.push(`No bundle file references the Production API origin ${PRODUCTION_API_ORIGIN}.`);
   }
 
