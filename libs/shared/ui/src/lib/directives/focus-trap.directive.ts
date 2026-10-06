@@ -17,7 +17,10 @@ const FOCUSABLE_SELECTOR =
   selector: '[libFocusTrap]',
   standalone: true,
   host: {
+    // Angular key bindings match modifiers exactly — `keydown.tab` never fires with Shift held
+    // (that event is `shift.tab`), so Shift+Tab needs its own binding to stay trapped.
     '(keydown.tab)': 'onTab($event)',
+    '(keydown.shift.tab)': 'onTab($event)',
   },
 })
 export class FocusTrapDirective {
