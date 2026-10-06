@@ -5,7 +5,13 @@ import { filter, map } from 'rxjs/operators';
 import type { OrderResponseDto } from '@patheya-express-frontend/api-sdk';
 import { CartFacade } from '@patheya-express-frontend/cart';
 import { MobilePlatformService } from '@patheya-express-frontend/core';
-import { OrderStatusBadgeComponent, SwipeDirective, type MobileSwipeEvent } from '@patheya-express-frontend/ui';
+import {
+  MOBILE_MOTION_DURATIONS_MS,
+  OrderStatusBadgeComponent,
+  prefersReducedMotion,
+  SwipeDirective,
+  type MobileSwipeEvent,
+} from '@patheya-express-frontend/ui';
 import { orderStatusMessage } from '../../constants/order-status-message.constants';
 import { LiveOrdersFacade } from '../../facades/live-orders.facade';
 
@@ -108,9 +114,28 @@ export class LiveOrdersFloatingTrackerComponent {
    *  why the two rarely disagree on visibility for the same route). */
   protected readonly aboveCartBar = computed(() => this.cartFacade.totalItems() > 0);
 
-  protected readonly visible = computed(
+  /** The real visibility condition. Renamed from the old `visible` so that name is free for the
+   *  DOM-presence signal below, which lags one leave-animation behind this on the way out. */
+  protected readonly shouldShow = computed(
     () => this.orders().length > 0 && !isHiddenRoute(this.currentUrl()),
   );
+
+  /** Last non-null `selectedOrder()`, kept around purely so the leave animation has something to
+   *  render — `orders()` (and so `selectedOrder()`) may already be empty by the time the deferred
+   *  removal below actually happens, e.g. once the tracked order turns DELIVERED and the store
+   *  drops it. Never read by `selectedOrderId`'s own management effect above; this is animation
+   *  support only, not part of the selection state machine. */
+  protected readonly displayOrder = signal<OrderResponseDto | null>(null);
+
+  /**
+   * Gates the template's `@if`, one leave-animation duration behind `shouldShow` on the way out so
+   * a leave animation (see the template) actually gets to play before Angular removes the element
+   * — a plain `@if (shouldShow())` would destroy it mid-frame instead. Immediate on the way in.
+   * Same pattern as `CartCheckoutBarComponent`'s own floating bar, which shares this exact
+   * "conditionally rendered, no transition" shape. Skips the delay under `prefers-reduced-motion`.
+   */
+  protected readonly visible = signal(false);
+  private hideTimeout?: ReturnType<typeof setTimeout>;
 
   /** Guards the click that follows a drag/swipe pointer sequence — see onPointerDown/onSwiped/onBarClick. */
   protected justSwiped = false;
@@ -170,6 +195,32 @@ export class LiveOrdersFloatingTrackerComponent {
       const targetIndex = Math.min(Math.max(oldIndex - 1, 0), current.length - 1);
       this.selectedOrderId.set(current[targetIndex].id);
       this.previousOrderIds = currentIds;
+    });
+
+    effect(() => {
+      const order = this.selectedOrder();
+      if (order) {
+        this.displayOrder.set(order);
+      }
+    });
+
+    effect(() => {
+      if (this.shouldShow()) {
+        clearTimeout(this.hideTimeout);
+        this.visible.set(true);
+        return;
+      }
+
+      if (!this.visible()) {
+        return;
+      }
+
+      if (prefersReducedMotion()) {
+        this.visible.set(false);
+        return;
+      }
+
+      this.hideTimeout = setTimeout(() => this.visible.set(false), MOBILE_MOTION_DURATIONS_MS.fast);
     });
   }
 

@@ -1,11 +1,16 @@
-@if (facade.pickupPhotoDialog(); as dialog) {
-  <div class="pickup-photo-dialog-backdrop">
-    <div class="pickup-photo-dialog" role="alertdialog" aria-modal="true" aria-label="Pickup verification">
-      <h2 class="pickup-photo-dialog-title">Pickup verification</h2>
-      <p class="pickup-photo-dialog-help">
-        Take a clear photo of the parcel before leaving the restaurant.
-      </p>
-
+@if (displayDialog(); as dialog) {
+  <lib-confirm-dialog
+    [open]="!!facade.pickupPhotoDialog()"
+    title="Pickup verification"
+    message="Take a clear photo of the parcel before leaving the restaurant."
+    [confirmLabel]="dialog.uploading ? 'Uploading…' : 'Submit photo'"
+    cancelLabel="Cancel"
+    [busy]="dialog.uploading"
+    [confirmDisabled]="!dialog.file"
+    (confirmed)="submit()"
+    (cancelled)="close()"
+  >
+    <div dialogContent>
       <lib-file-upload
         accept="image/png,image/jpeg,image/webp"
         capture="environment"
@@ -20,20 +25,6 @@
       @if (dialog.error) {
         <p class="pickup-photo-dialog-error">{{ dialog.error }}</p>
       }
-
-      <div class="pickup-photo-dialog-actions">
-        <button type="button" class="pickup-photo-dialog-cancel" [disabled]="dialog.uploading" (click)="close()">
-          Cancel
-        </button>
-        <button
-          type="button"
-          class="pickup-photo-dialog-confirm"
-          [disabled]="!canSubmit()"
-          (click)="submit()"
-        >
-          {{ dialog.uploading ? 'Uploading…' : 'Submit photo' }}
-        </button>
-      </div>
     </div>
-  </div>
+  </lib-confirm-dialog>
 }

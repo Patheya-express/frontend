@@ -4,25 +4,47 @@
 @use './lib/animations/keyframes';
 
 :root {
+  // Color — Patheya Express brand palette (five official colors; see role notes on each token
+  // below for how they map). Values live only on the semantic tokens that follow — this comment
+  // is the paper trail, not a second token layer:
+  //   Burgundy  #4D1821 → --color-primary (brand/CTA/interactive emphasis)
+  //   Glacier   #E8F2FF → --color-info-soft (cool, information-oriented surfaces)
+  //   Black     #3C3C3C → --color-secondary / --color-text (dark UI, primary text)
+  //   Silver    #F7F7F7 → --color-background (primary app surface)
+  //   Chocolate #D2691E → --color-accent (selective accent; see contrast note below)
+
   // Color — brand
-  --color-primary: #ff5200;
-  --color-primary-hover: #e64900;
-  --color-primary-soft: #fff1e9;
-  --color-secondary: #1c1c1e;
-  --color-secondary-soft: #f0f0f2;
+  --color-primary: #4d1821;
+  // Lightened (not darkened) on purpose: Burgundy is already near-black, so a darker hover would
+  // read as almost no feedback at all — lifting toward white keeps the "pressed/hovered" cue
+  // visible while staying dark enough to keep --color-text-on-primary's contrast intact.
+  --color-primary-hover: #62343c;
+  --color-primary-soft: #ede8e9;
+  --color-secondary: #3c3c3c;
+  --color-secondary-soft: #f0f0f0;
+
+  // Color — accent (Chocolate). Deliberately its own role, not a second primary — reserve for
+  // icons, borders, and selective highlights, not for filled buttons or body text. At normal text
+  // sizes #d2691e only clears ~3.2–3.4:1 against --color-background/--color-info-soft, short of
+  // the 4.5:1 AA text threshold (it does clear the 3:1 non-text/large-text/UI-component
+  // threshold), so nothing in this pass renders it as small text or as a text-bearing button fill.
+  --color-accent: #d2691e;
+  --color-accent-soft: #faede4;
 
   // Color — surfaces
-  --color-background: #f7f7f8;
+  --color-background: #f7f7f7;
   --color-surface: #ffffff;
-  --color-border: #e6e6e9;
+  --color-border: #e5e5e5;
 
   // Color — text
-  --color-text: #1c1c1e;
-  --color-text-muted: #6b6b74;
-  --color-text-subtle: #9a9aa2;
+  --color-text: #3c3c3c;
+  --color-text-muted: #6b6b6b;
+  --color-text-subtle: #9a9a9a;
   --color-text-on-primary: #ffffff;
 
   // Color — feedback
+  // Unchanged by the brand migration on purpose — success/error/warning/info stay visually
+  // distinct from --color-primary/--color-accent so status meaning is never confused with brand.
   --color-success: #1ba672;
   --color-success-soft: rgba(27, 166, 114, 0.12);
   --color-error: #d93025;
@@ -30,13 +52,15 @@
   --color-warning: #856404;
   --color-warning-soft: #fff3cd;
   --color-info: #0969da;
-  --color-info-soft: #e8f0fe;
+  // Glacier — this token's existing role ("information-oriented surfaces") already matched
+  // Glacier's intended use almost exactly (was #e8f0fe, a near-identical light blue).
+  --color-info-soft: #e8f2ff;
   --color-rating: #1ba672;
 
   // Color — brand, extended
   // A deeper primary for gradients/emphasis beyond what --color-primary-hover (a hover-state
   // adjustment) covers — e.g. the wallet page's balance-card gradient.
-  --color-primary-strong: #b25b00;
+  --color-primary-strong: #3e131a;
 
   // Color — surfaces, extended
   --color-surface-hover: rgba(0, 0, 0, 0.04);
@@ -197,11 +221,24 @@
 // avoids `@extend`ing a selector across a `@media` boundary (unreliable across Sass versions)
 // while still keeping the values defined exactly once.
 @mixin dark-palette {
-  --color-primary: #ff6a29;
-  --color-primary-hover: #ff7d45;
-  --color-primary-soft: #3a1f10;
-  --color-secondary: #f0f0f2;
+  // Not a simple inversion of the light palette (that would swap Silver↔Black and put Burgundy on
+  // a light Glacier chip — wrong on both counts). Burgundy itself is too dark to read against a
+  // near-black background (≈1.3:1), so dark mode uses a lifted rosewood tint of the same hue
+  // family instead, verified against every dark surface it sits on (see accessibility notes in
+  // the migration report). Chocolate needs no such adjustment — #d2691e already clears 5:1+
+  // against the dark background as-is.
+  --color-primary: #de6379;
+  --color-primary-hover: #e17386;
+  --color-primary-soft: #3b2228;
+  // A light neutral, not a dark one: this token is the fill for neutral badges/toasts/snackbars
+  // (paired with --color-text-on-primary), which need to read as a light chip against a dark page
+  // — reusing Silver here is the "same neutral, different surface" case, not a light/dark swap of
+  // brand roles.
+  --color-secondary: #f7f7f7;
   --color-secondary-soft: #2a2a2e;
+
+  --color-accent: #d2691e;
+  --color-accent-soft: #2f1f16;
 
   --color-background: #121214;
   --color-surface: #1c1c1f;
@@ -223,7 +260,7 @@
   --color-info-soft: #16283f;
   --color-rating: #38c793;
 
-  --color-primary-strong: #d9691f;
+  --color-primary-strong: #9b4555;
   --color-surface-hover: rgba(255, 255, 255, 0.06);
 
   --color-overlay-backdrop: rgba(0, 0, 0, 0.64);

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { EmptyStateComponent } from '@patheya-express-frontend/ui';
+import { BottomSheetComponent, EmptyStateComponent, IconButtonComponent } from '@patheya-express-frontend/ui';
 import { MobilePlatformService } from '@patheya-express-frontend/core';
 import { CartFacade } from '../../facades/cart.facade';
 import { CartItemComponent } from '../cart-item/cart-item.component';
@@ -9,10 +9,16 @@ import { CartSummaryComponent } from '../cart-summary/cart-summary.component';
 @Component({
   selector: 'lib-cart-drawer',
   standalone: true,
-  imports: [RouterLink, EmptyStateComponent, CartItemComponent, CartSummaryComponent],
+  imports: [RouterLink, EmptyStateComponent, CartItemComponent, CartSummaryComponent, BottomSheetComponent, IconButtonComponent],
   templateUrl: './cart-drawer.component.html',
   styleUrl: './cart-drawer.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    // BottomSheetComponent itself has no Escape handling (only the service-driven
+    // BottomSheetHostComponent does) — this drawer is mounted directly in app.html, not through
+    // BottomSheetService, so it keeps its own listener from the UI-1A pass.
+    '(document:keydown.escape)': 'onEscape()',
+  },
 })
 export class CartDrawerComponent {
   @Input() open = false;
@@ -31,6 +37,12 @@ export class CartDrawerComponent {
 
   protected close(): void {
     this.closeRequested.emit();
+  }
+
+  protected onEscape(): void {
+    if (this.open) {
+      this.close();
+    }
   }
 
   protected clearCart(): void {

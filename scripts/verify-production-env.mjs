@@ -2,10 +2,10 @@
 /**
  * Sprint 1.6 — production configuration & secrets hardening.
  *
- * `apps/customer-app/src/environments/environment.prod.ts` ships a literal placeholder
- * (`rzp_live_REPLACE_WITH_REAL_KEY`) with its own comment saying it must be replaced before a
- * real production deploy — but nothing in the build pipeline actually enforced that. This script
- * is that enforcement: it reads the *source* environment file for the given app (not a built
+ * `apps/customer-app/src/environments/environment.prod.ts` (and `environment.mobile.prod.ts`)
+ * ship the placeholder `REPLACE_WITH_RAZORPAY_LIVE_KEY_ID`, substituted at build time by
+ * `inject-production-env.mjs` from the RAZORPAY_LIVE_KEY_ID build secret. This script is the
+ * enforcement: it reads the *source* environment files for the given app (not a built
  * bundle — simpler and equally reliable, since fileReplacements swaps this exact file in
  * verbatim for a `--configuration=production` build) and fails with a clear, specific message if
  * it still contains an unedited placeholder, a `localhost`/127.0.0.1 URL, or (for any app that
@@ -45,6 +45,13 @@ const LOCALHOST_PATTERN = /https?:\/\/(localhost|127\.0\.0\.1)/i;
  *  (`rzp_test_...`) accidentally left in a production build silently makes checkout fail
  *  end-to-end, and nothing else in the pipeline would catch that before a real user does. */
 const TEST_RAZORPAY_KEY_PATTERN = /rzp_test_/;
+
+/** Every Production environment file an app may have — the web build (`environment.prod.ts`)
+ *  and, for the Capacitor apps, the Production native build (`environment.mobile.prod.ts`). */
+const PRODUCTION_ENVIRONMENT_FILES = [
+  'environment.prod.ts',
+  'environment.mobile.prod.ts',
+];
 
 function environmentPath(appName, fileName) {
   return join(repoRoot, 'apps', appName, 'src', 'environments', fileName);
@@ -181,11 +188,15 @@ function verifyMobileRelease(appName, envPath, contents) {
 }
 
 function verifyApp(appName, { mobileRelease = false } = {}) {
-  const envPath = environmentPath(appName, 'environment.prod.ts');
+  return PRODUCTION_ENVIRONMENT_FILES.flatMap((file) =>
+    verifyFile(appName, environmentPath(appName, file), { mobileRelease }),
+  );
+}
 
+function verifyFile(appName, envPath, { mobileRelease }) {
   if (!existsSync(envPath)) {
-    // Not every app has one worth checking (none currently lack it, but a future app without a
-    // production environment file — e.g. an internal tool — shouldn't fail this check).
+    // Not every app has every file (admin-app has no native build), and a future app without a
+    // production environment file — e.g. an internal tool — shouldn't fail this check.
     return [];
   }
 

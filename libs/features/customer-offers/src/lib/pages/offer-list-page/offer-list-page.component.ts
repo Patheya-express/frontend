@@ -1,5 +1,12 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
-import { EmptyStateComponent, ErrorStateComponent, PaginationComponent, SearchInputComponent, SkeletonComponent } from '@patheya-express-frontend/ui';
+import {
+  EmptyStateComponent,
+  ErrorStateComponent,
+  LinkButtonComponent,
+  PaginationComponent,
+  SearchInputComponent,
+  SkeletonComponent,
+} from '@patheya-express-frontend/ui';
 import { CustomerOffersFacade } from '../../facades/customer-offers.facade';
 import { OfferCardComponent } from '../../components/offer-card/offer-card.component';
 import type { GetOffersParams } from '../../services/customer-offers.service';
@@ -18,7 +25,15 @@ const TYPE_OPTIONS: { value: OfferType; label: string }[] = [
 @Component({
   selector: 'lib-offer-list-page',
   standalone: true,
-  imports: [SearchInputComponent, SkeletonComponent, EmptyStateComponent, ErrorStateComponent, PaginationComponent, OfferCardComponent],
+  imports: [
+    SearchInputComponent,
+    SkeletonComponent,
+    EmptyStateComponent,
+    ErrorStateComponent,
+    PaginationComponent,
+    OfferCardComponent,
+    LinkButtonComponent,
+  ],
   templateUrl: './offer-list-page.component.html',
   styleUrl: './offer-list-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

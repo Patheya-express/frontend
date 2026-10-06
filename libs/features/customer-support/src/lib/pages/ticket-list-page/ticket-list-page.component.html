@@ -37,7 +37,7 @@
             </div>
             <div class="ticket-item-meta">
               <span class="ticket-item-priority" [attr.data-priority]="ticket.priority">{{ ticket.priority }}</span>
-              <span class="ticket-item-status" [attr.data-status]="ticket.status">{{ statusLabel(ticket.status) }}</span>
+              <lib-status-chip [label]="statusLabel(ticket.status)" />
             </div>
           </a>
         </li>

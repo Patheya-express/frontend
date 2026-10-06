@@ -1,6 +1,12 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { EmptyStateComponent, ErrorStateComponent, PaginationComponent, SkeletonComponent } from '@patheya-express-frontend/ui';
+import {
+  EmptyStateComponent,
+  ErrorStateComponent,
+  PaginationComponent,
+  SkeletonComponent,
+  StatusChipComponent,
+} from '@patheya-express-frontend/ui';
 import { CustomerSupportFacade } from '../../facades/customer-support.facade';
 import type { TicketStatus } from '../../services/customer-support.service';
 
@@ -15,7 +21,7 @@ const STATUS_OPTIONS: { value: TicketStatus; label: string }[] = [
 @Component({
   selector: 'lib-ticket-list-page',
   standalone: true,
-  imports: [RouterLink, SkeletonComponent, EmptyStateComponent, ErrorStateComponent, PaginationComponent],
+  imports: [RouterLink, SkeletonComponent, EmptyStateComponent, ErrorStateComponent, PaginationComponent, StatusChipComponent],
   templateUrl: './ticket-list-page.component.html',
   styleUrl: './ticket-list-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -40,7 +46,13 @@ export class TicketListPageComponent implements OnInit {
     void this.facade.loadTickets(page);
   }
 
+  /** Title-cased for direct display (e.g. "Waiting On Customer") — previously plain-lowercased
+   *  text relying on the now-removed `.ticket-item-status`'s `text-transform: capitalize`, which
+   *  `lib-status-chip` doesn't apply itself. Produces the exact same visible text as before. */
   protected statusLabel(status: string): string {
-    return status.replace(/_/g, ' ').toLowerCase();
+    return status
+      .split('_')
+      .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+      .join(' ');
   }
 }

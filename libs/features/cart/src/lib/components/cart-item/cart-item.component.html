@@ -21,11 +21,7 @@
   </div>
 
   <div class="cart-item-controls">
-    <div class="cart-item-stepper">
-      <button type="button" class="stepper-btn" aria-label="Decrease quantity" (click)="decrease()">−</button>
-      <span class="stepper-value">{{ item.quantity }}</span>
-      <button type="button" class="stepper-btn" aria-label="Increase quantity" (click)="increase()">+</button>
-    </div>
+    <lib-quantity-stepper [value]="item.quantity" (decreased)="decrease()" (increased)="increase()" />
     <span class="cart-item-line-total">₹{{ item.lineTotal }}</span>
     <button type="button" class="cart-item-remove" aria-label="Remove item" (click)="remove()">Remove</button>
   </div>

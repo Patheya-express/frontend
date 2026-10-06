@@ -13,8 +13,13 @@
     background var(--transition-fast),
     transform var(--transition-fast);
 
-  &:hover:not(:disabled) {
-    background: var(--color-secondary-soft);
+  // Gated so a touch tap doesn't leave the highlighted background visibly "stuck" until the next
+  // unrelated tap elsewhere clears the phantom :hover state — same convention as every other
+  // interactive surface in this library (see button.scss's own mixin for the canonical rationale).
+  @media (hover: hover) and (pointer: fine) {
+    &:hover:not(:disabled) {
+      background: var(--color-secondary-soft);
+    }
   }
 
   &:active:not(:disabled) {

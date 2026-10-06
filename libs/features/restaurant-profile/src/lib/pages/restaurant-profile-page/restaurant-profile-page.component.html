@@ -33,9 +33,13 @@
         }
 
         @if (canSubmitVerification) {
-          <button type="button" (click)="onSubmitVerification()" [disabled]="facade.submittingVerification()">
-            {{ facade.submittingVerification() ? 'Submitting…' : 'Submit for Verification' }}
-          </button>
+          <lib-primary-button
+            [disabled]="facade.submittingVerification()"
+            [loading]="facade.submittingVerification()"
+            (buttonClick)="onSubmitVerification()"
+          >
+            Submit for Verification
+          </lib-primary-button>
         }
       }
 

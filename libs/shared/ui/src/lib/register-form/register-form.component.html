@@ -78,7 +78,7 @@
     <span class="form-field-error">You must accept the terms to continue.</span>
   }
 
-  <button type="submit" class="form-submit" [disabled]="loading" [attr.aria-busy]="loading || null">
+  <lib-primary-button type="submit" class="form-submit" [disabled]="loading" [loading]="loading">
     {{ loading ? 'Creating account…' : 'Create account' }}
-  </button>
+  </lib-primary-button>
 </form>

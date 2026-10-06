@@ -206,7 +206,8 @@ configuration. Every file is committed and contains **public client-side values 
 | `qa`                                   | `environment.qa.ts`      | `https://patheya-express-api-gateway-sg.onrender.com` | test                                                    | QA web                                                 |
 | **`mobile`**                           | `environment.mobile.ts`  | same QA origin, `environmentName: 'qa'`               | test                                                    | **Device/emulator builds** (`pnpm mobile:*`, launcher) |
 | `staging`                              | `environment.staging.ts` | `https://api.staging.patheyaexpress.com`              | test                                                    | Staging                                                |
-| `production`                           | `environment.prod.ts`    | `https://api.patheyaexpress.com`                      | `rzp_live_REPLACE_WITH_REAL_KEY` (blocking placeholder) | Store / production                                     |
+| `production`                           | `environment.prod.ts`    | `https://api.patheyaexpress.com`                      | live, injected at build time (see Payments)             | Production web (S3 + CloudFront)                       |
+| `mobile-production`                    | `environment.mobile.prod.ts` | `https://api.patheyaexpress.com`                  | live, injected at build time (see Payments)             | Store builds (`pnpm mobile:*:production`)              |
 
 The staging and production origins are the hosts of the backend's own ingress overlays
 (`patheya-express-platform/k8s/overlays/{staging,production}/ingress-patch.yaml`). **Neither resolves
@@ -477,16 +478,19 @@ and now have it. Store declarations (§21, §22) must match this table.
   design. The **key secret** and order creation/verification belong to the backend and are never
   in this repository.
 - **Environment separation (IMPLEMENTED):** development, qa, staging and mobile use the Razorpay
-  test key. **Production holds the blocking placeholder `rzp_live_REPLACE_WITH_REAL_KEY`.** A test
-  key in production made checkout run in test mode, and it already failed the CI production-config
-  check.
+  test key. **The committed production files (`environment.prod.ts`, `environment.mobile.prod.ts`)
+  hold the placeholder `REPLACE_WITH_RAZORPAY_LIVE_KEY_ID`**; `scripts/inject-production-env.mjs`
+  substitutes the live key ID from the `RAZORPAY_LIVE_KEY_ID` build secret at build time (CI's
+  `frontend-deploy-web.yml`, or a release machine for store builds). The live key ID is never
+  committed. A test key in production made checkout run in test mode.
 - **Enforcement (VALIDATED):** `scripts/verify-production-env.mjs` (CI `build` job,
-  `pnpm verify:prod-env`) rejects placeholders and `rzp_test_` keys in production. Customer
-  production builds stay **blocked until the live key ID is committed**, so CI's `customer-app`
-  build job is red until then.
-- **External action:** activate the Razorpay live account and generate the live API keys. Commit
-  the **live key ID** to `apps/customer-app/src/environments/environment.prod.ts`, and give the live
-  **key secret** to the production backend only. Then test a live payment end to end.
+  `pnpm verify:prod-env`) rejects placeholders and `rzp_test_` keys in both production files, so a
+  build that skipped injection fails. CI's `build` job does not inject, so its `customer-app`
+  production-config check stays red by design; deployable builds go through `frontend-deploy-web.yml`.
+- **External action:** activate the Razorpay live account and generate the live API keys. Store the
+  **live key ID** as the `RAZORPAY_LIVE_KEY_ID` secret of the frontend repository's `production`
+  GitHub Environment, and give the live **key secret** to the production backend only. Then test a
+  live payment end to end.
 
 ---
 

@@ -9,6 +9,7 @@ import {
   PrimaryButtonComponent,
   SecondaryButtonComponent,
   SkeletonComponent,
+  StatusChipComponent,
 } from '@patheya-express-frontend/ui';
 import { CustomerSupportFacade } from '../../facades/customer-support.facade';
 
@@ -25,6 +26,7 @@ import { CustomerSupportFacade } from '../../facades/customer-support.facade';
     FileUploadComponent,
     PrimaryButtonComponent,
     SecondaryButtonComponent,
+    StatusChipComponent,
   ],
   templateUrl: './ticket-detail-page.component.html',
   styleUrl: './ticket-detail-page.component.scss',

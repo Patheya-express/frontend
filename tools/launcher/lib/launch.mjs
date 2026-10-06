@@ -19,7 +19,11 @@ async function runWeb({ app, environment }, options) {
   log.section('Step 5 — Launch (web)');
   log.ok(`Starting Angular dev server for ${app.displayName}…`);
 
-  const args = ['run', `${app.project}:serve`];
+  // registry.mjs's defaultPort is the single source of truth for each app's dev-server port — no
+  // project.json sets one, so without this every app would fall back to Angular's 4200 and a second
+  // app (e.g. `pnpm run dev customer-app,delivery-app`) would fail with "Port 4200 is already in use".
+  // These are also the ports the backend's CORS/app-URL config expects (CUSTOMER_APP_URL etc.).
+  const args = ['run', `${app.project}:serve`, `--port=${app.defaultPort}`];
   if (environment.configuration) {
     args.push(`--configuration=${environment.configuration}`);
   }
