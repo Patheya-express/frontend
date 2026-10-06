@@ -259,6 +259,37 @@ describe('ConfirmDialogComponent', () => {
   });
 
   describe('accessibility', () => {
+    // jsdom does no layout, so HTMLElement.offsetParent is always null there — and FocusTrapDirective
+    // skips any focusable element without an offsetParent (i.e. not rendered), so it would see no
+    // boundaries at all and the Tab-trap tests could never exercise it. Emulate the browser rule for
+    // this block: an element connected to the document with no `display: none` ancestor has an
+    // offsetParent; anything hidden or detached still reports null. Restored after the block.
+    let jsdomOffsetParent: PropertyDescriptor | undefined;
+
+    beforeAll(() => {
+      jsdomOffsetParent = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetParent');
+      Object.defineProperty(HTMLElement.prototype, 'offsetParent', {
+        configurable: true,
+        get(this: HTMLElement): Element | null {
+          if (!this.isConnected || getComputedStyle(this).display === 'none') {
+            return null;
+          }
+          for (let el = this.parentElement; el; el = el.parentElement) {
+            if (getComputedStyle(el).display === 'none') {
+              return null;
+            }
+          }
+          return this.parentElement;
+        },
+      });
+    });
+
+    afterAll(() => {
+      if (jsdomOffsetParent) {
+        Object.defineProperty(HTMLElement.prototype, 'offsetParent', jsdomOffsetParent);
+      }
+    });
+
     it('has alertdialog role and aria-modal', async () => {
       const fixture = await createFixture();
       const el = panel(fixture.nativeElement);
