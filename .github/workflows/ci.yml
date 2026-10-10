@@ -34,7 +34,7 @@ jobs:
       # Sets NX_BASE/NX_HEAD correctly for both PR diffs and pushes to main
       # (plain `--base=origin/main` breaks on a push *to* main, since HEAD
       # is already on that branch and there'd be nothing to diff against).
-      - uses: nrwl/nx-set-shas@v4
+      - uses: nrwl/nx-set-shas@v5
       - name: nx affected -- lint
         run: pnpm exec nx affected --target=lint
 
@@ -52,7 +52,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - uses: nrwl/nx-set-shas@v4
+      - uses: nrwl/nx-set-shas@v5
       - name: nx affected -- test
         run: pnpm exec nx affected --target=test --ci --coverage
 
