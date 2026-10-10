@@ -51,7 +51,7 @@ jobs:
       - name: Regenerate SDK
         run: pnpm run generate:sdk --input openapi.json
 
-      - uses: peter-evans/create-pull-request@v7
+      - uses: peter-evans/create-pull-request@v8
         with:
           # Only the generated SDK — never the downloaded openapi.json input.
           add-paths: libs/shared/api-sdk/src/lib
