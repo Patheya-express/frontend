@@ -170,6 +170,7 @@ export type { RazorpayRefundResponseDto } from './models/razorpay-refund-respons
 export type { ReadinessResponseDto } from './models/readiness-response-dto';
 export type { RecentOrderSummaryDto } from './models/recent-order-summary-dto';
 export type { RecentSearchDto } from './models/recent-search-dto';
+export type { RecordBackgroundCheckConsentDto } from './models/record-background-check-consent-dto';
 export type { ReferralSummaryResponseDto } from './models/referral-summary-response-dto';
 export type { RefreshResponseDto } from './models/refresh-response-dto';
 export type { RefreshTokenDto } from './models/refresh-token-dto';
@@ -214,6 +215,7 @@ export type { ToggleMenuItemAvailabilityDto } from './models/toggle-menu-item-av
 export type { TopSellingItemDto } from './models/top-selling-item-dto';
 export type { TrendingSearchDto } from './models/trending-search-dto';
 export type { UnreadCountResponseDto } from './models/unread-count-response-dto';
+export type { UnregisterPushTokenDto } from './models/unregister-push-token-dto';
 export type { UpdateAddonDto } from './models/update-addon-dto';
 export type { UpdateAddonOptionDto } from './models/update-addon-option-dto';
 export type { UpdateAddressDto } from './models/update-address-dto';
@@ -664,6 +666,8 @@ export type { DeliveryOnboardingControllerGetState$Params as DeliveryOnboardingC
 export { deliveryOnboardingControllerGetState as deliveryOnboardingControllerGetState } from './fn/delivery-onboarding/delivery-onboarding-controller-get-state';
 export type { DeliveryOnboardingControllerCompleteStep$Params as DeliveryOnboardingControllerCompleteStep$Params } from './fn/delivery-onboarding/delivery-onboarding-controller-complete-step';
 export { deliveryOnboardingControllerCompleteStep as deliveryOnboardingControllerCompleteStep } from './fn/delivery-onboarding/delivery-onboarding-controller-complete-step';
+export type { DeliveryOnboardingControllerRecordBackgroundCheckConsent$Params as DeliveryOnboardingControllerRecordBackgroundCheckConsent$Params } from './fn/delivery-onboarding/delivery-onboarding-controller-record-background-check-consent';
+export { deliveryOnboardingControllerRecordBackgroundCheckConsent as deliveryOnboardingControllerRecordBackgroundCheckConsent } from './fn/delivery-onboarding/delivery-onboarding-controller-record-background-check-consent';
 export type { DeliveryOnboardingControllerSubmit$Params as DeliveryOnboardingControllerSubmit$Params } from './fn/delivery-onboarding/delivery-onboarding-controller-submit';
 export { deliveryOnboardingControllerSubmit as deliveryOnboardingControllerSubmit } from './fn/delivery-onboarding/delivery-onboarding-controller-submit';
 export type { AdminOnboardingControllerRequestChanges$Params as AdminOnboardingControllerRequestChanges$Params } from './fn/delivery-onboarding-admin/admin-onboarding-controller-request-changes';
@@ -676,12 +680,6 @@ export type { ProfileControllerGetMyProfile$Params as ProfileControllerGetMyProf
 export { profileControllerGetMyProfile as profileControllerGetMyProfile } from './fn/delivery-profile/profile-controller-get-my-profile';
 export type { ProfileControllerUpdateMyProfile$Params as ProfileControllerUpdateMyProfile$Params } from './fn/delivery-profile/profile-controller-update-my-profile';
 export { profileControllerUpdateMyProfile as profileControllerUpdateMyProfile } from './fn/delivery-profile/profile-controller-update-my-profile';
-export type { ProofControllerGeneratePickupOtp$Params as ProofControllerGeneratePickupOtp$Params } from './fn/delivery-proof/proof-controller-generate-pickup-otp';
-export { proofControllerGeneratePickupOtp as proofControllerGeneratePickupOtp } from './fn/delivery-proof/proof-controller-generate-pickup-otp';
-export type { ProofControllerVerifyPickupOtp$Params as ProofControllerVerifyPickupOtp$Params } from './fn/delivery-proof/proof-controller-verify-pickup-otp';
-export { proofControllerVerifyPickupOtp as proofControllerVerifyPickupOtp } from './fn/delivery-proof/proof-controller-verify-pickup-otp';
-export type { ProofControllerGetPickupStatus$Params as ProofControllerGetPickupStatus$Params } from './fn/delivery-proof/proof-controller-get-pickup-status';
-export { proofControllerGetPickupStatus as proofControllerGetPickupStatus } from './fn/delivery-proof/proof-controller-get-pickup-status';
 export type { ProofControllerGenerateDeliveryOtp$Params as ProofControllerGenerateDeliveryOtp$Params } from './fn/delivery-proof/proof-controller-generate-delivery-otp';
 export { proofControllerGenerateDeliveryOtp as proofControllerGenerateDeliveryOtp } from './fn/delivery-proof/proof-controller-generate-delivery-otp';
 export type { ProofControllerVerifyDeliveryOtp$Params as ProofControllerVerifyDeliveryOtp$Params } from './fn/delivery-proof/proof-controller-verify-delivery-otp';
@@ -710,6 +708,8 @@ export type { NotificationsControllerMarkAsRead$Params as NotificationsControlle
 export { notificationsControllerMarkAsRead as notificationsControllerMarkAsRead } from './fn/notifications/notifications-controller-mark-as-read';
 export type { NotificationsControllerRegisterPushToken$Params as NotificationsControllerRegisterPushToken$Params } from './fn/notifications/notifications-controller-register-push-token';
 export { notificationsControllerRegisterPushToken as notificationsControllerRegisterPushToken } from './fn/notifications/notifications-controller-register-push-token';
+export type { NotificationsControllerUnregisterPushToken$Params as NotificationsControllerUnregisterPushToken$Params } from './fn/notifications/notifications-controller-unregister-push-token';
+export { notificationsControllerUnregisterPushToken as notificationsControllerUnregisterPushToken } from './fn/notifications/notifications-controller-unregister-push-token';
 export type { NotificationsControllerGetAllForAdmin$Params as NotificationsControllerGetAllForAdmin$Params } from './fn/notifications/notifications-controller-get-all-for-admin';
 export { notificationsControllerGetAllForAdmin as notificationsControllerGetAllForAdmin } from './fn/notifications/notifications-controller-get-all-for-admin';
 export type { NotificationsControllerGetByIdForAdmin$Params as NotificationsControllerGetByIdForAdmin$Params } from './fn/notifications/notifications-controller-get-by-id-for-admin';

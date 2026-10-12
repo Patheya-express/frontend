@@ -13,6 +13,8 @@ import { deliveryOnboardingControllerCompleteStep } from '../fn/delivery-onboard
 import { DeliveryOnboardingControllerCompleteStep$Params } from '../fn/delivery-onboarding/delivery-onboarding-controller-complete-step';
 import { deliveryOnboardingControllerGetState } from '../fn/delivery-onboarding/delivery-onboarding-controller-get-state';
 import { DeliveryOnboardingControllerGetState$Params } from '../fn/delivery-onboarding/delivery-onboarding-controller-get-state';
+import { deliveryOnboardingControllerRecordBackgroundCheckConsent } from '../fn/delivery-onboarding/delivery-onboarding-controller-record-background-check-consent';
+import { DeliveryOnboardingControllerRecordBackgroundCheckConsent$Params } from '../fn/delivery-onboarding/delivery-onboarding-controller-record-background-check-consent';
 import { deliveryOnboardingControllerSubmit } from '../fn/delivery-onboarding/delivery-onboarding-controller-submit';
 import { DeliveryOnboardingControllerSubmit$Params } from '../fn/delivery-onboarding/delivery-onboarding-controller-submit';
 import { DeliveryOnboardingResponseDto } from '../models/delivery-onboarding-response-dto';
@@ -62,7 +64,7 @@ export class DeliveryOnboardingService extends BaseService {
   /**
    * Mark a wizard step complete.
    *
-   * Records wizard progress only — the step's actual data is saved via the existing dedicated endpoint for that section (profile, vehicles, documents, bank account) before this is called.
+   * Records wizard progress. The step's data must already be saved via the dedicated endpoint for that section (profile, vehicles, documents, bank account, background-check consent) — the backend verifies it exists and returns 400 otherwise.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `deliveryOnboardingControllerCompleteStep()` instead.
@@ -77,7 +79,7 @@ export class DeliveryOnboardingService extends BaseService {
   /**
    * Mark a wizard step complete.
    *
-   * Records wizard progress only — the step's actual data is saved via the existing dedicated endpoint for that section (profile, vehicles, documents, bank account) before this is called.
+   * Records wizard progress. The step's data must already be saved via the dedicated endpoint for that section (profile, vehicles, documents, bank account, background-check consent) — the backend verifies it exists and returns 400 otherwise.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `deliveryOnboardingControllerCompleteStep$Response()` instead.
@@ -86,6 +88,39 @@ export class DeliveryOnboardingService extends BaseService {
    */
   deliveryOnboardingControllerCompleteStep(params: DeliveryOnboardingControllerCompleteStep$Params, context?: HttpContext): Promise<DeliveryOnboardingResponseDto> {
     const resp = this.deliveryOnboardingControllerCompleteStep$Response(params, context);
+    return resp.then((r: StrictHttpResponse<DeliveryOnboardingResponseDto>): DeliveryOnboardingResponseDto => r.body);
+  }
+
+  /** Path part for operation `deliveryOnboardingControllerRecordBackgroundCheckConsent()` */
+  static readonly DeliveryOnboardingControllerRecordBackgroundCheckConsentPath = '/api/v1/delivery/onboarding/background-check-consent';
+
+  /**
+   * Record background-check consent (wizard step 11).
+   *
+   * Stores when the partner consented to the background verification check. Idempotent — the first consent timestamp is kept.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `deliveryOnboardingControllerRecordBackgroundCheckConsent()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  deliveryOnboardingControllerRecordBackgroundCheckConsent$Response(params: DeliveryOnboardingControllerRecordBackgroundCheckConsent$Params, context?: HttpContext): Promise<StrictHttpResponse<DeliveryOnboardingResponseDto>> {
+    const obs = deliveryOnboardingControllerRecordBackgroundCheckConsent(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Record background-check consent (wizard step 11).
+   *
+   * Stores when the partner consented to the background verification check. Idempotent — the first consent timestamp is kept.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `deliveryOnboardingControllerRecordBackgroundCheckConsent$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  deliveryOnboardingControllerRecordBackgroundCheckConsent(params: DeliveryOnboardingControllerRecordBackgroundCheckConsent$Params, context?: HttpContext): Promise<DeliveryOnboardingResponseDto> {
+    const resp = this.deliveryOnboardingControllerRecordBackgroundCheckConsent$Response(params, context);
     return resp.then((r: StrictHttpResponse<DeliveryOnboardingResponseDto>): DeliveryOnboardingResponseDto => r.body);
   }
 
