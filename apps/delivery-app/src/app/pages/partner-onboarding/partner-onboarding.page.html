@@ -1,105 +1,238 @@
-<lib-auth-layout brandName="Patheya Express Courier">
+<lib-auth-layout [brandName]="brandName">
   <lib-auth-card
-    title="Join as a Delivery Partner"
-    subtitle="Deliver with Patheya Express and earn on your own schedule."
+    title="Join as a delivery partner"
+    subtitle="Create your account and add your vehicle. You can start delivering once your documents are verified and your account is approved."
   >
-    <form class="auth-form" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <form
+      class="auth-form"
+      [formGroup]="form"
+      (ngSubmit)="onSubmit()"
+      novalidate
+    >
       @if (errorMessage()) {
-        <div class="form-alert" role="alert">{{ errorMessage() }}</div>
+      <div class="form-alert" role="alert">{{ errorMessage() }}</div>
       }
 
-      <div class="form-row">
-        <div class="form-field">
-          <label for="onboard-first-name">First name</label>
-          <input
-            id="onboard-first-name"
-            type="text"
-            autocomplete="given-name"
-            formControlName="firstName"
-            [class.invalid]="form.controls.firstName.invalid && form.controls.firstName.touched"
-          />
-          @if (form.controls.firstName.invalid && form.controls.firstName.touched) {
-            <span class="form-field-error">First name is required.</span>
-          }
-        </div>
+      <p class="form-required-legend">
+        <span class="form-required" aria-hidden="true">*</span> Required
+      </p>
 
-        <div class="form-field">
-          <label for="onboard-last-name">Last name</label>
-          <input
-            id="onboard-last-name"
-            type="text"
-            autocomplete="family-name"
-            formControlName="lastName"
-            [class.invalid]="form.controls.lastName.invalid && form.controls.lastName.touched"
-          />
-          @if (form.controls.lastName.invalid && form.controls.lastName.touched) {
-            <span class="form-field-error">Last name is required.</span>
-          }
-        </div>
-      </div>
+      <fieldset class="form-section" [disabled]="accountCreated()">
+        <legend>Your details</legend>
 
-      <div class="form-field">
-        <label for="onboard-email">Email</label>
-        <input
-          id="onboard-email"
-          type="email"
-          autocomplete="email"
-          formControlName="email"
-          [class.invalid]="form.controls.email.invalid && form.controls.email.touched"
-        />
-        @if (form.controls.email.invalid && form.controls.email.touched) {
-          <span class="form-field-error">Enter a valid email address.</span>
-        }
-      </div>
-
-      <div class="form-field">
-        <label for="onboard-password">Password</label>
-        <input
-          id="onboard-password"
-          type="password"
-          autocomplete="new-password"
-          formControlName="password"
-          [class.invalid]="form.controls.password.invalid && form.controls.password.touched"
-        />
-        @if (form.controls.password.invalid && form.controls.password.touched) {
-          <span class="form-field-error">Password must be at least 8 characters.</span>
-        }
-      </div>
-
-      <div class="form-row">
-        <div class="form-field">
-          <label for="onboard-vehicle-type">Vehicle type</label>
-          <select id="onboard-vehicle-type" formControlName="vehicleType">
-            @for (type of vehicleTypes; track type) {
-              <option [value]="type">{{ type }}</option>
+        <div class="form-row">
+          <div class="form-field">
+            <label for="onboard-first-name"
+              >First name<span class="form-required" aria-hidden="true"
+                >*</span
+              ></label
+            >
+            <input
+              id="onboard-first-name"
+              type="text"
+              autocomplete="given-name"
+              placeholder="Enter your first name"
+              required
+              formControlName="firstName"
+              [class.invalid]="showError('firstName')"
+              [attr.aria-invalid]="showError('firstName') ? true : null"
+              [attr.aria-describedby]="showError('firstName') ? 'onboard-first-name-error' : null"
+            />
+            @if (showError('firstName')) {
+            <span id="onboard-first-name-error" class="form-field-error"
+              >First name is required.</span
+            >
             }
-          </select>
+          </div>
+
+          <div class="form-field">
+            <label for="onboard-last-name"
+              >Last name<span class="form-required" aria-hidden="true"
+                >*</span
+              ></label
+            >
+            <input
+              id="onboard-last-name"
+              type="text"
+              autocomplete="family-name"
+              placeholder="Enter your last name"
+              required
+              formControlName="lastName"
+              [class.invalid]="showError('lastName')"
+              [attr.aria-invalid]="showError('lastName') ? true : null"
+              [attr.aria-describedby]="showError('lastName') ? 'onboard-last-name-error' : null"
+            />
+            @if (showError('lastName')) {
+            <span id="onboard-last-name-error" class="form-field-error"
+              >Last name is required.</span
+            >
+            }
+          </div>
         </div>
 
         <div class="form-field">
-          <label for="onboard-vehicle-number">Vehicle number</label>
+          <label for="onboard-email"
+            >Email<span class="form-required" aria-hidden="true">*</span></label
+          >
           <input
-            id="onboard-vehicle-number"
-            type="text"
-            formControlName="vehicleNumber"
-            [class.invalid]="form.controls.vehicleNumber.invalid && form.controls.vehicleNumber.touched"
+            id="onboard-email"
+            type="email"
+            autocomplete="email"
+            inputmode="email"
+            placeholder="Enter your email address"
+            required
+            formControlName="email"
+            [class.invalid]="showError('email')"
+            [attr.aria-invalid]="showError('email') ? true : null"
+            [attr.aria-describedby]="showError('email') ? 'onboard-email-error' : null"
           />
-          @if (form.controls.vehicleNumber.invalid && form.controls.vehicleNumber.touched) {
-            <span class="form-field-error">Vehicle number is required.</span>
+          @if (showError('email')) {
+          <span id="onboard-email-error" class="form-field-error">
+            {{ form.controls.email.hasError('required') ? 'Email is required.' :
+            'Enter a valid email address.' }}
+          </span>
           }
         </div>
-      </div>
 
-      <div class="form-field">
-        <label for="onboard-license-number">Driving license number (optional)</label>
-        <input id="onboard-license-number" type="text" formControlName="licenseNumber" />
-      </div>
+        <div class="form-field">
+          <label for="onboard-password"
+            >Password<span class="form-required" aria-hidden="true"
+              >*</span
+            ></label
+          >
+          <input
+            id="onboard-password"
+            type="password"
+            autocomplete="new-password"
+            placeholder="Create a password"
+            required
+            [attr.minlength]="passwordMinLength"
+            formControlName="password"
+            aria-describedby="onboard-password-hint"
+            [class.invalid]="showError('password')"
+            [attr.aria-invalid]="showError('password') ? true : null"
+          />
+          <p id="onboard-password-hint" class="form-field-hint">
+            Use at least {{ passwordMinLength }} characters.
+          </p>
+          @if (showError('password')) {
+          <span class="form-field-error" role="alert">
+            {{ form.controls.password.hasError('required') ? 'Password is
+            required.' : 'Password must be at least ' + passwordMinLength + '
+            characters.' }}
+          </span>
+          }
+        </div>
 
-      <lib-primary-button type="submit" class="form-submit" [disabled]="submitting()" [loading]="submitting()">
-        {{ submitting() ? 'Submitting…' : 'Join as Delivery Partner' }}
+        <div class="form-field">
+          <label for="onboard-confirm-password"
+            >Confirm password<span class="form-required" aria-hidden="true"
+              >*</span
+            ></label
+          >
+          <input
+            id="onboard-confirm-password"
+            type="password"
+            autocomplete="new-password"
+            placeholder="Re-enter your password"
+            required
+            formControlName="confirmPassword"
+            [class.invalid]="showError('confirmPassword') || showPasswordMismatch()"
+            [attr.aria-invalid]="showError('confirmPassword') || showPasswordMismatch() ? true : null"
+            [attr.aria-describedby]="showError('confirmPassword') || showPasswordMismatch() ? 'onboard-confirm-password-error' : null"
+          />
+          @if (showError('confirmPassword')) {
+          <span id="onboard-confirm-password-error" class="form-field-error"
+            >Confirm your password.</span
+          >
+          } @else if (showPasswordMismatch()) {
+          <span id="onboard-confirm-password-error" class="form-field-error"
+            >Passwords don't match.</span
+          >
+          }
+        </div>
+      </fieldset>
+
+      <fieldset class="form-section">
+        <legend>Your vehicle</legend>
+
+        <div class="form-row">
+          <div class="form-field">
+            <label for="onboard-vehicle-type"
+              >Vehicle type<span class="form-required" aria-hidden="true"
+                >*</span
+              ></label
+            >
+            <select
+              id="onboard-vehicle-type"
+              required
+              formControlName="vehicleType"
+            >
+              @for (option of vehicleTypeOptions; track option.value) {
+              <option [value]="option.value">{{ option.label }}</option>
+              }
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label for="onboard-vehicle-number"
+              >Vehicle registration number<span
+                class="form-required"
+                aria-hidden="true"
+                >*</span
+              ></label
+            >
+            <input
+              id="onboard-vehicle-number"
+              type="text"
+              autocapitalize="characters"
+              placeholder="e.g. KA01AB1234"
+              required
+              formControlName="vehicleNumber"
+              [class.invalid]="showError('vehicleNumber')"
+              [attr.aria-invalid]="showError('vehicleNumber') ? true : null"
+              [attr.aria-describedby]="showError('vehicleNumber') ? 'onboard-vehicle-number-error' : null"
+            />
+            @if (showError('vehicleNumber')) {
+            <span id="onboard-vehicle-number-error" class="form-field-error"
+              >Vehicle registration number is required.</span
+            >
+            }
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="onboard-license-number"
+            >Driving licence number (optional)</label
+          >
+          <input
+            id="onboard-license-number"
+            type="text"
+            autocapitalize="characters"
+            placeholder="Enter your driving licence number"
+            formControlName="licenseNumber"
+            aria-describedby="onboard-license-number-hint"
+          />
+          <p id="onboard-license-number-hint" class="form-field-hint">
+            You will also upload a photo of your driving licence during
+            verification.
+          </p>
+        </div>
+      </fieldset>
+
+      <lib-primary-button
+        type="submit"
+        class="form-submit"
+        [disabled]="submitting()"
+        [loading]="submitting()"
+      >
+        {{ submitting() ? 'Submitting…' : accountCreated() ? 'Save vehicle
+        details' : 'Create account' }}
       </lib-primary-button>
     </form>
 
-    <span auth-card-footer>Already a courier? <a routerLink="/auth/login">Log in</a></span>
+    <span auth-card-footer
+      >Already a delivery partner? <a routerLink="/auth/login">Log in</a></span
+    >
   </lib-auth-card>
 </lib-auth-layout>

@@ -59,6 +59,14 @@ export const appConfig: ApplicationConfig = {
         return config;
       },
     },
-    provideAppInitializer(() => inject(AuthFacade).initialize()),
+    // Same as customer-app: on native the session lives in the Keychain/Keystore, which must be
+    // read into AuthStorageService's cache before initialize()'s synchronous load(). Without the
+    // hydrate step every native cold launch saw "no session" even with a valid one stored. No-op
+    // on web. Route guards rely on isAuthenticated() being settled before the first navigation.
+    provideAppInitializer(async () => {
+      const authFacade = inject(AuthFacade);
+      await authFacade.hydrateNativeSession();
+      authFacade.initialize();
+    }),
   ],
 };
