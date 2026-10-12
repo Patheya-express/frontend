@@ -1,10 +1,20 @@
-import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
-import { ConfirmDialogComponent, FileUploadComponent } from '@patheya-express-frontend/ui';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
+import {
+  ConfirmDialogComponent,
+  FileUploadComponent,
+} from '@patheya-express-frontend/ui';
 import type { PickupPhotoDialogState } from '../../store/delivery-assignments.store';
 import { DeliveryAssignmentsFacade } from '../../facades/delivery-assignments.facade';
+import { PICKUP_PHOTO_LIMITS_HINT } from '../../utils/pickup-photo.utils';
 
 /**
- * Business requirement (delivery parcel photo + customer confirmation + OTP-gated delivery) —
+ * Business requirement (parcel photo gates pickup; reference-only, no customer approval) —
  * mandatory pickup-parcel photo capture. Self-contained like ProofOtpDialogComponent (reads the
  * facade directly), since it owns the same shape of local state (a not-yet-submitted selection
  * the rider can retake before confirming — see PickupPhotoDialogState's doc comment). Reuses
@@ -25,12 +35,15 @@ import { DeliveryAssignmentsFacade } from '../../facades/delivery-assignments.fa
 })
 export class PickupPhotoDialogComponent {
   protected readonly facade = inject(DeliveryAssignmentsFacade);
+  protected readonly limitsHint = PICKUP_PHOTO_LIMITS_HINT;
 
   /** Last known non-null dialog state, kept around purely so ConfirmDialogComponent's own leave
    *  animation (see its `visible` doc comment) has content to fade out — `pickupPhotoDialog()` is
    *  cleared the instant the upload succeeds, before that animation gets to play. Not part of the
    *  upload state machine; animation support only. */
-  protected readonly displayDialog = signal<PickupPhotoDialogState | null>(null);
+  protected readonly displayDialog = signal<PickupPhotoDialogState | null>(
+    null,
+  );
 
   constructor() {
     effect(() => {
@@ -42,7 +55,7 @@ export class PickupPhotoDialogComponent {
   }
 
   protected onFileSelected(file: File): void {
-    this.facade.selectPickupPhoto(file);
+    void this.facade.selectPickupPhoto(file);
   }
 
   protected canSubmit(): boolean {

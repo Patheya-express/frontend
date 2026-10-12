@@ -3,6 +3,11 @@
 
 import { DeliveryOnboardingChangeItemDto } from '../models/delivery-onboarding-change-item-dto';
 export interface DeliveryOnboardingResponseDto {
+
+  /**
+   * When the partner consented to the background verification check (step 11).
+   */
+  backgroundCheckConsentAt?: string;
   changesRequested?: Array<DeliveryOnboardingChangeItemDto>;
   completedSteps: Array<number>;
   createdAt: string;

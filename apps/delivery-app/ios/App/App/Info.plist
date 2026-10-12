@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>Patheya Express Delivery</string>
+        <string>Patheya Delivery Partner</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -27,14 +27,14 @@
 	<!-- Live courier location tracking (AUDIT-016) — foreground only, requested by
 	     @capacitor/geolocation when a delivery partner has an active out-for-delivery order. -->
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Patheya Express Delivery uses your location to share your live position with customers while you're delivering their order.</string>
+	<string>Patheya Delivery Partner uses your location to share your live position with customers while you're delivering their order.</string>
 	<!-- Mandatory pickup-parcel photo (capture="environment" opens the camera directly), onboarding
 	     selfie and KYC/vehicle documents via lib-file-upload — iOS terminates the app on camera access
 	     without NSCameraUsageDescription. -->
 	<key>NSCameraUsageDescription</key>
-	<string>Patheya Express Delivery uses your camera to take the pickup parcel photo, your verification selfie and photos of your documents.</string>
+	<string>Patheya Delivery Partner uses your camera to take the pickup parcel photo, your verification selfie and photos of your documents.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Patheya Express Delivery uses your photo library to let you choose photos of your documents for upload.</string>
+	<string>Patheya Delivery Partner uses your photo library to let you choose photos of your documents for upload.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

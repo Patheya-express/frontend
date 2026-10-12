@@ -32,6 +32,8 @@ import { notificationsControllerRegisterPushToken } from '../fn/notifications/no
 import { NotificationsControllerRegisterPushToken$Params } from '../fn/notifications/notifications-controller-register-push-token';
 import { notificationsControllerRetryNotification } from '../fn/notifications/notifications-controller-retry-notification';
 import { NotificationsControllerRetryNotification$Params } from '../fn/notifications/notifications-controller-retry-notification';
+import { notificationsControllerUnregisterPushToken } from '../fn/notifications/notifications-controller-unregister-push-token';
+import { NotificationsControllerUnregisterPushToken$Params } from '../fn/notifications/notifications-controller-unregister-push-token';
 import { PaginatedAdminNotificationsResponseDto } from '../models/paginated-admin-notifications-response-dto';
 import { PaginatedNotificationsResponseDto } from '../models/paginated-notifications-response-dto';
 import { PushTokenResponseDto } from '../models/push-token-response-dto';
@@ -272,6 +274,39 @@ export class NotificationsService extends BaseService {
   notificationsControllerRegisterPushToken(params: NotificationsControllerRegisterPushToken$Params, context?: HttpContext): Promise<PushTokenResponseDto> {
     const resp = this.notificationsControllerRegisterPushToken$Response(params, context);
     return resp.then((r: StrictHttpResponse<PushTokenResponseDto>): PushTokenResponseDto => r.body);
+  }
+
+  /** Path part for operation `notificationsControllerUnregisterPushToken()` */
+  static readonly NotificationsControllerUnregisterPushTokenPath = '/api/v1/notifications/push-token';
+
+  /**
+   * Unregister push notification token.
+   *
+   * Removes the caller's own device token (call on logout so the device stops receiving this account's pushes). Idempotent; another user's token is never affected.
+   *
+   * This method provides access to the full `HttpResponse`, allowing access to response headers.
+   * To access only the response body, use `notificationsControllerUnregisterPushToken()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  notificationsControllerUnregisterPushToken$Response(params: NotificationsControllerUnregisterPushToken$Params, context?: HttpContext): Promise<StrictHttpResponse<void>> {
+    const obs = notificationsControllerUnregisterPushToken(this.http, this.rootUrl, params, context);
+    return firstValueFrom(obs);
+  }
+
+  /**
+   * Unregister push notification token.
+   *
+   * Removes the caller's own device token (call on logout so the device stops receiving this account's pushes). Idempotent; another user's token is never affected.
+   *
+   * This method provides access only to the response body.
+   * To access the full response (for headers, for example), `notificationsControllerUnregisterPushToken$Response()` instead.
+   *
+   * This method sends `application/json` and handles request body of type `application/json`.
+   */
+  notificationsControllerUnregisterPushToken(params: NotificationsControllerUnregisterPushToken$Params, context?: HttpContext): Promise<void> {
+    const resp = this.notificationsControllerUnregisterPushToken$Response(params, context);
+    return resp.then((r: StrictHttpResponse<void>): void => r.body);
   }
 
   /** Path part for operation `notificationsControllerGetAllForAdmin()` */

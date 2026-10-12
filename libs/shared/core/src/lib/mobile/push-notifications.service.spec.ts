@@ -6,7 +6,7 @@ import { PushNotificationsService } from './push-notifications.service';
 
 jest.mock('@capacitor/core', () => ({
   ...jest.requireActual('@capacitor/core'),
-  Capacitor: { isNativePlatform: jest.fn() },
+  Capacitor: { isNativePlatform: jest.fn(), getPlatform: jest.fn() },
 }));
 
 jest.mock('@capacitor/push-notifications', () => ({
@@ -16,6 +16,7 @@ jest.mock('@capacitor/push-notifications', () => ({
     register: jest.fn(),
     removeAllListeners: jest.fn(),
     unregister: jest.fn(),
+    createChannel: jest.fn(),
   },
 }));
 
@@ -26,12 +27,13 @@ type ListenerMap = Map<string, (event: unknown) => void>;
 
 function captureListeners(): ListenerMap {
   const listeners: ListenerMap = new Map();
-  mockedPushNotifications.addListener.mockImplementation(
-    ((event: string, handler: (event: unknown) => void) => {
-      listeners.set(event, handler);
-      return Promise.resolve({ remove: jest.fn() });
-    }) as typeof PushNotifications.addListener,
-  );
+  mockedPushNotifications.addListener.mockImplementation(((
+    event: string,
+    handler: (event: unknown) => void,
+  ) => {
+    listeners.set(event, handler);
+    return Promise.resolve({ remove: jest.fn() });
+  }) as typeof PushNotifications.addListener);
   return listeners;
 }
 
@@ -73,7 +75,9 @@ describe('PushNotificationsService', () => {
     });
 
     it('requests permission and registers when granted', async () => {
-      mockedPushNotifications.requestPermissions.mockResolvedValue({ receive: 'granted' });
+      mockedPushNotifications.requestPermissions.mockResolvedValue({
+        receive: 'granted',
+      });
       const service = createService();
 
       await service.initialize();
@@ -83,7 +87,9 @@ describe('PushNotificationsService', () => {
     });
 
     it('does not register when permission is denied, and records the denial', async () => {
-      mockedPushNotifications.requestPermissions.mockResolvedValue({ receive: 'denied' });
+      mockedPushNotifications.requestPermissions.mockResolvedValue({
+        receive: 'denied',
+      });
       const service = createService();
 
       await service.initialize();
@@ -93,17 +99,23 @@ describe('PushNotificationsService', () => {
     });
 
     it('never prompts a second time, even after a denial', async () => {
-      mockedPushNotifications.requestPermissions.mockResolvedValue({ receive: 'denied' });
+      mockedPushNotifications.requestPermissions.mockResolvedValue({
+        receive: 'denied',
+      });
       const service = createService();
 
       await service.initialize();
       await service.initialize();
 
-      expect(mockedPushNotifications.requestPermissions).toHaveBeenCalledTimes(1);
+      expect(mockedPushNotifications.requestPermissions).toHaveBeenCalledTimes(
+        1,
+      );
     });
 
     it('captures the token from a registration event', async () => {
-      mockedPushNotifications.requestPermissions.mockResolvedValue({ receive: 'granted' });
+      mockedPushNotifications.requestPermissions.mockResolvedValue({
+        receive: 'granted',
+      });
       const listeners = captureListeners();
       const service = createService();
 
@@ -114,7 +126,9 @@ describe('PushNotificationsService', () => {
     });
 
     it('clears the token on a registration error', async () => {
-      mockedPushNotifications.requestPermissions.mockResolvedValue({ receive: 'granted' });
+      mockedPushNotifications.requestPermissions.mockResolvedValue({
+        receive: 'granted',
+      });
       const listeners = captureListeners();
       const service = createService();
 
@@ -126,7 +140,9 @@ describe('PushNotificationsService', () => {
     });
 
     it('records a tapped notification and clears it on acknowledgeTap()', async () => {
-      mockedPushNotifications.requestPermissions.mockResolvedValue({ receive: 'granted' });
+      mockedPushNotifications.requestPermissions.mockResolvedValue({
+        receive: 'granted',
+      });
       const listeners = captureListeners();
       const service = createService();
       await service.initialize();
@@ -145,7 +161,9 @@ describe('PushNotificationsService', () => {
     });
 
     it('records a foreground notification', async () => {
-      mockedPushNotifications.requestPermissions.mockResolvedValue({ receive: 'granted' });
+      mockedPushNotifications.requestPermissions.mockResolvedValue({
+        receive: 'granted',
+      });
       const listeners = captureListeners();
       const service = createService();
       await service.initialize();
@@ -156,7 +174,9 @@ describe('PushNotificationsService', () => {
     });
 
     it('reset() clears all state and unregisters natively after a successful initialize', async () => {
-      mockedPushNotifications.requestPermissions.mockResolvedValue({ receive: 'granted' });
+      mockedPushNotifications.requestPermissions.mockResolvedValue({
+        receive: 'granted',
+      });
       captureListeners();
       const service = createService();
       await service.initialize();
@@ -181,18 +201,24 @@ describe('PushNotificationsService', () => {
     });
 
     it('allows initialize() to run again after reset() (e.g. a second login in the same session)', async () => {
-      mockedPushNotifications.requestPermissions.mockResolvedValue({ receive: 'granted' });
+      mockedPushNotifications.requestPermissions.mockResolvedValue({
+        receive: 'granted',
+      });
       const service = createService();
 
       await service.initialize();
       await service.reset();
       await service.initialize();
 
-      expect(mockedPushNotifications.requestPermissions).toHaveBeenCalledTimes(2);
+      expect(mockedPushNotifications.requestPermissions).toHaveBeenCalledTimes(
+        2,
+      );
     });
 
     it('registers its cleanup with LogoutCleanupRegistry, which triggers reset()', async () => {
-      mockedPushNotifications.requestPermissions.mockResolvedValue({ receive: 'granted' });
+      mockedPushNotifications.requestPermissions.mockResolvedValue({
+        receive: 'granted',
+      });
       const service = createService();
       await service.initialize();
 
@@ -204,6 +230,52 @@ describe('PushNotificationsService', () => {
 
       expect(mockedPushNotifications.unregister).toHaveBeenCalled();
       expect(service.token()).toBeNull();
+    });
+  });
+
+  describe('createAndroidChannel', () => {
+    const CHANNEL = {
+      id: 'delivery_assignments',
+      name: 'Delivery assignments',
+      description: 'New delivery offers',
+      importance: 5 as const,
+    };
+
+    it('creates the channel on Android', async () => {
+      mockedCapacitor.isNativePlatform.mockReturnValue(true);
+      mockedCapacitor.getPlatform.mockReturnValue('android');
+      mockedPushNotifications.createChannel.mockResolvedValue();
+
+      await createService().createAndroidChannel(CHANNEL);
+
+      expect(mockedPushNotifications.createChannel).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'delivery_assignments', importance: 5 }),
+      );
+    });
+
+    it('does nothing on iOS or the web', async () => {
+      mockedCapacitor.isNativePlatform.mockReturnValue(true);
+      mockedCapacitor.getPlatform.mockReturnValue('ios');
+      await createService().createAndroidChannel(CHANNEL);
+      TestBed.resetTestingModule();
+
+      mockedCapacitor.isNativePlatform.mockReturnValue(false);
+      mockedCapacitor.getPlatform.mockReturnValue('web');
+      await createService().createAndroidChannel(CHANNEL);
+
+      expect(mockedPushNotifications.createChannel).not.toHaveBeenCalled();
+    });
+
+    it('never throws if the platform rejects the channel', async () => {
+      mockedCapacitor.isNativePlatform.mockReturnValue(true);
+      mockedCapacitor.getPlatform.mockReturnValue('android');
+      mockedPushNotifications.createChannel.mockRejectedValue(
+        new Error('boom'),
+      );
+
+      await expect(
+        createService().createAndroidChannel(CHANNEL),
+      ).resolves.toBeUndefined();
     });
   });
 });

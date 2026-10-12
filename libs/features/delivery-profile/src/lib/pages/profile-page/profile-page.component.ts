@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component, OnInit, effect, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  effect,
+  inject,
+} from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import {
@@ -8,14 +14,19 @@ import {
   StatusChipComponent,
   type StatusChipTone,
 } from '@patheya-express-frontend/ui';
-import { MapPickerComponent, type PickedLocation } from '@patheya-express-frontend/map-picker';
+import {
+  MapPickerComponent,
+  type PickedLocation,
+} from '@patheya-express-frontend/map-picker';
 import { DeliveryVerificationFacade } from '@patheya-express-frontend/delivery-verification';
 import type { DeliveryVerificationResponseDto } from '@patheya-express-frontend/api-sdk';
 import { DeliveryProfileFacade } from '../../facades/delivery-profile.facade';
 
 const GENDERS = ['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY'] as const;
 
-function stageTone(stage: DeliveryVerificationResponseDto['stage'] | undefined): StatusChipTone {
+function stageTone(
+  stage: DeliveryVerificationResponseDto['stage'] | undefined,
+): StatusChipTone {
   switch (stage) {
     case 'APPROVED':
       return 'success';
@@ -54,6 +65,12 @@ export class ProfilePageComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
 
   protected readonly genders = GENDERS;
+  /** `<input type="date" max>` (local date) — a date of birth can't be in the future. */
+  protected readonly maxBirthDate = [
+    new Date().getFullYear(),
+    String(new Date().getMonth() + 1).padStart(2, '0'),
+    String(new Date().getDate()).padStart(2, '0'),
+  ].join('-');
   protected readonly stageTone = stageTone;
 
   protected initialCurrentPosition?: { lat: number; lng: number };
@@ -132,8 +149,14 @@ export class ProfilePageComponent implements OnInit {
       currentAddressLongitude: profile.currentAddressLongitude ?? 0,
     });
 
-    if (profile.currentAddressLatitude !== undefined && profile.currentAddressLongitude !== undefined) {
-      this.initialCurrentPosition = { lat: profile.currentAddressLatitude, lng: profile.currentAddressLongitude };
+    if (
+      profile.currentAddressLatitude !== undefined &&
+      profile.currentAddressLongitude !== undefined
+    ) {
+      this.initialCurrentPosition = {
+        lat: profile.currentAddressLatitude,
+        lng: profile.currentAddressLongitude,
+      };
     }
 
     this.permanentAddressForm.reset({
@@ -147,8 +170,14 @@ export class ProfilePageComponent implements OnInit {
       permanentLongitude: profile.permanentLongitude ?? 0,
     });
 
-    if (profile.permanentLatitude !== undefined && profile.permanentLongitude !== undefined) {
-      this.initialPermanentPosition = { lat: profile.permanentLatitude, lng: profile.permanentLongitude };
+    if (
+      profile.permanentLatitude !== undefined &&
+      profile.permanentLongitude !== undefined
+    ) {
+      this.initialPermanentPosition = {
+        lat: profile.permanentLatitude,
+        lng: profile.permanentLongitude,
+      };
     }
 
     this.emergencyContactForm.reset({
@@ -166,10 +195,16 @@ export class ProfilePageComponent implements OnInit {
     this.currentAddressForm.patchValue({
       currentAddressLatitude: location.lat,
       currentAddressLongitude: location.lng,
-      currentAddressLine1: location.addressLine1 || this.currentAddressForm.controls.currentAddressLine1.value,
-      currentCity: location.city || this.currentAddressForm.controls.currentCity.value,
-      currentState: location.state || this.currentAddressForm.controls.currentState.value,
-      currentPostalCode: location.postalCode || this.currentAddressForm.controls.currentPostalCode.value,
+      currentAddressLine1:
+        location.addressLine1 ||
+        this.currentAddressForm.controls.currentAddressLine1.value,
+      currentCity:
+        location.city || this.currentAddressForm.controls.currentCity.value,
+      currentState:
+        location.state || this.currentAddressForm.controls.currentState.value,
+      currentPostalCode:
+        location.postalCode ||
+        this.currentAddressForm.controls.currentPostalCode.value,
     });
     this.currentAddressForm.markAsDirty();
   }
@@ -178,10 +213,17 @@ export class ProfilePageComponent implements OnInit {
     this.permanentAddressForm.patchValue({
       permanentLatitude: location.lat,
       permanentLongitude: location.lng,
-      permanentAddressLine1: location.addressLine1 || this.permanentAddressForm.controls.permanentAddressLine1.value,
-      permanentCity: location.city || this.permanentAddressForm.controls.permanentCity.value,
-      permanentState: location.state || this.permanentAddressForm.controls.permanentState.value,
-      permanentPostalCode: location.postalCode || this.permanentAddressForm.controls.permanentPostalCode.value,
+      permanentAddressLine1:
+        location.addressLine1 ||
+        this.permanentAddressForm.controls.permanentAddressLine1.value,
+      permanentCity:
+        location.city || this.permanentAddressForm.controls.permanentCity.value,
+      permanentState:
+        location.state ||
+        this.permanentAddressForm.controls.permanentState.value,
+      permanentPostalCode:
+        location.postalCode ||
+        this.permanentAddressForm.controls.permanentPostalCode.value,
     });
     this.permanentAddressForm.markAsDirty();
   }
@@ -192,7 +234,10 @@ export class ProfilePageComponent implements OnInit {
       dateOfBirth: value.dateOfBirth || undefined,
       gender: value.gender || undefined,
       languagesSpoken: value.languagesSpoken
-        ? value.languagesSpoken.split(',').map((s) => s.trim()).filter(Boolean)
+        ? value.languagesSpoken
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
         : undefined,
     });
   }

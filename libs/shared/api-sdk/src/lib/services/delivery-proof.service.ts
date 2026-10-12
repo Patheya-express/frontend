@@ -11,24 +11,18 @@ import { StrictHttpResponse } from '../strict-http-response';
 
 import { proofControllerGenerateDeliveryOtp } from '../fn/delivery-proof/proof-controller-generate-delivery-otp';
 import { ProofControllerGenerateDeliveryOtp$Params } from '../fn/delivery-proof/proof-controller-generate-delivery-otp';
-import { proofControllerGeneratePickupOtp } from '../fn/delivery-proof/proof-controller-generate-pickup-otp';
-import { ProofControllerGeneratePickupOtp$Params } from '../fn/delivery-proof/proof-controller-generate-pickup-otp';
 import { proofControllerGetArrivalStatus } from '../fn/delivery-proof/proof-controller-get-arrival-status';
 import { ProofControllerGetArrivalStatus$Params } from '../fn/delivery-proof/proof-controller-get-arrival-status';
 import { proofControllerGetDeliveryStatus } from '../fn/delivery-proof/proof-controller-get-delivery-status';
 import { ProofControllerGetDeliveryStatus$Params } from '../fn/delivery-proof/proof-controller-get-delivery-status';
 import { proofControllerGetPickupPhoto } from '../fn/delivery-proof/proof-controller-get-pickup-photo';
 import { ProofControllerGetPickupPhoto$Params } from '../fn/delivery-proof/proof-controller-get-pickup-photo';
-import { proofControllerGetPickupStatus } from '../fn/delivery-proof/proof-controller-get-pickup-status';
-import { ProofControllerGetPickupStatus$Params } from '../fn/delivery-proof/proof-controller-get-pickup-status';
 import { proofControllerMarkRestaurantArrival } from '../fn/delivery-proof/proof-controller-mark-restaurant-arrival';
 import { ProofControllerMarkRestaurantArrival$Params } from '../fn/delivery-proof/proof-controller-mark-restaurant-arrival';
 import { proofControllerUploadPickupPhoto } from '../fn/delivery-proof/proof-controller-upload-pickup-photo';
 import { ProofControllerUploadPickupPhoto$Params } from '../fn/delivery-proof/proof-controller-upload-pickup-photo';
 import { proofControllerVerifyDeliveryOtp } from '../fn/delivery-proof/proof-controller-verify-delivery-otp';
 import { ProofControllerVerifyDeliveryOtp$Params } from '../fn/delivery-proof/proof-controller-verify-delivery-otp';
-import { proofControllerVerifyPickupOtp } from '../fn/delivery-proof/proof-controller-verify-pickup-otp';
-import { ProofControllerVerifyPickupOtp$Params } from '../fn/delivery-proof/proof-controller-verify-pickup-otp';
 import { ProofOtpGeneratedResponseDto } from '../models/proof-otp-generated-response-dto';
 import { ProofOtpStatusResponseDto } from '../models/proof-otp-status-response-dto';
 import { ProofPhotoResponseDto } from '../models/proof-photo-response-dto';
@@ -40,112 +34,13 @@ export class DeliveryProofService extends BaseService {
     super(config, http);
   }
 
-  /** Path part for operation `proofControllerGeneratePickupOtp()` */
-  static readonly ProofControllerGeneratePickupOtpPath = '/api/v1/delivery/orders/{orderId}/proof/pickup/generate';
-
-  /**
-   * Generate (or regenerate) the pickup OTP.
-   *
-   * Sends a fresh 6-digit code to the customer. Calling this again before verification overwrites the previous code and resets the attempt count — this is also how a partner regenerates an expired or exhausted OTP. Only valid while the order is READY_FOR_PICKUP.
-   *
-   * This method provides access to the full `HttpResponse`, allowing access to response headers.
-   * To access only the response body, use `proofControllerGeneratePickupOtp()` instead.
-   *
-   * This method doesn't expect any request body.
-   */
-  proofControllerGeneratePickupOtp$Response(params: ProofControllerGeneratePickupOtp$Params, context?: HttpContext): Promise<StrictHttpResponse<ProofOtpGeneratedResponseDto>> {
-    const obs = proofControllerGeneratePickupOtp(this.http, this.rootUrl, params, context);
-    return firstValueFrom(obs);
-  }
-
-  /**
-   * Generate (or regenerate) the pickup OTP.
-   *
-   * Sends a fresh 6-digit code to the customer. Calling this again before verification overwrites the previous code and resets the attempt count — this is also how a partner regenerates an expired or exhausted OTP. Only valid while the order is READY_FOR_PICKUP.
-   *
-   * This method provides access only to the response body.
-   * To access the full response (for headers, for example), `proofControllerGeneratePickupOtp$Response()` instead.
-   *
-   * This method doesn't expect any request body.
-   */
-  proofControllerGeneratePickupOtp(params: ProofControllerGeneratePickupOtp$Params, context?: HttpContext): Promise<ProofOtpGeneratedResponseDto> {
-    const resp = this.proofControllerGeneratePickupOtp$Response(params, context);
-    return resp.then((r: StrictHttpResponse<ProofOtpGeneratedResponseDto>): ProofOtpGeneratedResponseDto => r.body);
-  }
-
-  /** Path part for operation `proofControllerVerifyPickupOtp()` */
-  static readonly ProofControllerVerifyPickupOtpPath = '/api/v1/delivery/orders/{orderId}/proof/pickup/verify';
-
-  /**
-   * Verify the pickup OTP.
-   *
-   * On success, advances the order to OUT_FOR_DELIVERY and emits pickup.verified.
-   *
-   * This method provides access to the full `HttpResponse`, allowing access to response headers.
-   * To access only the response body, use `proofControllerVerifyPickupOtp()` instead.
-   *
-   * This method sends `application/json` and handles request body of type `application/json`.
-   */
-  proofControllerVerifyPickupOtp$Response(params: ProofControllerVerifyPickupOtp$Params, context?: HttpContext): Promise<StrictHttpResponse<ProofOtpStatusResponseDto>> {
-    const obs = proofControllerVerifyPickupOtp(this.http, this.rootUrl, params, context);
-    return firstValueFrom(obs);
-  }
-
-  /**
-   * Verify the pickup OTP.
-   *
-   * On success, advances the order to OUT_FOR_DELIVERY and emits pickup.verified.
-   *
-   * This method provides access only to the response body.
-   * To access the full response (for headers, for example), `proofControllerVerifyPickupOtp$Response()` instead.
-   *
-   * This method sends `application/json` and handles request body of type `application/json`.
-   */
-  proofControllerVerifyPickupOtp(params: ProofControllerVerifyPickupOtp$Params, context?: HttpContext): Promise<ProofOtpStatusResponseDto> {
-    const resp = this.proofControllerVerifyPickupOtp$Response(params, context);
-    return resp.then((r: StrictHttpResponse<ProofOtpStatusResponseDto>): ProofOtpStatusResponseDto => r.body);
-  }
-
-  /** Path part for operation `proofControllerGetPickupStatus()` */
-  static readonly ProofControllerGetPickupStatusPath = '/api/v1/delivery/orders/{orderId}/proof/pickup/status';
-
-  /**
-   * Get the current pickup OTP status.
-   *
-   *
-   *
-   * This method provides access to the full `HttpResponse`, allowing access to response headers.
-   * To access only the response body, use `proofControllerGetPickupStatus()` instead.
-   *
-   * This method doesn't expect any request body.
-   */
-  proofControllerGetPickupStatus$Response(params: ProofControllerGetPickupStatus$Params, context?: HttpContext): Promise<StrictHttpResponse<ProofOtpStatusResponseDto>> {
-    const obs = proofControllerGetPickupStatus(this.http, this.rootUrl, params, context);
-    return firstValueFrom(obs);
-  }
-
-  /**
-   * Get the current pickup OTP status.
-   *
-   *
-   *
-   * This method provides access only to the response body.
-   * To access the full response (for headers, for example), `proofControllerGetPickupStatus$Response()` instead.
-   *
-   * This method doesn't expect any request body.
-   */
-  proofControllerGetPickupStatus(params: ProofControllerGetPickupStatus$Params, context?: HttpContext): Promise<ProofOtpStatusResponseDto> {
-    const resp = this.proofControllerGetPickupStatus$Response(params, context);
-    return resp.then((r: StrictHttpResponse<ProofOtpStatusResponseDto>): ProofOtpStatusResponseDto => r.body);
-  }
-
   /** Path part for operation `proofControllerGenerateDeliveryOtp()` */
   static readonly ProofControllerGenerateDeliveryOtpPath = '/api/v1/delivery/orders/{orderId}/proof/delivery/generate';
 
   /**
    * Generate (or regenerate) the delivery OTP.
    *
-   * Sends a fresh 6-digit code to the customer. Calling this again before verification overwrites the previous code and resets the attempt count. Only valid while the order is OUT_FOR_DELIVERY.
+   * Sends a fresh 6-digit code to the customer. Calling this again before verification replaces the previous code and resets the attempt count, but only after a 60-second cooldown and at most 5 codes per order (429 otherwise). A verified code is never replaced. Only valid while the order is OUT_FOR_DELIVERY.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `proofControllerGenerateDeliveryOtp()` instead.
@@ -160,7 +55,7 @@ export class DeliveryProofService extends BaseService {
   /**
    * Generate (or regenerate) the delivery OTP.
    *
-   * Sends a fresh 6-digit code to the customer. Calling this again before verification overwrites the previous code and resets the attempt count. Only valid while the order is OUT_FOR_DELIVERY.
+   * Sends a fresh 6-digit code to the customer. Calling this again before verification replaces the previous code and resets the attempt count, but only after a 60-second cooldown and at most 5 codes per order (429 otherwise). A verified code is never replaced. Only valid while the order is OUT_FOR_DELIVERY.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `proofControllerGenerateDeliveryOtp$Response()` instead.
@@ -277,7 +172,7 @@ export class DeliveryProofService extends BaseService {
   /**
    * Upload the mandatory pickup-parcel photo.
    *
-   * Write-once — a second upload for the same order is rejected. Only valid while the order is READY_FOR_PICKUP. This photo is required before OUT_FOR_DELIVERY can be reached.
+   * Write-once — a second upload for the same order is rejected. Only valid while the order is READY_FOR_PICKUP and after the rider has marked arrival at the restaurant. This photo is required before OUT_FOR_DELIVERY can be reached; it is reference-only and needs no customer approval. Accepts JPEG, PNG or WebP up to 5MB.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `proofControllerUploadPickupPhoto()` instead.
@@ -292,7 +187,7 @@ export class DeliveryProofService extends BaseService {
   /**
    * Upload the mandatory pickup-parcel photo.
    *
-   * Write-once — a second upload for the same order is rejected. Only valid while the order is READY_FOR_PICKUP. This photo is required before OUT_FOR_DELIVERY can be reached.
+   * Write-once — a second upload for the same order is rejected. Only valid while the order is READY_FOR_PICKUP and after the rider has marked arrival at the restaurant. This photo is required before OUT_FOR_DELIVERY can be reached; it is reference-only and needs no customer approval. Accepts JPEG, PNG or WebP up to 5MB.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `proofControllerUploadPickupPhoto$Response()` instead.

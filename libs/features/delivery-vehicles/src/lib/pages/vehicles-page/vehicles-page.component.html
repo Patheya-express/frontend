@@ -2,59 +2,113 @@
   <div class="vehicles-page-header">
     <h1>Vehicles</h1>
     @if (!showForm()) {
-      <button type="button" class="vehicles-page-add" (click)="openForm()">+ Add Vehicle</button>
+      <button type="button" class="vehicles-page-add" (click)="openForm()">
+        + Add Vehicle
+      </button>
     }
   </div>
 
   @if (facade.saveError()) {
     <p class="vehicles-page-error" role="alert">{{ facade.saveError() }}</p>
   }
+  @if (facade.saveSuccess(); as message) {
+    <p class="form-success" role="status">{{ message }}</p>
+  }
 
   @if (showForm()) {
-    <form class="vehicle-form" [formGroup]="vehicleForm" (ngSubmit)="onSubmitVehicle()">
+    <form
+      class="vehicle-form"
+      [formGroup]="vehicleForm"
+      (ngSubmit)="onSubmitVehicle()"
+      novalidate
+    >
       <h2>Register a vehicle</h2>
+      <p class="form-required-legend">
+        <span class="form-required" aria-hidden="true">*</span> Required
+      </p>
 
       <label>
-        Vehicle Type
-        <select formControlName="vehicleType">
+        <span
+          >Vehicle type<span class="form-required" aria-hidden="true"
+            >*</span
+          ></span
+        >
+        <select formControlName="vehicleType" required>
           @for (type of vehicleTypes; track type) {
-            <option [value]="type">{{ type }}</option>
+            <option [value]="type">{{ vehicleTypeLabels[type] }}</option>
           }
         </select>
       </label>
 
       <label>
-        Registration Number
-        <input type="text" formControlName="registrationNumber" placeholder="KA01AB1234" />
+        <span
+          >Registration number<span class="form-required" aria-hidden="true"
+            >*</span
+          ></span
+        >
+        <input
+          type="text"
+          autocapitalize="characters"
+          placeholder="e.g. KA01AB1234"
+          required
+          formControlName="registrationNumber"
+          aria-describedby="vehicle-registration-error"
+        />
+        <lib-field-error
+          id="vehicle-registration-error"
+          [control]="vehicleForm.controls.registrationNumber"
+          [messages]="{ required: 'Registration number is required.' }"
+        />
       </label>
 
       <label>
-        Brand
-        <input type="text" formControlName="brand" />
+        <span>Brand (optional)</span>
+        <input type="text" placeholder="e.g. Honda" formControlName="brand" />
       </label>
 
       <label>
-        Model
-        <input type="text" formControlName="model" />
+        <span>Model (optional)</span>
+        <input
+          type="text"
+          placeholder="e.g. Activa 6G"
+          formControlName="model"
+        />
       </label>
 
       <label>
-        Year
-        <input type="number" formControlName="year" />
+        <span>Year (optional)</span>
+        <input
+          type="number"
+          inputmode="numeric"
+          [min]="yearMin"
+          [max]="yearMax"
+          placeholder="e.g. 2022"
+          formControlName="year"
+          aria-describedby="vehicle-year-error"
+        />
+        <lib-field-error
+          id="vehicle-year-error"
+          [control]="vehicleForm.controls.year"
+          [messages]="{
+            min: 'Enter a year from ' + yearMin + ' onwards.',
+            max: 'Enter a year up to ' + yearMax + '.',
+          }"
+        />
       </label>
 
       <label>
-        Fuel Type
+        <span>Fuel type (optional)</span>
         <select formControlName="fuelType">
+          <option value="">Not specified</option>
           @for (type of fuelTypes; track type) {
-            <option [value]="type">{{ type }}</option>
+            <option [value]="type">{{ fuelTypeLabels[type] }}</option>
           }
         </select>
       </label>
 
       <label>
-        Color
-        <input type="text" formControlName="color" />
+        <span>Colour (optional)</span>
+        <input type="text" placeholder="e.g. Black" formControlName="color" />
       </label>
 
       <div class="vehicle-form-actions">
@@ -86,31 +140,75 @@
             @if (entry.vehicle.isPrimary) {
               <lib-status-chip label="Primary" tone="success" />
             }
-            <lib-status-chip [label]="entry.vehicle.verificationStatus" [tone]="verificationTone(entry.vehicle.verificationStatus)" />
+            <lib-status-chip
+              [label]="entry.vehicle.verificationStatus"
+              [tone]="verificationTone(entry.vehicle.verificationStatus)"
+            />
           </div>
 
           <p class="vehicle-card-meta">
             {{ entry.vehicle.vehicleType }}
-            @if (entry.vehicle.brand) { · {{ entry.vehicle.brand }} }
-            @if (entry.vehicle.model) { {{ entry.vehicle.model }} }
-            @if (entry.vehicle.year) { ({{ entry.vehicle.year }}) }
+            @if (entry.vehicle.brand) {
+              · {{ entry.vehicle.brand }}
+            }
+            @if (entry.vehicle.model) {
+              {{ entry.vehicle.model }}
+            }
+            @if (entry.vehicle.year) {
+              ({{ entry.vehicle.year }})
+            }
           </p>
 
-          @if (entry.insurance || entry.rc || entry.fitness || entry.pollution) {
+          @if (
+            entry.insurance || entry.rc || entry.fitness || entry.pollution
+          ) {
             <div class="vehicle-card-warnings">
-              @if (entry.insurance) { <span class="warning" [class.expired]="entry.insurance === 'expired'">Insurance {{ entry.insurance }}</span> }
-              @if (entry.rc) { <span class="warning" [class.expired]="entry.rc === 'expired'">RC {{ entry.rc }}</span> }
-              @if (entry.fitness) { <span class="warning" [class.expired]="entry.fitness === 'expired'">Fitness {{ entry.fitness }}</span> }
-              @if (entry.pollution) { <span class="warning" [class.expired]="entry.pollution === 'expired'">Pollution {{ entry.pollution }}</span> }
+              @if (entry.insurance) {
+                <span
+                  class="warning"
+                  [class.expired]="entry.insurance === 'expired'"
+                  >Insurance {{ entry.insurance }}</span
+                >
+              }
+              @if (entry.rc) {
+                <span class="warning" [class.expired]="entry.rc === 'expired'"
+                  >RC {{ entry.rc }}</span
+                >
+              }
+              @if (entry.fitness) {
+                <span
+                  class="warning"
+                  [class.expired]="entry.fitness === 'expired'"
+                  >Fitness {{ entry.fitness }}</span
+                >
+              }
+              @if (entry.pollution) {
+                <span
+                  class="warning"
+                  [class.expired]="entry.pollution === 'expired'"
+                  >Pollution {{ entry.pollution }}</span
+                >
+              }
             </div>
           }
 
           <div class="vehicle-card-actions">
             @if (!entry.vehicle.isPrimary && entry.vehicle.isActive) {
-              <button type="button" (click)="setPrimary(entry.vehicle.id)" [disabled]="facade.saving()">Set as Primary</button>
+              <button
+                type="button"
+                (click)="setPrimary(entry.vehicle.id)"
+                [disabled]="facade.saving()"
+              >
+                Set as Primary
+              </button>
             }
             @if (entry.vehicle.isActive) {
-              <button type="button" class="danger" (click)="requestDeactivate(entry.vehicle.id)" [disabled]="facade.saving()">
+              <button
+                type="button"
+                class="danger"
+                (click)="requestDeactivate(entry.vehicle.id)"
+                [disabled]="facade.saving()"
+              >
                 Replace / Deactivate
               </button>
             } @else {

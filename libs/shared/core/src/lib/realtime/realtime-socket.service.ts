@@ -7,6 +7,9 @@ import {
 import { APP_ENVIRONMENT } from '../environment/app-environment';
 import { MobilePlatformService } from '../mobile/mobile-platform.service';
 
+/** socket.io's own listener signature for untyped events. */
+type SocketListener = Parameters<Socket['on']>[1];
+
 export interface JoinRoomResult {
   success: boolean;
   room?: string;
@@ -32,6 +35,14 @@ export class RealtimeSocketService {
    *  while `connected` still reads `true`, so consumers relying on it to decide "is realtime
    *  working" have no signal anything is wrong. */
   private readonly joinedRooms = new Set<string>();
+
+  /** Every handler registered via `on()` and not yet unsubscribed, keyed by event. Logout's
+   *  `disconnect()` discards the Socket object (and with it every listener attached to it), so a
+   *  long-lived consumer that subscribed once — e.g. an app root component — silently stopped
+   *  receiving events after logout → login in the same app session. Keeping the registry here and
+   *  attaching it to each newly created Socket in `connect()` makes subscriptions outlive any one
+   *  Socket instance, exactly as `joinedRooms` already does for room membership. */
+  private readonly listeners = new Map<string, Set<SocketListener>>();
 
   /** M4: the token the current socket connection actually authenticated with — compared against
    *  `authFacade.accessToken()` to decide whether a reauth-reconnect is needed. Tracking this
@@ -83,6 +94,12 @@ export class RealtimeSocketService {
     });
     socket.on('disconnect', () => this.connected.set(false));
     socket.on('connect_error', () => this.connected.set(false));
+
+    for (const [event, handlers] of this.listeners) {
+      for (const handler of handlers) {
+        socket.on(event, handler);
+      }
+    }
 
     this.socket = socket;
 
@@ -150,11 +167,24 @@ export class RealtimeSocketService {
 
   /** Subscribes to a server-pushed event; returns an unsubscribe function. */
   on<T>(event: string, handler: (payload: T) => void): () => void {
-    const socket = this.connect();
+    let handlers = this.listeners.get(event);
+    if (!handlers) {
+      handlers = new Set();
+      this.listeners.set(event, handlers);
+    }
+    handlers.add(handler);
 
-    socket.on(event, handler);
+    if (this.socket) {
+      this.socket.on(event, handler);
+    } else {
+      // A brand-new Socket attaches every registered listener itself (see connect()).
+      this.connect();
+    }
 
-    return () => socket.off(event, handler);
+    return () => {
+      this.listeners.get(event)?.delete(handler);
+      this.socket?.off(event, handler);
+    };
   }
 
   disconnect(): void {

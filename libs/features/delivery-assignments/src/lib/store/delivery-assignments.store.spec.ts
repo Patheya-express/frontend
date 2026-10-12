@@ -3,7 +3,11 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
 import type { DeliveryAssignmentResponseDto } from '@patheya-express-frontend/api-sdk';
 import { LogoutCleanupRegistry } from '@patheya-express-frontend/auth';
-import { GeolocationService, MobilePlatformService } from '@patheya-express-frontend/core';
+import {
+  GeolocationService,
+  MobilePlatformService,
+  RealtimeSocketService,
+} from '@patheya-express-frontend/core';
 import { NetworkStatusService } from '@patheya-express-frontend/ui';
 import type { CacheReadResult } from '@patheya-express-frontend/mobile-offline';
 import { DeliveryAssignmentsStore } from './delivery-assignments.store';
@@ -41,8 +45,7 @@ describe('DeliveryAssignmentsStore — M3 offline resilience', () => {
     getAssignments: jest.Mock;
     acceptAssignment: jest.Mock;
     rejectAssignment: jest.Mock;
-    generatePickupOtp: jest.Mock;
-    verifyPickupOtp: jest.Mock;
+    confirmPickup: jest.Mock;
     generateDeliveryOtp: jest.Mock;
     verifyDeliveryOtp: jest.Mock;
     uploadPickupPhoto: jest.Mock;
@@ -52,8 +55,13 @@ describe('DeliveryAssignmentsStore — M3 offline resilience', () => {
   let networkStatus: { isOffline: jest.Mock; isOnline: jest.Mock };
   let resumeCallback: (() => void) | undefined;
   let mobilePlatform: { isNative: jest.Mock; onResume: jest.Mock };
-  let geolocationService: { ensurePermission: jest.Mock; getCurrentPosition: jest.Mock };
+  let geolocationService: {
+    ensurePermission: jest.Mock;
+    getCurrentPosition: jest.Mock;
+  };
   let logoutRegistry: LogoutCleanupRegistry;
+  let realtimeHandlers: Map<string, () => void>;
+  let realtimeUnsubscribe: jest.Mock;
 
   function cachedResult(
     data: DeliveryAssignmentResponseDto,
@@ -75,8 +83,7 @@ describe('DeliveryAssignmentsStore — M3 offline resilience', () => {
       getAssignments: jest.fn().mockResolvedValue([]),
       acceptAssignment: jest.fn().mockResolvedValue(undefined),
       rejectAssignment: jest.fn().mockResolvedValue(undefined),
-      generatePickupOtp: jest.fn(),
-      verifyPickupOtp: jest.fn(),
+      confirmPickup: jest.fn().mockResolvedValue(undefined),
       generateDeliveryOtp: jest.fn(),
       verifyDeliveryOtp: jest.fn(),
       uploadPickupPhoto: jest.fn(),
@@ -87,7 +94,9 @@ describe('DeliveryAssignmentsStore — M3 offline resilience', () => {
       ensurePermission: jest.fn().mockResolvedValue(true),
       getCurrentPosition: jest
         .fn()
-        .mockResolvedValue({ coords: { latitude: 12.9716, longitude: 77.5946 } }),
+        .mockResolvedValue({
+          coords: { latitude: 12.9716, longitude: 77.5946, accuracy: 12 },
+        }),
     };
 
     cache = {
@@ -108,8 +117,20 @@ describe('DeliveryAssignmentsStore — M3 offline resilience', () => {
       }),
     };
 
+    realtimeHandlers = new Map();
+    realtimeUnsubscribe = jest.fn();
+
     TestBed.configureTestingModule({
       providers: [
+        {
+          provide: RealtimeSocketService,
+          useValue: {
+            on: jest.fn((event: string, handler: () => void) => {
+              realtimeHandlers.set(event, handler);
+              return realtimeUnsubscribe;
+            }),
+          },
+        },
         { provide: DeliveryAssignmentsService, useValue: assignmentsService },
         { provide: ActiveAssignmentCacheService, useValue: cache },
         { provide: NetworkStatusService, useValue: networkStatus },
@@ -375,9 +396,9 @@ describe('DeliveryAssignmentsStore — M3 offline resilience', () => {
       await store.loadAssignments();
 
       networkStatus.isOffline.mockReturnValue(true);
-      await store.openPickupOtpDialog('assignment-1');
+      await store.openDeliveryOtpDialog('assignment-1');
 
-      expect(assignmentsService.generatePickupOtp).not.toHaveBeenCalled();
+      expect(assignmentsService.generateDeliveryOtp).not.toHaveBeenCalled();
       expect(store.otpDialog()?.error).toMatch(/offline/i);
     });
 
@@ -439,7 +460,7 @@ describe('DeliveryAssignmentsStore — M3 offline resilience', () => {
       store.openPickupPhotoDialog('assignment-1');
 
       const file = buildFile();
-      store.selectPickupPhoto(file);
+      await store.selectPickupPhoto(file);
 
       expect(store.pickupPhotoDialog()?.file).toBe(file);
       expect(store.pickupPhotoDialog()?.previewUrl).toBe('blob:mock-preview');
@@ -451,7 +472,7 @@ describe('DeliveryAssignmentsStore — M3 offline resilience', () => {
       const store = TestBed.inject(DeliveryAssignmentsStore);
       await store.loadAssignments();
       store.openPickupPhotoDialog('assignment-1');
-      store.selectPickupPhoto(buildFile());
+      await store.selectPickupPhoto(buildFile());
 
       networkStatus.isOffline.mockReturnValue(true);
       await store.submitPickupPhoto();
@@ -466,7 +487,7 @@ describe('DeliveryAssignmentsStore — M3 offline resilience', () => {
       const store = TestBed.inject(DeliveryAssignmentsStore);
       await store.loadAssignments();
       store.openPickupPhotoDialog('assignment-1');
-      store.selectPickupPhoto(buildFile());
+      await store.selectPickupPhoto(buildFile());
 
       await store.submitPickupPhoto();
 
@@ -487,7 +508,7 @@ describe('DeliveryAssignmentsStore — M3 offline resilience', () => {
       const store = TestBed.inject(DeliveryAssignmentsStore);
       await store.loadAssignments();
       store.openPickupPhotoDialog('assignment-1');
-      store.selectPickupPhoto(buildFile());
+      await store.selectPickupPhoto(buildFile());
 
       await store.submitPickupPhoto();
 
@@ -504,7 +525,7 @@ describe('DeliveryAssignmentsStore — M3 offline resilience', () => {
       const store = TestBed.inject(DeliveryAssignmentsStore);
       await store.loadAssignments();
       store.openPickupPhotoDialog('assignment-1');
-      store.selectPickupPhoto(buildFile());
+      await store.selectPickupPhoto(buildFile());
 
       store.closePickupPhotoDialog();
 
@@ -551,7 +572,8 @@ describe('DeliveryAssignmentsStore — M3 offline resilience', () => {
       assignmentsService.markRestaurantArrival.mockRejectedValue(
         new HttpErrorResponse({
           error: {
-            message: 'You are 342m from the restaurant — move within 100m to mark arrival',
+            message:
+              'You are 342m from the restaurant — move within 100m to mark arrival',
           },
         }),
       );
@@ -562,7 +584,8 @@ describe('DeliveryAssignmentsStore — M3 offline resilience', () => {
 
       expect(store.actionError()).toMatch(/342m/);
       expect(
-        store.groups().active.find((a) => a.id === 'assignment-1')?.arrivedAtRestaurantAt,
+        store.groups().active.find((a) => a.id === 'assignment-1')
+          ?.arrivedAtRestaurantAt,
       ).toBeUndefined();
     });
 
@@ -583,7 +606,8 @@ describe('DeliveryAssignmentsStore — M3 offline resilience', () => {
         77.5946,
       );
       expect(
-        store.groups().active.find((a) => a.id === 'assignment-1')?.arrivedAtRestaurantAt,
+        store.groups().active.find((a) => a.id === 'assignment-1')
+          ?.arrivedAtRestaurantAt,
       ).toBe('2026-09-16T10:00:00.000Z');
       expect(store.actionError()).toBeNull();
     });
@@ -613,6 +637,189 @@ describe('DeliveryAssignmentsStore — M3 offline resilience', () => {
       await flush();
 
       expect(assignmentsService.getAssignments).not.toHaveBeenCalled();
+    });
+  });
+  describe('confirmPickup — 2026-10-11 pickup revision (photo-gated, no pickup OTP)', () => {
+    function awaitingPickup(): DeliveryAssignmentResponseDto {
+      const assignment = buildAssignment({
+        arrivedAtRestaurantAt: '2026-10-11T10:00:00.000Z',
+      });
+      if (!assignment.order) {
+        throw new Error('fixture must include an order');
+      }
+      return {
+        ...assignment,
+        order: {
+          ...assignment.order,
+          status: 'READY_FOR_PICKUP',
+          pickupPhotoUploaded: true,
+        },
+      };
+    }
+
+    it('advances the order to OUT_FOR_DELIVERY through the delivery-status endpoint', async () => {
+      assignmentsService.getAssignments.mockResolvedValue([awaitingPickup()]);
+      const store = TestBed.inject(DeliveryAssignmentsStore);
+      await store.loadAssignments();
+
+      await store.confirmPickup('assignment-1');
+
+      expect(assignmentsService.confirmPickup).toHaveBeenCalledWith('order-1');
+      expect(store.groups().active[0].order?.status).toBe('OUT_FOR_DELIVERY');
+      expect(store.actionError()).toBeNull();
+    });
+
+    it('rolls back and shows the backend reason when pickup is refused (e.g. no photo)', async () => {
+      assignmentsService.getAssignments.mockResolvedValue([awaitingPickup()]);
+      assignmentsService.confirmPickup.mockRejectedValue(
+        new HttpErrorResponse({
+          status: 403,
+          error: {
+            message:
+              'A pickup photo is required before marking this order as OUT_FOR_DELIVERY',
+          },
+        }),
+      );
+      const store = TestBed.inject(DeliveryAssignmentsStore);
+      await store.loadAssignments();
+      assignmentsService.getAssignments.mockClear();
+
+      await store.confirmPickup('assignment-1');
+      await flush();
+
+      expect(store.groups().active[0].order?.status).toBe('READY_FOR_PICKUP');
+      expect(store.actionError()).toMatch(/pickup photo is required/);
+      // A 4xx means local state is stale — the authoritative list is re-fetched.
+      expect(assignmentsService.getAssignments).toHaveBeenCalled();
+    });
+
+    it('refuses while offline without calling the backend', async () => {
+      assignmentsService.getAssignments.mockResolvedValue([awaitingPickup()]);
+      const store = TestBed.inject(DeliveryAssignmentsStore);
+      await store.loadAssignments();
+
+      networkStatus.isOffline.mockReturnValue(true);
+      await store.confirmPickup('assignment-1');
+
+      expect(assignmentsService.confirmPickup).not.toHaveBeenCalled();
+      expect(store.actionError()).toMatch(/offline/i);
+    });
+  });
+
+  describe('accept/reject failures', () => {
+    it('shows the backend reason for a stale offer and re-fetches the list', async () => {
+      assignmentsService.getAssignments.mockResolvedValue([
+        buildAssignment({ status: 'PENDING', order: undefined }),
+      ]);
+      assignmentsService.acceptAssignment.mockRejectedValue(
+        new HttpErrorResponse({
+          status: 400,
+          error: { message: 'Only pending assignments can be accepted' },
+        }),
+      );
+      const store = TestBed.inject(DeliveryAssignmentsStore);
+      await store.loadAssignments();
+      assignmentsService.getAssignments.mockClear();
+
+      await store.acceptAssignment('assignment-1');
+      await flush();
+
+      expect(store.actionError()).toBe(
+        'Only pending assignments can be accepted',
+      );
+      expect(store.groups().available[0]?.status).toBe('PENDING');
+      expect(assignmentsService.getAssignments).toHaveBeenCalled();
+    });
+
+    it('keeps the generic message for a failure without a backend message', async () => {
+      assignmentsService.getAssignments.mockResolvedValue([
+        buildAssignment({ status: 'PENDING', order: undefined }),
+      ]);
+      assignmentsService.acceptAssignment.mockRejectedValue(new Error('boom'));
+      const store = TestBed.inject(DeliveryAssignmentsStore);
+      await store.loadAssignments();
+
+      await store.acceptAssignment('assignment-1');
+
+      expect(store.actionError()).toBe(
+        'Unable to update this assignment. Please try again.',
+      );
+    });
+  });
+
+  describe('realtime new-assignment refresh', () => {
+    it('re-fetches the list as soon as a delivery.assignment event arrives while polling', async () => {
+      const store = TestBed.inject(DeliveryAssignmentsStore);
+      store.startPolling();
+      await flush();
+      assignmentsService.getAssignments.mockClear();
+
+      realtimeHandlers.get('delivery.assignment')?.();
+      await flush();
+
+      expect(assignmentsService.getAssignments).toHaveBeenCalledTimes(1);
+      store.stopPolling();
+    });
+
+    it('unsubscribes from delivery.assignment when polling stops', async () => {
+      const store = TestBed.inject(DeliveryAssignmentsStore);
+      store.startPolling();
+      await flush();
+
+      store.stopPolling();
+
+      expect(realtimeUnsubscribe).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('restaurant arrival — GPS accuracy guard', () => {
+    it('does not submit a fix whose accuracy is worse than the 100m arrival radius', async () => {
+      assignmentsService.getAssignments.mockResolvedValue([buildAssignment()]);
+      geolocationService.getCurrentPosition.mockResolvedValue({
+        coords: { latitude: 12.9716, longitude: 77.5946, accuracy: 450 },
+      });
+      const store = TestBed.inject(DeliveryAssignmentsStore);
+      await store.loadAssignments();
+
+      await store.markRestaurantArrival('assignment-1');
+
+      expect(assignmentsService.markRestaurantArrival).not.toHaveBeenCalled();
+      expect(store.actionError()).toMatch(/GPS signal is too weak.*450m/);
+    });
+  });
+
+  describe('pickup-photo validation', () => {
+    it('rejects an unsupported file type and keeps Submit disabled', async () => {
+      assignmentsService.getAssignments.mockResolvedValue([buildAssignment()]);
+      const store = TestBed.inject(DeliveryAssignmentsStore);
+      await store.loadAssignments();
+      store.openPickupPhotoDialog('assignment-1');
+
+      await store.selectPickupPhoto(
+        new File(['gif'], 'parcel.gif', { type: 'image/gif' }),
+      );
+
+      expect(store.pickupPhotoDialog()?.file).toBeNull();
+      expect(store.pickupPhotoDialog()?.error).toMatch(/JPG, PNG or WebP/);
+    });
+
+    it('rejects a photo over 5 MB that cannot be downscaled on this device', async () => {
+      assignmentsService.getAssignments.mockResolvedValue([buildAssignment()]);
+      const store = TestBed.inject(DeliveryAssignmentsStore);
+      await store.loadAssignments();
+      store.openPickupPhotoDialog('assignment-1');
+      const oversized = new File(
+        [new Uint8Array(5 * 1024 * 1024 + 1)],
+        'big.jpg',
+        {
+          type: 'image/jpeg',
+        },
+      );
+
+      await store.selectPickupPhoto(oversized);
+
+      expect(store.pickupPhotoDialog()?.file).toBeNull();
+      expect(store.pickupPhotoDialog()?.error).toMatch(/larger than 5 MB/);
     });
   });
 });

@@ -1,6 +1,21 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, OnChanges, Output } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input,
+  OnChanges,
+  Output,
+  inject,
+} from '@angular/core';
+import {
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { PrimaryButtonComponent } from '../buttons/primary-button.component';
+import { focusFirstInvalidControl } from '../utils/form-focus.utils';
 
 export interface LoginFormValue {
   email: string;
@@ -27,9 +42,17 @@ export class LoginFormComponent implements OnChanges {
   @Input() initialEmail = '';
   @Output() submitted = new EventEmitter<LoginFormValue>();
 
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+
   protected readonly form = new FormGroup({
-    email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
-    password: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.minLength(8)] }),
+    email: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.email],
+    }),
+    password: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.minLength(8)],
+    }),
     rememberMe: new FormControl(true, { nonNullable: true }),
   });
 
@@ -40,9 +63,16 @@ export class LoginFormComponent implements OnChanges {
     }
   }
 
+  /** Errors appear once a field has been visited (or on a submit attempt), never on first render. */
+  protected showError(control: 'email' | 'password'): boolean {
+    const field = this.form.controls[control];
+    return field.invalid && field.touched;
+  }
+
   protected onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      focusFirstInvalidControl(this.host.nativeElement);
       return;
     }
 

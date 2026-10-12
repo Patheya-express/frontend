@@ -165,6 +165,7 @@ export type { RazorpayRefundResponseDto } from './models/razorpay-refund-respons
 export type { ReadinessResponseDto } from './models/readiness-response-dto';
 export type { RecentOrderSummaryDto } from './models/recent-order-summary-dto';
 export type { RecentSearchDto } from './models/recent-search-dto';
+export type { RecordBackgroundCheckConsentDto } from './models/record-background-check-consent-dto';
 export type { ReferralSummaryResponseDto } from './models/referral-summary-response-dto';
 export type { RefreshResponseDto } from './models/refresh-response-dto';
 export type { RefreshTokenDto } from './models/refresh-token-dto';
@@ -209,6 +210,7 @@ export type { ToggleMenuItemAvailabilityDto } from './models/toggle-menu-item-av
 export type { TopSellingItemDto } from './models/top-selling-item-dto';
 export type { TrendingSearchDto } from './models/trending-search-dto';
 export type { UnreadCountResponseDto } from './models/unread-count-response-dto';
+export type { UnregisterPushTokenDto } from './models/unregister-push-token-dto';
 export type { UpdateAddonDto } from './models/update-addon-dto';
 export type { UpdateAddonOptionDto } from './models/update-addon-option-dto';
 export type { UpdateAddressDto } from './models/update-address-dto';

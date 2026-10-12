@@ -9,7 +9,7 @@ const liveReloadUrl = process.env['CAP_SERVER_URL'];
 
 const config: CapacitorConfig = {
   appId: 'com.patheyaexpress.delivery',
-  appName: 'Patheya Express Delivery',
+  appName: 'Patheya Delivery Partner',
   webDir: '../../dist/apps/delivery-app/browser',
   server: liveReloadUrl
     ? { url: liveReloadUrl, cleartext: true }
@@ -30,6 +30,12 @@ const config: CapacitorConfig = {
     },
     StatusBar: {
       overlaysWebView: false,
+    },
+    // No OS banner while the app is open: the app shows its own de-duplicated in-app alert for a
+    // foreground push (see App's foregroundNotification effect). Background/closed-app pushes are
+    // displayed by the OS as usual.
+    PushNotifications: {
+      presentationOptions: [],
     },
     Keyboard: {
       resize: 'body',

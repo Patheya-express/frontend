@@ -1,5 +1,13 @@
-import { ChangeDetectionStrategy, Component, Input, inject } from '@angular/core';
-import type { AssignmentOrderSummaryDto, DeliveryAssignmentResponseDto } from '@patheya-express-frontend/api-sdk';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Input,
+  inject,
+} from '@angular/core';
+import type {
+  AssignmentOrderSummaryDto,
+  DeliveryAssignmentResponseDto,
+} from '@patheya-express-frontend/api-sdk';
 import { ConfirmDialogComponent } from '@patheya-express-frontend/ui';
 import { NavigationService } from '@patheya-express-frontend/core';
 import { DeliveryAssignmentsFacade } from '../../facades/delivery-assignments.facade';
@@ -28,7 +36,11 @@ interface NavigateTarget {
 @Component({
   selector: 'lib-assignment-card',
   standalone: true,
-  imports: [AssignmentStatusBadgeComponent, AssignmentItemsComponent, ConfirmDialogComponent],
+  imports: [
+    AssignmentStatusBadgeComponent,
+    AssignmentItemsComponent,
+    ConfirmDialogComponent,
+  ],
   templateUrl: './assignment-card.component.html',
   styleUrl: './assignment-card.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -58,7 +70,13 @@ export class AssignmentCardComponent {
     if (!branch) {
       return null;
     }
-    return [branch.addressLine1, branch.addressLine2, branch.city, branch.state, branch.postalCode]
+    return [
+      branch.addressLine1,
+      branch.addressLine2,
+      branch.city,
+      branch.state,
+      branch.postalCode,
+    ]
       .filter(Boolean)
       .join(', ');
   }
@@ -69,7 +87,10 @@ export class AssignmentCardComponent {
 
   /** Accepted, but the order hasn't left the restaurant yet — this is the pickup window. */
   protected get isAwaitingPickup(): boolean {
-    return this.assignment.status === 'ACCEPTED' && this.order?.status === 'READY_FOR_PICKUP';
+    return (
+      this.assignment.status === 'ACCEPTED' &&
+      this.order?.status === 'READY_FOR_PICKUP'
+    );
   }
 
   /** Client-side display only — the actual 100m geofence check is backend-authoritative (see
@@ -80,11 +101,45 @@ export class AssignmentCardComponent {
 
   /** Accepted, picked up, on the way — this is the delivery window. */
   protected get isAwaitingDelivery(): boolean {
-    return this.assignment.status === 'ACCEPTED' && this.order?.status === 'OUT_FOR_DELIVERY';
+    return (
+      this.assignment.status === 'ACCEPTED' &&
+      this.order?.status === 'OUT_FOR_DELIVERY'
+    );
   }
 
   protected get isProcessing(): boolean {
     return this.facade.processingId() === this.assignment.id;
+  }
+
+  /**
+   * One line telling the partner what happens next, derived only from the server-provided
+   * assignment/order state (never a client-side status of its own).
+   */
+  protected get stageMessage(): string | null {
+    if (this.isPending) {
+      return 'New delivery assignment — accept or reject it before the offer expires.';
+    }
+    if (this.isAwaitingPickup) {
+      if (!this.hasArrivedAtRestaurant) {
+        return "Head to the restaurant. Tap I've Arrived when you're within 100 m.";
+      }
+      return this.order?.pickupPhotoUploaded
+        ? 'Parcel photo uploaded. Confirm pickup to start the delivery.'
+        : 'You have arrived. Upload the parcel photo to continue.';
+    }
+    if (this.isAwaitingDelivery) {
+      return 'Head to the customer. Ask them for the delivery code to complete the order.';
+    }
+    if (
+      this.assignment.status === 'ACCEPTED' &&
+      this.order?.status === 'DELIVERED'
+    ) {
+      return 'Delivered.';
+    }
+    if (this.order?.status === 'CANCELLED') {
+      return 'This order was cancelled.';
+    }
+    return null;
   }
 
   /**
@@ -142,7 +197,9 @@ export class AssignmentCardComponent {
         return [
           {
             key: 'markArrival',
-            label: this.isProcessing ? 'Checking your location…' : "I've Arrived",
+            label: this.isProcessing
+              ? 'Checking your location…'
+              : "I've Arrived",
             tone: 'primary',
             run: () => this.markArrival(),
           },
@@ -153,7 +210,7 @@ export class AssignmentCardComponent {
         return [
           {
             key: 'takePickupPhoto',
-            label: 'Take Photo',
+            label: 'Upload Parcel Photo',
             tone: 'primary',
             run: () => this.takePickupPhoto(),
           },
@@ -163,7 +220,7 @@ export class AssignmentCardComponent {
       return [
         {
           key: 'confirmPickup',
-          label: 'Verify Pickup',
+          label: this.isProcessing ? 'Confirming…' : 'Confirm Pickup',
           tone: 'primary',
           run: () => this.confirmPickup(),
         },
@@ -177,7 +234,7 @@ export class AssignmentCardComponent {
       return [
         {
           key: 'confirmDelivery',
-          label: 'Verify Delivery',
+          label: 'Enter Delivery Code',
           tone: 'primary',
           run: () => this.confirmDelivery(),
         },
@@ -222,7 +279,10 @@ export class AssignmentCardComponent {
   }
 
   protected confirmPickup(): void {
-    void this.facade.openPickupOtpDialog(this.assignment.id);
+    if (this.isProcessing) {
+      return;
+    }
+    void this.facade.confirmPickup(this.assignment.id);
   }
 
   protected confirmDelivery(): void {

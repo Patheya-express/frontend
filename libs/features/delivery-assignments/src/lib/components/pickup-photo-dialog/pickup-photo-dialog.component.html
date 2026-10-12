@@ -1,8 +1,8 @@
 @if (displayDialog(); as dialog) {
   <lib-confirm-dialog
     [open]="!!facade.pickupPhotoDialog()"
-    title="Pickup verification"
-    message="Take a clear photo of the parcel before leaving the restaurant."
+    title="Parcel photo"
+    message="Take a clear photo of the sealed parcel before you leave the restaurant. It is kept as a reference for this order — the customer does not need to approve it."
     [confirmLabel]="dialog.uploading ? 'Uploading…' : 'Submit photo'"
     cancelLabel="Cancel"
     [busy]="dialog.uploading"
@@ -15,6 +15,7 @@
         accept="image/png,image/jpeg,image/webp"
         capture="environment"
         label="Take photo"
+        [hint]="limitsHint"
         ariaLabel="Take or upload parcel photo"
         [uploading]="dialog.uploading"
         [previewUrl]="dialog.previewUrl ?? undefined"
@@ -23,7 +24,7 @@
       />
 
       @if (dialog.error) {
-        <p class="pickup-photo-dialog-error">{{ dialog.error }}</p>
+        <p class="pickup-photo-dialog-error" role="alert">{{ dialog.error }}</p>
       }
     </div>
   </lib-confirm-dialog>

@@ -1,13 +1,19 @@
 <article class="assignment-card">
   <header class="assignment-card-header">
     <div class="assignment-card-heading">
-      <span class="assignment-card-restaurant">{{ order?.restaurant?.name ?? 'Restaurant' }}</span>
+      <span class="assignment-card-restaurant">{{
+        order?.restaurant?.name ?? 'Restaurant'
+      }}</span>
       @if (order?.orderNumber; as orderNumber) {
         <span class="assignment-card-order-number">{{ orderNumber }}</span>
       }
     </div>
     <lib-assignment-status-badge [status]="assignment.status" />
   </header>
+
+  @if (stageMessage; as message) {
+    <p class="assignment-card-stage" role="status">{{ message }}</p>
+  }
 
   @if (pickupAddress; as address) {
     <div class="assignment-card-address">
@@ -39,12 +45,21 @@
   }
 
   <div class="assignment-card-meta">
-    <span>Total <strong>₹{{ order?.totalAmount }}</strong></span>
-    <span>Delivery fee <strong>₹{{ order?.deliveryFee }}</strong></span>
+    <span
+      >Total <strong>₹{{ order?.totalAmount }}</strong></span
+    >
+    <span
+      >Delivery fee <strong>₹{{ order?.deliveryFee }}</strong></span
+    >
   </div>
 
   @if (navigateTarget; as target) {
-    <a class="assignment-card-navigate" [href]="target.url" target="_blank" rel="noopener noreferrer">
+    <a
+      class="assignment-card-navigate"
+      [href]="target.url"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
       {{ target.label }}
     </a>
   }

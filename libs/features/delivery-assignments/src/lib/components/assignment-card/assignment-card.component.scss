@@ -123,3 +123,10 @@
     cursor: not-allowed;
   }
 }
+
+.assignment-card-stage {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+}

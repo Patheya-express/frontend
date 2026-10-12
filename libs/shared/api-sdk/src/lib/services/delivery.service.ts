@@ -120,7 +120,7 @@ export class DeliveryService extends BaseService {
   /**
    * Onboard delivery partner.
    *
-   * Register the authenticated user as a delivery partner.
+   * Register the authenticated DELIVERY_PARTNER user as a delivery partner.
    *
    * This method provides access to the full `HttpResponse`, allowing access to response headers.
    * To access only the response body, use `deliveryControllerOnboardPartner()` instead.
@@ -135,7 +135,7 @@ export class DeliveryService extends BaseService {
   /**
    * Onboard delivery partner.
    *
-   * Register the authenticated user as a delivery partner.
+   * Register the authenticated DELIVERY_PARTNER user as a delivery partner.
    *
    * This method provides access only to the response body.
    * To access the full response (for headers, for example), `deliveryControllerOnboardPartner$Response()` instead.

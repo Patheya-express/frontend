@@ -1,38 +1,64 @@
-<form class="auth-form" [formGroup]="form" (ngSubmit)="onSubmit()">
+<form class="auth-form" [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
   @if (errorMessage) {
     <div class="form-alert" role="alert">{{ errorMessage }}</div>
   }
 
+  <p class="form-required-legend">
+    <span class="form-required" aria-hidden="true">*</span> Required
+  </p>
+
   <div class="form-field">
-    <label for="login-email">Email</label>
+    <label for="login-email"
+      >Email<span class="form-required" aria-hidden="true">*</span></label
+    >
     <input
       id="login-email"
       type="email"
       autocomplete="email"
       inputmode="email"
+      placeholder="Enter your email address"
+      required
       formControlName="email"
-      [class.invalid]="form.controls.email.invalid && form.controls.email.touched"
-      [attr.aria-invalid]="form.controls.email.invalid && form.controls.email.touched ? true : null"
-      [attr.aria-describedby]="form.controls.email.invalid && form.controls.email.touched ? 'login-email-error' : null"
+      [class.invalid]="showError('email')"
+      [attr.aria-invalid]="showError('email') ? true : null"
+      [attr.aria-describedby]="showError('email') ? 'login-email-error' : null"
     />
-    @if (form.controls.email.invalid && form.controls.email.touched) {
-      <span id="login-email-error" class="form-field-error">Enter a valid email address.</span>
+    @if (showError('email')) {
+      <span id="login-email-error" class="form-field-error">
+        {{
+          form.controls.email.hasError('required')
+            ? 'Email is required.'
+            : 'Enter a valid email address.'
+        }}
+      </span>
     }
   </div>
 
   <div class="form-field">
-    <label for="login-password">Password</label>
+    <label for="login-password"
+      >Password<span class="form-required" aria-hidden="true">*</span></label
+    >
     <input
       id="login-password"
       type="password"
       autocomplete="current-password"
+      placeholder="Enter your password"
+      required
       formControlName="password"
-      [class.invalid]="form.controls.password.invalid && form.controls.password.touched"
-      [attr.aria-invalid]="form.controls.password.invalid && form.controls.password.touched ? true : null"
-      [attr.aria-describedby]="form.controls.password.invalid && form.controls.password.touched ? 'login-password-error' : null"
+      [class.invalid]="showError('password')"
+      [attr.aria-invalid]="showError('password') ? true : null"
+      [attr.aria-describedby]="
+        showError('password') ? 'login-password-error' : null
+      "
     />
-    @if (form.controls.password.invalid && form.controls.password.touched) {
-      <span id="login-password-error" class="form-field-error">Password must be at least 8 characters.</span>
+    @if (showError('password')) {
+      <span id="login-password-error" class="form-field-error">
+        {{
+          form.controls.password.hasError('required')
+            ? 'Password is required.'
+            : 'Password must be at least 8 characters.'
+        }}
+      </span>
     }
   </div>
 
@@ -41,7 +67,12 @@
     <span>Remember me</span>
   </label>
 
-  <lib-primary-button type="submit" class="form-submit" [disabled]="loading" [loading]="loading">
+  <lib-primary-button
+    type="submit"
+    class="form-submit"
+    [disabled]="loading"
+    [loading]="loading"
+  >
     {{ loading ? 'Logging in…' : 'Log in' }}
   </lib-primary-button>
 </form>

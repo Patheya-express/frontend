@@ -1,10 +1,37 @@
-import { ChangeDetectionStrategy, Component, OnInit, effect, inject } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ErrorStateComponent, SkeletonComponent, StatusChipComponent, type StatusChipTone } from '@patheya-express-frontend/ui';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  OnInit,
+  effect,
+  inject,
+} from '@angular/core';
+import {
+  FormBuilder,
+  ReactiveFormsModule,
+  Validators,
+  type AbstractControl,
+  type ValidationErrors,
+} from '@angular/forms';
+import {
+  ErrorStateComponent,
+  FieldErrorComponent,
+  SkeletonComponent,
+  StatusChipComponent,
+  focusFirstInvalidControl,
+  type StatusChipTone,
+} from '@patheya-express-frontend/ui';
 import type { DeliveryBankAccountResponseDto } from '@patheya-express-frontend/api-sdk';
 import { DeliveryBankAccountFacade } from '../../facades/delivery-bank-account.facade';
 
-function verificationTone(status: DeliveryBankAccountResponseDto['verificationStatus']): StatusChipTone {
+/** Empty or whitespace-only counts as missing — mirrors the backend's non-blank check. */
+function notBlank(control: AbstractControl<string>): ValidationErrors | null {
+  return control.value.trim() ? null : { required: true };
+}
+
+function verificationTone(
+  status: DeliveryBankAccountResponseDto['verificationStatus'],
+): StatusChipTone {
   switch (status) {
     case 'VERIFIED':
       return 'success';
@@ -21,7 +48,13 @@ function verificationTone(status: DeliveryBankAccountResponseDto['verificationSt
 @Component({
   selector: 'lib-bank-account-page',
   standalone: true,
-  imports: [ReactiveFormsModule, SkeletonComponent, ErrorStateComponent, StatusChipComponent],
+  imports: [
+    ReactiveFormsModule,
+    SkeletonComponent,
+    ErrorStateComponent,
+    StatusChipComponent,
+    FieldErrorComponent,
+  ],
   templateUrl: './bank-account-page.component.html',
   styleUrl: './bank-account-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -29,15 +62,19 @@ function verificationTone(status: DeliveryBankAccountResponseDto['verificationSt
 export class BankAccountPageComponent implements OnInit {
   protected readonly facade = inject(DeliveryBankAccountFacade);
   private readonly fb = inject(FormBuilder);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected readonly verificationTone = verificationTone;
 
   protected readonly bankForm = this.fb.nonNullable.group({
-    accountHolderName: ['', Validators.required],
+    accountHolderName: ['', notBlank],
     accountNumber: ['', [Validators.required, Validators.minLength(6)]],
-    bankName: ['', Validators.required],
+    bankName: ['', notBlank],
     branchName: [''],
-    ifsc: ['', [Validators.required, Validators.pattern(/^[A-Z]{4}0[A-Z0-9]{6}$/)]],
+    ifsc: [
+      '',
+      [Validators.required, Validators.pattern(/^[A-Z]{4}0[A-Z0-9]{6}$/)],
+    ],
     upiId: [''],
   });
 
@@ -79,18 +116,19 @@ export class BankAccountPageComponent implements OnInit {
   protected onSubmit(): void {
     if (this.bankForm.invalid) {
       this.bankForm.markAllAsTouched();
+      focusFirstInvalidControl(this.host.nativeElement);
       return;
     }
 
     const value = this.bankForm.getRawValue();
 
     void this.facade.upsert({
-      accountHolderName: value.accountHolderName,
-      accountNumber: value.accountNumber,
-      bankName: value.bankName,
-      branchName: value.branchName || undefined,
+      accountHolderName: value.accountHolderName.trim(),
+      accountNumber: value.accountNumber.trim(),
+      bankName: value.bankName.trim(),
+      branchName: value.branchName.trim() || undefined,
       ifsc: value.ifsc.toUpperCase(),
-      upiId: value.upiId || undefined,
+      upiId: value.upiId.trim() || undefined,
     });
   }
 }

@@ -4,9 +4,11 @@ import type {
   OrderResponseDto,
 } from '@patheya-express-frontend/api-sdk';
 import { LogoutCleanupRegistry } from '@patheya-express-frontend/auth';
+import { HttpErrorResponse } from '@angular/common/http';
 import {
   GeolocationService,
   MobilePlatformService,
+  RealtimeSocketService,
   extractHttpErrorMessage,
 } from '@patheya-express-frontend/core';
 import { classifyNetworkError } from '@patheya-express-frontend/mobile-networking';
@@ -14,6 +16,11 @@ import { NetworkStatusService } from '@patheya-express-frontend/ui';
 import { ActiveAssignmentCacheService } from '../services/active-assignment-cache.service';
 import { CourierLocationService } from '../services/courier-location.service';
 import { DeliveryAssignmentsService } from '../services/delivery-assignments.service';
+import {
+  pickupPhotoSizeError,
+  pickupPhotoTypeError,
+  preparePickupPhoto,
+} from '../utils/pickup-photo.utils';
 
 export interface AssignmentGroups {
   active: DeliveryAssignmentResponseDto[];
@@ -21,7 +28,8 @@ export interface AssignmentGroups {
   completed: DeliveryAssignmentResponseDto[];
 }
 
-export type ProofType = 'pickup' | 'delivery';
+/** Only delivery is OTP-verified since the 2026-10-11 pickup revision (pickup is photo-gated). */
+export type ProofType = 'delivery';
 
 /**
  * Whether the currently-displayed active assignment (`groups().active`) can be trusted as
@@ -83,6 +91,18 @@ const POLL_INTERVAL_MS = 15_000;
 const OFFLINE_MUTATION_MESSAGE =
   "You're offline — reconnect to update this delivery.";
 
+/**
+ * The backend accepts arrival within 100m of the restaurant (ProofService.ARRIVAL_RADIUS_METERS).
+ * A GPS fix whose own uncertainty is larger than that can't meaningfully show the partner is
+ * there, so the app asks for a better fix instead of submitting it. This is UX only — the
+ * backend still validates the coordinates, and cannot verify accuracy reported by the device.
+ */
+const MAX_ARRIVAL_ACCURACY_METERS = 100;
+
+/** 4xx statuses meaning "this assignment is no longer what you think it is" (expired, taken by
+ *  someone else, already handled) — the list is re-fetched so the stale card disappears. */
+const STALE_ASSIGNMENT_STATUSES = new Set([400, 403, 404, 409]);
+
 function buildGroups(
   assignments: DeliveryAssignmentResponseDto[],
 ): AssignmentGroups {
@@ -111,6 +131,7 @@ export class DeliveryAssignmentsStore {
   private readonly activeAssignmentCache = inject(ActiveAssignmentCacheService);
   private readonly networkStatus = inject(NetworkStatusService);
   private readonly mobilePlatform = inject(MobilePlatformService);
+  private readonly realtimeSocket = inject(RealtimeSocketService);
 
   private readonly _assignments = signal<DeliveryAssignmentResponseDto[]>([]);
   private readonly _loading = signal(false);
@@ -128,6 +149,8 @@ export class DeliveryAssignmentsStore {
   );
 
   private pollHandle: ReturnType<typeof setInterval> | null = null;
+  /** Unsubscribes the `delivery.assignment` listener registered while polling. */
+  private stopRealtimeRefresh: (() => void) | null = null;
   /** Shared by every fetch entry point (poll tick, manual refresh, resume, reconnect) so they
    *  coalesce onto one in-flight request instead of firing concurrent duplicate GETs — same
    *  single-flight idiom `authInterceptor` uses for token refresh. */
@@ -220,6 +243,17 @@ export class DeliveryAssignmentsStore {
       () => void this.refreshSilently(),
       intervalMs,
     );
+
+    // A new offer is pushed over Socket.IO the moment dispatch creates it (the app root joins the
+    // partner's user room). Offers expire quickly, so the list refreshes immediately rather than
+    // waiting up to one poll interval. The event carries ids only — the refresh re-reads the
+    // authoritative list, it never trusts the payload.
+    this.stopRealtimeRefresh = this.realtimeSocket.on(
+      'delivery.assignment',
+      () => {
+        void this.refreshSilently();
+      },
+    );
   }
 
   stopPolling(): void {
@@ -227,6 +261,8 @@ export class DeliveryAssignmentsStore {
       clearInterval(this.pollHandle);
       this.pollHandle = null;
     }
+    this.stopRealtimeRefresh?.();
+    this.stopRealtimeRefresh = null;
   }
 
   private refreshSilently(): Promise<void> {
@@ -355,16 +391,31 @@ export class DeliveryAssignmentsStore {
   }
 
   /**
-   * Opens the Pickup OTP dialog for this assignment and immediately requests a fresh code
-   * (sent to the customer) — matching the ORDER FLOW spec's "Arrive Restaurant → Pickup OTP
-   * Verification" step: tapping "Confirm Pickup" both opens the dialog and generates the code
-   * in one motion, rather than requiring a separate "send code" tap first.
+   * 2026-10-11 pickup revision — completes pickup (READY_FOR_PICKUP → OUT_FOR_DELIVERY) with no
+   * OTP. The backend refuses unless this partner owns the assignment and the parcel photo was
+   * uploaded (which itself requires the 100m arrival), so the UI only offers it after both.
    */
-  openPickupOtpDialog(assignmentId: string): Promise<void> {
-    return this.openOtpDialog(assignmentId, 'pickup');
+  confirmPickup(assignmentId: string): Promise<void> {
+    return this.transitionAssignment(
+      assignmentId,
+      (assignment) =>
+        assignment.order
+          ? {
+              ...assignment,
+              order: { ...assignment.order, status: 'OUT_FOR_DELIVERY' },
+            }
+          : assignment,
+      async (original) => {
+        if (!original.order) {
+          throw new Error('Assignment has no order');
+        }
+        await this.assignmentsService.confirmPickup(original.order.id);
+      },
+    );
   }
 
-  /** Same as openPickupOtpDialog, for the OUT_FOR_DELIVERY → DELIVERED step. */
+  /** Opens the delivery OTP dialog (OUT_FOR_DELIVERY → DELIVERED) and requests a fresh code,
+   *  which the backend sends to the customer. */
   openDeliveryOtpDialog(assignmentId: string): Promise<void> {
     return this.openOtpDialog(assignmentId, 'delivery');
   }
@@ -392,10 +443,9 @@ export class DeliveryAssignmentsStore {
     this._otpDialog.set({ ...dialog, generating: true, error: null });
 
     try {
-      const generated =
-        dialog.type === 'pickup'
-          ? await this.assignmentsService.generatePickupOtp(dialog.orderId)
-          : await this.assignmentsService.generateDeliveryOtp(dialog.orderId);
+      const generated = await this.assignmentsService.generateDeliveryOtp(
+        dialog.orderId,
+      );
 
       this._otpDialog.set({
         ...dialog,
@@ -432,13 +482,10 @@ export class DeliveryAssignmentsStore {
     this._otpDialog.set({ ...dialog, verifying: true, error: null });
 
     try {
-      const result =
-        dialog.type === 'pickup'
-          ? await this.assignmentsService.verifyPickupOtp(dialog.orderId, code)
-          : await this.assignmentsService.verifyDeliveryOtp(
-              dialog.orderId,
-              code,
-            );
+      const result = await this.assignmentsService.verifyDeliveryOtp(
+        dialog.orderId,
+        code,
+      );
 
       this.replaceAssignmentOrderStatus(
         dialog.assignmentId,
@@ -514,7 +561,9 @@ export class DeliveryAssignmentsStore {
   ): void {
     this._assignments.update((assignments) =>
       assignments.map((assignment) =>
-        assignment.id === assignmentId ? { ...assignment, ...patch } : assignment,
+        assignment.id === assignmentId
+          ? { ...assignment, ...patch }
+          : assignment,
       ),
     );
   }
@@ -528,7 +577,9 @@ export class DeliveryAssignmentsStore {
    * is what actually enforces the 100m radius; a rejection here is the gate working, not a bug.
    */
   async markRestaurantArrival(assignmentId: string): Promise<void> {
-    const assignment = this._assignments().find((item) => item.id === assignmentId);
+    const assignment = this._assignments().find(
+      (item) => item.id === assignmentId,
+    );
     if (!assignment?.order || this._processingId()) {
       return;
     }
@@ -545,14 +596,23 @@ export class DeliveryAssignmentsStore {
       const permitted = await this.geolocationService.ensurePermission();
       if (!permitted) {
         this._actionError.set(
-          'Location access is needed to mark arrival — please enable it and try again.',
+          'Enable location access to confirm arrival, then try again.',
         );
         return;
       }
 
       const position = await this.geolocationService.getCurrentPosition();
       if (!position) {
-        this._actionError.set('Unable to get your current location. Please try again.');
+        this._actionError.set(
+          'Unable to get your current location. Please try again.',
+        );
+        return;
+      }
+
+      if (position.coords.accuracy > MAX_ARRIVAL_ACCURACY_METERS) {
+        this._actionError.set(
+          `Your GPS signal is too weak to confirm arrival (accurate to about ${Math.round(position.coords.accuracy)}m). Move to an open area and try again.`,
+        );
         return;
       }
 
@@ -609,7 +669,11 @@ export class DeliveryAssignmentsStore {
   /** Swaps in a newly picked file — purely local until submitPickupPhoto() is called, so a rider
    *  can retake as many times as they like before anything is uploaded (Phase 7: replacement
    *  before submission is a client-side-only operation). */
-  selectPickupPhoto(file: File): void {
+  async selectPickupPhoto(selected: File): Promise<void> {
+    const typeError = pickupPhotoTypeError(selected);
+    const file = typeError ? selected : await preparePickupPhoto(selected);
+
+    // Re-read after the (possibly slow) downscale — the dialog may have been closed meanwhile.
     const dialog = this._pickupPhotoDialog();
     if (!dialog) {
       return;
@@ -617,6 +681,18 @@ export class DeliveryAssignmentsStore {
 
     if (dialog.previewUrl) {
       URL.revokeObjectURL(dialog.previewUrl);
+    }
+
+    const error = typeError ?? pickupPhotoSizeError(file);
+    if (error) {
+      // An unusable selection is never kept, so "Submit photo" stays disabled.
+      this._pickupPhotoDialog.set({
+        ...dialog,
+        file: null,
+        previewUrl: null,
+        error,
+      });
+      return;
     }
 
     this._pickupPhotoDialog.set({
@@ -637,14 +713,20 @@ export class DeliveryAssignmentsStore {
     }
 
     if (this.networkStatus.isOffline()) {
-      this._pickupPhotoDialog.set({ ...dialog, error: OFFLINE_MUTATION_MESSAGE });
+      this._pickupPhotoDialog.set({
+        ...dialog,
+        error: OFFLINE_MUTATION_MESSAGE,
+      });
       return;
     }
 
     this._pickupPhotoDialog.set({ ...dialog, uploading: true, error: null });
 
     try {
-      await this.assignmentsService.uploadPickupPhoto(dialog.orderId, dialog.file);
+      await this.assignmentsService.uploadPickupPhoto(
+        dialog.orderId,
+        dialog.file,
+      );
       this.patchAssignmentOrder(dialog.assignmentId, {
         pickupPhotoUploaded: true,
       });
@@ -711,11 +793,22 @@ export class DeliveryAssignmentsStore {
       await action(original);
       this._actionError.set(null);
       await this.syncActiveAssignmentCache(this._assignments());
-    } catch {
+    } catch (error) {
       this.replaceAssignment(assignmentId, original);
+      // Previously always a generic message, so an expired or already-taken offer gave the
+      // partner no idea why Accept failed. The backend's own message says what happened.
       this._actionError.set(
-        'Unable to update this assignment. Please try again.',
+        extractHttpErrorMessage(
+          error,
+          'Unable to update this assignment. Please try again.',
+        ),
       );
+      if (
+        error instanceof HttpErrorResponse &&
+        STALE_ASSIGNMENT_STATUSES.has(error.status)
+      ) {
+        void this.refreshSilently();
+      }
     } finally {
       this._processingId.set(null);
     }

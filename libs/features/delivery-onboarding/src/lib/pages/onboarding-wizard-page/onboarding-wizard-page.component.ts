@@ -1,10 +1,73 @@
-import { ChangeDetectionStrategy, Component, OnInit, effect, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  OnInit,
+  effect,
+  inject,
+} from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  FormBuilder,
+  FormControl,
+  ReactiveFormsModule,
+  Validators,
+  type AbstractControl,
+  type ValidationErrors,
+} from '@angular/forms';
 import { Router } from '@angular/router';
-import { ErrorStateComponent, FileUploadComponent, SkeletonComponent } from '@patheya-express-frontend/ui';
-import { MapPickerComponent, type PickedLocation } from '@patheya-express-frontend/map-picker';
-import { DeliveryOnboardingWizardFacade, ONBOARDING_TOTAL_STEPS } from '../../facades/delivery-onboarding-wizard.facade';
+import {
+  DOCUMENT_UPLOAD_LIMITS,
+  ErrorStateComponent,
+  FieldErrorComponent,
+  FileUploadComponent,
+  IMAGE_UPLOAD_LIMITS,
+  SkeletonComponent,
+  focusFirstInvalidControl,
+} from '@patheya-express-frontend/ui';
+import {
+  MapPickerComponent,
+  type PickedLocation,
+} from '@patheya-express-frontend/map-picker';
+import {
+  DeliveryOnboardingWizardFacade,
+  ONBOARDING_TOTAL_STEPS,
+} from '../../facades/delivery-onboarding-wizard.facade';
+
+/** Empty or whitespace-only counts as missing — mirrors the backend's non-blank checks. */
+function notBlank(control: AbstractControl<string>): ValidationErrors | null {
+  return control.value.trim() ? null : { required: true };
+}
+
+/** Local calendar date as YYYY-MM-DD — the format `<input type="date">` uses. */
+function todayIsoDate(): string {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${now.getFullYear()}-${month}-${day}`;
+}
+
+/** A date of birth can't be in the future. No minimum-age rule exists in the platform, so none
+ *  is enforced here. */
+function notInFuture(
+  control: AbstractControl<string>,
+): ValidationErrors | null {
+  return control.value && control.value > todayIsoDate()
+    ? { future: true }
+    : null;
+}
+
+/** The coordinate controls default to 0, which `Validators.required` accepts — so an address
+ *  could be saved at 0°N 0°E without ever using the map. Requires an actual picked location. */
+function locationPicked(
+  control: AbstractControl<number>,
+): ValidationErrors | null {
+  return control.value ? null : { locationRequired: true };
+}
+
+/** Same bounds CreateVehicleDto enforces (@Min(1980) @Max(2100)). */
+const VEHICLE_YEAR_MIN = 1980;
+const VEHICLE_YEAR_MAX = 2100;
 
 interface StepMeta {
   step: number;
@@ -27,7 +90,13 @@ const STEPS: StepMeta[] = [
   { step: 12, key: 'review', label: 'Review & Submit' },
 ];
 
-const VEHICLE_TYPES = ['BIKE', 'SCOOTER', 'BICYCLE', 'CAR', 'ELECTRIC_VEHICLE'] as const;
+const VEHICLE_TYPES = [
+  'BIKE',
+  'SCOOTER',
+  'BICYCLE',
+  'CAR',
+  'ELECTRIC_VEHICLE',
+] as const;
 const GENDERS = ['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY'] as const;
 
 /**
@@ -43,7 +112,15 @@ const GENDERS = ['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY'] as const;
 @Component({
   selector: 'lib-onboarding-wizard-page',
   standalone: true,
-  imports: [DatePipe, ReactiveFormsModule, SkeletonComponent, ErrorStateComponent, FileUploadComponent, MapPickerComponent],
+  imports: [
+    DatePipe,
+    ReactiveFormsModule,
+    SkeletonComponent,
+    ErrorStateComponent,
+    FileUploadComponent,
+    MapPickerComponent,
+    FieldErrorComponent,
+  ],
   templateUrl: './onboarding-wizard-page.component.html',
   styleUrl: './onboarding-wizard-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -52,6 +129,13 @@ export class OnboardingWizardPageComponent implements OnInit {
   protected readonly facade = inject(DeliveryOnboardingWizardFacade);
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  protected readonly documentLimits = DOCUMENT_UPLOAD_LIMITS;
+  protected readonly imageLimits = IMAGE_UPLOAD_LIMITS;
+  protected readonly maxBirthDate = todayIsoDate();
+  protected readonly yearMin = VEHICLE_YEAR_MIN;
+  protected readonly yearMax = VEHICLE_YEAR_MAX;
 
   protected readonly steps = STEPS;
   protected readonly totalSteps = ONBOARDING_TOTAL_STEPS;
@@ -64,19 +148,19 @@ export class OnboardingWizardPageComponent implements OnInit {
   protected initialPermanentPosition?: { lat: number; lng: number };
 
   protected readonly personalForm = this.fb.nonNullable.group({
-    dateOfBirth: ['', Validators.required],
+    dateOfBirth: ['', [Validators.required, notInFuture]],
     gender: ['' as '' | (typeof GENDERS)[number], Validators.required],
-    languagesSpoken: ['', Validators.required],
+    languagesSpoken: ['', notBlank],
   });
 
   protected readonly addressForm = this.fb.nonNullable.group({
-    currentAddressLine1: ['', Validators.required],
+    currentAddressLine1: ['', notBlank],
     currentAddressLine2: [''],
-    currentCity: ['', Validators.required],
-    currentState: ['', Validators.required],
-    currentPostalCode: ['', Validators.required],
-    currentAddressLatitude: [0, Validators.required],
-    currentAddressLongitude: [0, Validators.required],
+    currentCity: ['', notBlank],
+    currentState: ['', notBlank],
+    currentPostalCode: ['', notBlank],
+    currentAddressLatitude: [0, locationPicked],
+    currentAddressLongitude: [0, locationPicked],
     sameAsPermanentAddress: [false],
     permanentAddressLine1: [''],
     permanentAddressLine2: [''],
@@ -88,21 +172,31 @@ export class OnboardingWizardPageComponent implements OnInit {
   });
 
   protected readonly vehicleForm = this.fb.nonNullable.group({
-    vehicleType: ['BIKE' as (typeof VEHICLE_TYPES)[number], Validators.required],
-    registrationNumber: ['', Validators.required],
+    vehicleType: [
+      'BIKE' as (typeof VEHICLE_TYPES)[number],
+      Validators.required,
+    ],
+    registrationNumber: ['', notBlank],
     brand: [''],
     model: [''],
-    year: [new Date().getFullYear()],
-    fuelType: ['PETROL' as 'PETROL' | 'DIESEL' | 'ELECTRIC' | 'CNG' | 'HYBRID'],
+    year: [
+      new Date().getFullYear() as number | null,
+      [Validators.min(VEHICLE_YEAR_MIN), Validators.max(VEHICLE_YEAR_MAX)],
+    ],
+    // Optional on the backend — previously forced to PETROL, even for bicycles.
+    fuelType: ['' as '' | 'PETROL' | 'DIESEL' | 'ELECTRIC' | 'CNG' | 'HYBRID'],
     color: [''],
   });
 
   protected readonly bankForm = this.fb.nonNullable.group({
-    accountHolderName: ['', Validators.required],
+    accountHolderName: ['', notBlank],
     accountNumber: ['', [Validators.required, Validators.minLength(6)]],
-    bankName: ['', Validators.required],
+    bankName: ['', notBlank],
     branchName: [''],
-    ifsc: ['', [Validators.required, Validators.pattern(/^[A-Z]{4}0[A-Z0-9]{6}$/)]],
+    ifsc: [
+      '',
+      [Validators.required, Validators.pattern(/^[A-Z]{4}0[A-Z0-9]{6}$/)],
+    ],
     upiId: [''],
   });
 
@@ -131,6 +225,11 @@ export class OnboardingWizardPageComponent implements OnInit {
   }
 
   private prefillForms(): void {
+    // Consent already on record (e.g. returning after a change request) stays ticked.
+    if (this.facade.onboarding()?.backgroundCheckConsentAt) {
+      this.backgroundConsent.setValue(true);
+    }
+
     const profile = this.facade.profile();
     const vehicle = this.facade.primaryVehicle();
     const bankAccount = this.facade.bankAccount();
@@ -160,11 +259,23 @@ export class OnboardingWizardPageComponent implements OnInit {
         permanentLongitude: profile.permanentLongitude ?? 0,
       });
 
-      if (profile.currentAddressLatitude !== undefined && profile.currentAddressLongitude !== undefined) {
-        this.initialCurrentPosition = { lat: profile.currentAddressLatitude, lng: profile.currentAddressLongitude };
+      if (
+        profile.currentAddressLatitude !== undefined &&
+        profile.currentAddressLongitude !== undefined
+      ) {
+        this.initialCurrentPosition = {
+          lat: profile.currentAddressLatitude,
+          lng: profile.currentAddressLongitude,
+        };
       }
-      if (profile.permanentLatitude !== undefined && profile.permanentLongitude !== undefined) {
-        this.initialPermanentPosition = { lat: profile.permanentLatitude, lng: profile.permanentLongitude };
+      if (
+        profile.permanentLatitude !== undefined &&
+        profile.permanentLongitude !== undefined
+      ) {
+        this.initialPermanentPosition = {
+          lat: profile.permanentLatitude,
+          lng: profile.permanentLongitude,
+        };
       }
     }
 
@@ -208,7 +319,16 @@ export class OnboardingWizardPageComponent implements OnInit {
     this.facade.goToStep(step);
   }
 
-  protected hasDocument(type: 'DRIVING_LICENSE' | 'AADHAAR' | 'PAN' | 'VEHICLE_RC' | 'VEHICLE_INSURANCE' | 'SELFIE' | 'BACKGROUND_VERIFICATION'): boolean {
+  protected hasDocument(
+    type:
+      | 'DRIVING_LICENSE'
+      | 'AADHAAR'
+      | 'PAN'
+      | 'VEHICLE_RC'
+      | 'VEHICLE_INSURANCE'
+      | 'SELFIE'
+      | 'BACKGROUND_VERIFICATION',
+  ): boolean {
     return this.facade.documentsByType().has(type);
   }
 
@@ -224,6 +344,7 @@ export class OnboardingWizardPageComponent implements OnInit {
     }
     if (this.personalForm.invalid) {
       this.personalForm.markAllAsTouched();
+      focusFirstInvalidControl(this.host.nativeElement);
       return;
     }
     const value = this.personalForm.getRawValue();
@@ -231,7 +352,10 @@ export class OnboardingWizardPageComponent implements OnInit {
       .savePersonal({
         dateOfBirth: value.dateOfBirth,
         gender: value.gender || undefined,
-        languagesSpoken: value.languagesSpoken.split(',').map((s) => s.trim()).filter(Boolean),
+        languagesSpoken: value.languagesSpoken
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean),
       })
       .then((ok) => {
         if (ok) {
@@ -246,10 +370,15 @@ export class OnboardingWizardPageComponent implements OnInit {
     this.addressForm.patchValue({
       currentAddressLatitude: location.lat,
       currentAddressLongitude: location.lng,
-      currentAddressLine1: location.addressLine1 || this.addressForm.controls.currentAddressLine1.value,
+      currentAddressLine1:
+        location.addressLine1 ||
+        this.addressForm.controls.currentAddressLine1.value,
       currentCity: location.city || this.addressForm.controls.currentCity.value,
-      currentState: location.state || this.addressForm.controls.currentState.value,
-      currentPostalCode: location.postalCode || this.addressForm.controls.currentPostalCode.value,
+      currentState:
+        location.state || this.addressForm.controls.currentState.value,
+      currentPostalCode:
+        location.postalCode ||
+        this.addressForm.controls.currentPostalCode.value,
     });
     this.addressForm.markAsDirty();
   }
@@ -258,10 +387,16 @@ export class OnboardingWizardPageComponent implements OnInit {
     this.addressForm.patchValue({
       permanentLatitude: location.lat,
       permanentLongitude: location.lng,
-      permanentAddressLine1: location.addressLine1 || this.addressForm.controls.permanentAddressLine1.value,
-      permanentCity: location.city || this.addressForm.controls.permanentCity.value,
-      permanentState: location.state || this.addressForm.controls.permanentState.value,
-      permanentPostalCode: location.postalCode || this.addressForm.controls.permanentPostalCode.value,
+      permanentAddressLine1:
+        location.addressLine1 ||
+        this.addressForm.controls.permanentAddressLine1.value,
+      permanentCity:
+        location.city || this.addressForm.controls.permanentCity.value,
+      permanentState:
+        location.state || this.addressForm.controls.permanentState.value,
+      permanentPostalCode:
+        location.postalCode ||
+        this.addressForm.controls.permanentPostalCode.value,
     });
     this.addressForm.markAsDirty();
   }
@@ -273,6 +408,7 @@ export class OnboardingWizardPageComponent implements OnInit {
     }
     if (this.addressForm.invalid) {
       this.addressForm.markAllAsTouched();
+      focusFirstInvalidControl(this.host.nativeElement);
       return;
     }
     const value = this.addressForm.getRawValue();
@@ -286,13 +422,27 @@ export class OnboardingWizardPageComponent implements OnInit {
         currentAddressLatitude: value.currentAddressLatitude,
         currentAddressLongitude: value.currentAddressLongitude,
         sameAsPermanentAddress: value.sameAsPermanentAddress,
-        permanentAddressLine1: value.sameAsPermanentAddress ? value.currentAddressLine1 : value.permanentAddressLine1 || undefined,
-        permanentAddressLine2: value.sameAsPermanentAddress ? value.currentAddressLine2 : value.permanentAddressLine2 || undefined,
-        permanentCity: value.sameAsPermanentAddress ? value.currentCity : value.permanentCity || undefined,
-        permanentState: value.sameAsPermanentAddress ? value.currentState : value.permanentState || undefined,
-        permanentPostalCode: value.sameAsPermanentAddress ? value.currentPostalCode : value.permanentPostalCode || undefined,
-        permanentLatitude: value.sameAsPermanentAddress ? value.currentAddressLatitude : value.permanentLatitude || undefined,
-        permanentLongitude: value.sameAsPermanentAddress ? value.currentAddressLongitude : value.permanentLongitude || undefined,
+        permanentAddressLine1: value.sameAsPermanentAddress
+          ? value.currentAddressLine1
+          : value.permanentAddressLine1 || undefined,
+        permanentAddressLine2: value.sameAsPermanentAddress
+          ? value.currentAddressLine2
+          : value.permanentAddressLine2 || undefined,
+        permanentCity: value.sameAsPermanentAddress
+          ? value.currentCity
+          : value.permanentCity || undefined,
+        permanentState: value.sameAsPermanentAddress
+          ? value.currentState
+          : value.permanentState || undefined,
+        permanentPostalCode: value.sameAsPermanentAddress
+          ? value.currentPostalCode
+          : value.permanentPostalCode || undefined,
+        permanentLatitude: value.sameAsPermanentAddress
+          ? value.currentAddressLatitude
+          : value.permanentLatitude || undefined,
+        permanentLongitude: value.sameAsPermanentAddress
+          ? value.currentAddressLongitude
+          : value.permanentLongitude || undefined,
       })
       .then((ok) => {
         if (ok) {
@@ -310,18 +460,19 @@ export class OnboardingWizardPageComponent implements OnInit {
     }
     if (this.vehicleForm.invalid) {
       this.vehicleForm.markAllAsTouched();
+      focusFirstInvalidControl(this.host.nativeElement);
       return;
     }
     const value = this.vehicleForm.getRawValue();
     void this.facade
       .saveVehicle({
         vehicleType: value.vehicleType,
-        registrationNumber: value.registrationNumber,
-        brand: value.brand || undefined,
-        model: value.model || undefined,
-        year: value.year || undefined,
-        fuelType: value.fuelType,
-        color: value.color || undefined,
+        registrationNumber: value.registrationNumber.trim(),
+        brand: value.brand.trim() || undefined,
+        model: value.model.trim() || undefined,
+        year: value.year ?? undefined,
+        fuelType: value.fuelType || undefined,
+        color: value.color.trim() || undefined,
       })
       .then((ok) => {
         if (ok) {
@@ -417,15 +568,16 @@ export class OnboardingWizardPageComponent implements OnInit {
     }
     if (this.bankForm.invalid) {
       this.bankForm.markAllAsTouched();
+      focusFirstInvalidControl(this.host.nativeElement);
       return;
     }
     const value = this.bankForm.getRawValue();
     void this.facade
       .saveBankDetails({
-        accountHolderName: value.accountHolderName,
-        accountNumber: value.accountNumber,
-        bankName: value.bankName,
-        branchName: value.branchName || undefined,
+        accountHolderName: value.accountHolderName.trim(),
+        accountNumber: value.accountNumber.trim(),
+        bankName: value.bankName.trim(),
+        branchName: value.branchName.trim() || undefined,
         ifsc: value.ifsc.toUpperCase(),
         upiId: value.upiId || undefined,
       })
