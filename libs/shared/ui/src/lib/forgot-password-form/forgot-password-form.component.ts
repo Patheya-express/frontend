@@ -1,6 +1,20 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input,
+  Output,
+  inject,
+} from '@angular/core';
+import {
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { PrimaryButtonComponent } from '../buttons/primary-button.component';
+import { focusFirstInvalidControl } from '../utils/form-focus.utils';
 
 export interface ForgotPasswordFormValue {
   email: string;
@@ -19,13 +33,19 @@ export class ForgotPasswordFormComponent {
   @Input() errorMessage: string | null = null;
   @Output() submitted = new EventEmitter<ForgotPasswordFormValue>();
 
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+
   protected readonly form = new FormGroup({
-    email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
+    email: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.email],
+    }),
   });
 
   protected onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      focusFirstInvalidControl(this.host.nativeElement);
       return;
     }
 

@@ -299,3 +299,47 @@
 .safe-area-inset {
   padding: var(--safe-area-top) var(--safe-area-right) var(--safe-area-bottom) var(--safe-area-left);
 }
+
+// Shared form-field affordances — one definition for every form, rather than each component's
+// scoped stylesheet inventing its own. `.form-required` is the visual `*` after a label (mark it
+// `aria-hidden="true"`; the control's own `required` attribute is what assistive tech reads), and
+// `.form-required-legend` explains it once per form. `.form-field-hint` is persistent helper text
+// (format, limits) referenced from the control via `aria-describedby`.
+.form-required {
+  color: var(--color-error);
+  margin-left: 2px;
+}
+
+.form-required-legend,
+.form-field-hint {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+// Default inline validation message style (used by `lib-field-error`). Components that already
+// define their own scoped `.form-field-error` keep it — scoped rules win over this global one.
+.form-field-error {
+  font-size: var(--font-size-xs);
+  color: var(--color-error);
+}
+
+// Inline confirmation after a successful save/upload (announced via role="status").
+.form-success {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-success);
+}
+
+// Visually hidden but announced by screen readers (e.g. "(required)" next to a `*` marker).
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

@@ -28,6 +28,7 @@ export * from './lib/table-toolbar/table-toolbar.component';
 export * from './lib/data-table/data-table.component';
 export * from './lib/star-rating/star-rating.component';
 export * from './lib/file-upload/file-upload.component';
+export * from './lib/file-upload/upload-limits';
 export * from './lib/restaurant-branch-switcher/restaurant-branch-switcher.component';
 export * from './lib/search-bar/search-bar.component';
 export * from './lib/carousel/carousel.component';
@@ -47,6 +48,8 @@ export * from './lib/types/overlay.types';
 export * from './lib/utils/track-by.utils';
 export * from './lib/utils/highlight.utils';
 export * from './lib/utils/currency.utils';
+export * from './lib/utils/form-focus.utils';
+export * from './lib/field-error/field-error.component';
 
 // Animations
 export * from './lib/animations/reduced-motion.util';
