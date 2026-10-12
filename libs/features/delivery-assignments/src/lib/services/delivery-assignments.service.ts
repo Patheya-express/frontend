@@ -1,8 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import {
   DeliveryProofService,
+  DeliveryService,
   DispatchService,
   type DeliveryAssignmentResponseDto,
+  type OrderResponseDto,
   type ProofOtpGeneratedResponseDto,
   type ProofOtpStatusResponseDto,
   type ProofPhotoResponseDto,
@@ -27,52 +29,78 @@ function unwrap<T>(response: T): T {
 export class DeliveryAssignmentsService {
   private readonly dispatchService = inject(DispatchService);
   private readonly deliveryProofService = inject(DeliveryProofService);
+  private readonly deliveryService = inject(DeliveryService);
   private readonly currentPartner = inject(CurrentDeliveryPartnerService);
 
   async getAssignments(): Promise<DeliveryAssignmentResponseDto[]> {
     await this.currentPartner.getPartner();
-    const response = await this.dispatchService.dispatchControllerGetAssignments();
+    const response =
+      await this.dispatchService.dispatchControllerGetAssignments();
     return unwrap(response);
   }
 
   async acceptAssignment(assignmentId: string): Promise<void> {
-    await this.dispatchService.dispatchControllerAcceptAssignment({ id: assignmentId });
+    await this.dispatchService.dispatchControllerAcceptAssignment({
+      id: assignmentId,
+    });
   }
 
   async rejectAssignment(assignmentId: string): Promise<void> {
-    await this.dispatchService.dispatchControllerRejectAssignment({ id: assignmentId });
+    await this.dispatchService.dispatchControllerRejectAssignment({
+      id: assignmentId,
+    });
   }
 
-  // Sprint 4.1 — Delivery Proof & Trust. Pickup/delivery status no longer changes via a direct
-  // status-update call (the backend now rejects that path for delivery partners); it only
-  // advances as a side effect of a successful OTP verification below.
-  async generatePickupOtp(orderId: string): Promise<ProofOtpGeneratedResponseDto> {
-    const response = await this.deliveryProofService.proofControllerGeneratePickupOtp({ orderId });
+  /**
+   * 2026-10-11 pickup revision — pickup has no OTP. Completing pickup is the existing
+   * delivery-status transition READY_FOR_PICKUP → OUT_FOR_DELIVERY; the backend only allows it for
+   * the assigned partner once the parcel photo exists (OrdersService.updateOrderStatus), and the
+   * photo itself can only be uploaded after the backend-validated restaurant arrival.
+   */
+  async confirmPickup(orderId: string): Promise<OrderResponseDto> {
+    const response =
+      await this.deliveryService.deliveryControllerUpdateDeliveryStatus({
+        orderId,
+        body: { status: 'OUT_FOR_DELIVERY' },
+      });
     return unwrap(response);
   }
 
-  async verifyPickupOtp(orderId: string, code: string): Promise<ProofOtpStatusResponseDto> {
-    const response = await this.deliveryProofService.proofControllerVerifyPickupOtp({ orderId, body: { code } });
+  // Delivery Proof & Trust — DELIVERED is only reachable through a successful delivery-OTP
+  // verification below (the backend rejects a direct status update without a verified OTP).
+  async generateDeliveryOtp(
+    orderId: string,
+  ): Promise<ProofOtpGeneratedResponseDto> {
+    const response =
+      await this.deliveryProofService.proofControllerGenerateDeliveryOtp({
+        orderId,
+      });
     return unwrap(response);
   }
 
-  async generateDeliveryOtp(orderId: string): Promise<ProofOtpGeneratedResponseDto> {
-    const response = await this.deliveryProofService.proofControllerGenerateDeliveryOtp({ orderId });
-    return unwrap(response);
-  }
-
-  async verifyDeliveryOtp(orderId: string, code: string): Promise<ProofOtpStatusResponseDto> {
-    const response = await this.deliveryProofService.proofControllerVerifyDeliveryOtp({ orderId, body: { code } });
+  async verifyDeliveryOtp(
+    orderId: string,
+    code: string,
+  ): Promise<ProofOtpStatusResponseDto> {
+    const response =
+      await this.deliveryProofService.proofControllerVerifyDeliveryOtp({
+        orderId,
+        body: { code },
+      });
     return unwrap(response);
   }
 
   // Mandatory pickup-parcel photo — write-once evidence required before the order can advance to
   // OUT_FOR_DELIVERY (see ProofService.uploadPickupPhoto/OrdersService.assertPhotoVerifiedForStatus).
-  async uploadPickupPhoto(orderId: string, file: File): Promise<ProofPhotoResponseDto> {
-    const response = await this.deliveryProofService.proofControllerUploadPickupPhoto({
-      orderId,
-      body: { file },
-    });
+  async uploadPickupPhoto(
+    orderId: string,
+    file: File,
+  ): Promise<ProofPhotoResponseDto> {
+    const response =
+      await this.deliveryProofService.proofControllerUploadPickupPhoto({
+        orderId,
+        body: { file },
+      });
     return unwrap(response);
   }
 
@@ -85,10 +113,11 @@ export class DeliveryAssignmentsService {
     latitude: number,
     longitude: number,
   ): Promise<RestaurantArrivalResponseDto> {
-    const response = await this.deliveryProofService.proofControllerMarkRestaurantArrival({
-      orderId,
-      body: { latitude, longitude },
-    });
+    const response =
+      await this.deliveryProofService.proofControllerMarkRestaurantArrival({
+        orderId,
+        body: { latitude, longitude },
+      });
     return unwrap(response);
   }
 }

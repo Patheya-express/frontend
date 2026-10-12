@@ -11,7 +11,15 @@ import type {
   UpsertDeliveryBankAccountDto,
   SubmitDeliveryOnboardingDto,
 } from '@patheya-express-frontend/api-sdk';
-import { CurrentDeliveryPartnerService } from '@patheya-express-frontend/core';
+import {
+  CurrentDeliveryPartnerService,
+  extractHttpErrorMessage,
+} from '@patheya-express-frontend/core';
+import {
+  DOCUMENT_UPLOAD_LIMITS,
+  IMAGE_UPLOAD_LIMITS,
+  uploadLimitError,
+} from '@patheya-express-frontend/ui';
 import {
   DeliveryOnboardingWizardService,
   type DeliveryDocumentType,
@@ -19,17 +27,27 @@ import {
 
 export const ONBOARDING_TOTAL_STEPS = 12;
 
+/** A file rejected locally (type/size) before any upload — its message is shown as-is. */
+class UploadRejectedError extends Error {}
+
 @Injectable({ providedIn: 'root' })
 export class DeliveryOnboardingWizardStore {
   private readonly service = inject(DeliveryOnboardingWizardService);
-  private readonly currentDeliveryPartnerService = inject(CurrentDeliveryPartnerService);
+  private readonly currentDeliveryPartnerService = inject(
+    CurrentDeliveryPartnerService,
+  );
 
-  private readonly _onboarding = signal<DeliveryOnboardingResponseDto | null>(null);
-  private readonly _verification = signal<DeliveryVerificationResponseDto | null>(null);
+  private readonly _onboarding = signal<DeliveryOnboardingResponseDto | null>(
+    null,
+  );
+  private readonly _verification =
+    signal<DeliveryVerificationResponseDto | null>(null);
   private readonly _profile = signal<DeliveryProfileResponseDto | null>(null);
   private readonly _vehicles = signal<VehicleResponseDto[]>([]);
   private readonly _documents = signal<DeliveryDocumentResponseDto[]>([]);
-  private readonly _bankAccount = signal<DeliveryBankAccountResponseDto | null>(null);
+  private readonly _bankAccount = signal<DeliveryBankAccountResponseDto | null>(
+    null,
+  );
   private readonly _activeStep = signal(1);
 
   private readonly _initializing = signal(false);
@@ -54,12 +72,21 @@ export class DeliveryOnboardingWizardStore {
   readonly saveError = this._saveError.asReadonly();
   readonly uploadingKey = this._uploadingKey.asReadonly();
 
-  readonly completedSteps = computed(() => new Set(this._onboarding()?.completedSteps ?? []));
-  readonly progressPercent = computed(() => this._onboarding()?.progressPercent ?? 0);
+  readonly completedSteps = computed(
+    () => new Set(this._onboarding()?.completedSteps ?? []),
+  );
+  readonly progressPercent = computed(
+    () => this._onboarding()?.progressPercent ?? 0,
+  );
   readonly status = computed(() => this._onboarding()?.status ?? 'DRAFT');
-  readonly changesRequested = computed(() => this._onboarding()?.changesRequested ?? []);
+  readonly changesRequested = computed(
+    () => this._onboarding()?.changesRequested ?? [],
+  );
 
-  readonly primaryVehicle = computed(() => this._vehicles().find((v) => v.isPrimary) ?? this._vehicles()[0] ?? null);
+  readonly primaryVehicle = computed(
+    () =>
+      this._vehicles().find((v) => v.isPrimary) ?? this._vehicles()[0] ?? null,
+  );
 
   readonly documentsByType = computed(() => {
     const map = new Map<DeliveryDocumentType, DeliveryDocumentResponseDto>();
@@ -110,7 +137,14 @@ export class DeliveryOnboardingWizardStore {
     this._error.set(null);
 
     try {
-      const [onboarding, verification, profile, vehicles, documents, bankAccount] = await Promise.all([
+      const [
+        onboarding,
+        verification,
+        profile,
+        vehicles,
+        documents,
+        bankAccount,
+      ] = await Promise.all([
         this.service.getState(),
         this.service.getVerification(),
         this.service.getProfile(),
@@ -126,10 +160,14 @@ export class DeliveryOnboardingWizardStore {
       this._documents.set(documents);
       this._bankAccount.set(bankAccount);
 
-      this._activeStep.set(Math.min(onboarding.currentStep, ONBOARDING_TOTAL_STEPS));
+      this._activeStep.set(
+        Math.min(onboarding.currentStep, ONBOARDING_TOTAL_STEPS),
+      );
       this._initialized.set(true);
     } catch {
-      this._error.set('Unable to load your onboarding application. Please refresh and try again.');
+      this._error.set(
+        'Unable to load your onboarding application. Please refresh and try again.',
+      );
     } finally {
       this._initializing.set(false);
     }
@@ -145,8 +183,14 @@ export class DeliveryOnboardingWizardStore {
     this._saveError.set(null);
     try {
       return await action();
-    } catch {
-      this._saveError.set('Unable to save this step. Please check the form and try again.');
+    } catch (error) {
+      // Prefer the backend's own validation message over a generic one.
+      this._saveError.set(
+        extractHttpErrorMessage(
+          error,
+          'Unable to save this step. Please check the form and try again.',
+        ),
+      );
       return null;
     } finally {
       this._saving.set(false);
@@ -180,31 +224,59 @@ export class DeliveryOnboardingWizardStore {
     return result !== null;
   }
 
-  private async withUpload(key: string, action: () => Promise<void>): Promise<boolean> {
+  private async withUpload(
+    key: string,
+    action: () => Promise<void>,
+  ): Promise<boolean> {
     this._uploadingKey.set(key);
     this._saveError.set(null);
     try {
       await action();
       return true;
-    } catch {
-      this._saveError.set('Unable to upload this document. Please try again.');
+    } catch (error) {
+      this._saveError.set(
+        error instanceof UploadRejectedError
+          ? error.message
+          : extractHttpErrorMessage(
+              error,
+              'Unable to upload this document. Please try again.',
+            ),
+      );
       return false;
     } finally {
       this._uploadingKey.set(null);
     }
   }
 
-  private async uploadAndReplace(documentType: DeliveryDocumentType, file: File, vehicleId?: string): Promise<void> {
+  private async uploadAndReplace(
+    documentType: DeliveryDocumentType,
+    file: File,
+    vehicleId?: string,
+  ): Promise<void> {
+    // Same rules the backend enforces (DOCUMENT_* for documents; the selfie step only offers
+    // images) — rejected before a slow upload that could only fail.
+    const limitError = uploadLimitError(
+      file,
+      documentType === 'SELFIE' ? IMAGE_UPLOAD_LIMITS : DOCUMENT_UPLOAD_LIMITS,
+    );
+    if (limitError) {
+      throw new UploadRejectedError(limitError);
+    }
     const existing = this.documentsByType().get(documentType);
     const document = await this.service.uploadDocument(documentType, file, {
       vehicleId,
       previousVersionId: existing?.id,
     });
-    this._documents.update((docs) => [...docs.filter((d) => d.documentType !== documentType), document]);
+    this._documents.update((docs) => [
+      ...docs.filter((d) => d.documentType !== documentType),
+      document,
+    ]);
   }
 
   uploadDrivingLicense(file: File): Promise<boolean> {
-    return this.withUpload('DRIVING_LICENSE', () => this.uploadAndReplace('DRIVING_LICENSE', file));
+    return this.withUpload('DRIVING_LICENSE', () =>
+      this.uploadAndReplace('DRIVING_LICENSE', file),
+    );
   }
 
   async completeDrivingLicenseStep(): Promise<boolean> {
@@ -213,7 +285,9 @@ export class DeliveryOnboardingWizardStore {
   }
 
   uploadAadhaar(file: File): Promise<boolean> {
-    return this.withUpload('AADHAAR', () => this.uploadAndReplace('AADHAAR', file));
+    return this.withUpload('AADHAAR', () =>
+      this.uploadAndReplace('AADHAAR', file),
+    );
   }
 
   async completeAadhaarStep(): Promise<boolean> {
@@ -232,7 +306,9 @@ export class DeliveryOnboardingWizardStore {
 
   uploadVehicleRc(file: File): Promise<boolean> {
     const vehicleId = this.primaryVehicle()?.id;
-    return this.withUpload('VEHICLE_RC', () => this.uploadAndReplace('VEHICLE_RC', file, vehicleId));
+    return this.withUpload('VEHICLE_RC', () =>
+      this.uploadAndReplace('VEHICLE_RC', file, vehicleId),
+    );
   }
 
   async completeVehicleRcStep(): Promise<boolean> {
@@ -242,17 +318,23 @@ export class DeliveryOnboardingWizardStore {
 
   uploadVehicleInsurance(file: File): Promise<boolean> {
     const vehicleId = this.primaryVehicle()?.id;
-    return this.withUpload('VEHICLE_INSURANCE', () => this.uploadAndReplace('VEHICLE_INSURANCE', file, vehicleId));
+    return this.withUpload('VEHICLE_INSURANCE', () =>
+      this.uploadAndReplace('VEHICLE_INSURANCE', file, vehicleId),
+    );
   }
 
   uploadVehicleFitness(file: File): Promise<boolean> {
     const vehicleId = this.primaryVehicle()?.id;
-    return this.withUpload('VEHICLE_FITNESS', () => this.uploadAndReplace('VEHICLE_FITNESS', file, vehicleId));
+    return this.withUpload('VEHICLE_FITNESS', () =>
+      this.uploadAndReplace('VEHICLE_FITNESS', file, vehicleId),
+    );
   }
 
   uploadVehiclePollution(file: File): Promise<boolean> {
     const vehicleId = this.primaryVehicle()?.id;
-    return this.withUpload('VEHICLE_POLLUTION', () => this.uploadAndReplace('VEHICLE_POLLUTION', file, vehicleId));
+    return this.withUpload('VEHICLE_POLLUTION', () =>
+      this.uploadAndReplace('VEHICLE_POLLUTION', file, vehicleId),
+    );
   }
 
   async completeVehicleDocumentsStep(): Promise<boolean> {
@@ -270,7 +352,9 @@ export class DeliveryOnboardingWizardStore {
   }
 
   uploadSelfie(file: File): Promise<boolean> {
-    return this.withUpload('SELFIE', () => this.uploadAndReplace('SELFIE', file));
+    return this.withUpload('SELFIE', () =>
+      this.uploadAndReplace('SELFIE', file),
+    );
   }
 
   async completeSelfieStep(): Promise<boolean> {
@@ -279,11 +363,18 @@ export class DeliveryOnboardingWizardStore {
   }
 
   uploadBackgroundVerificationDocument(file: File): Promise<boolean> {
-    return this.withUpload('BACKGROUND_VERIFICATION', () => this.uploadAndReplace('BACKGROUND_VERIFICATION', file));
+    return this.withUpload('BACKGROUND_VERIFICATION', () =>
+      this.uploadAndReplace('BACKGROUND_VERIFICATION', file),
+    );
   }
 
+  /** Step 11: the consent is stored on the backend first (the step cannot complete without it). */
   async completeBackgroundVerificationStep(): Promise<boolean> {
-    const result = await this.withSaving(() => this.completeStep(11));
+    const result = await this.withSaving(async () => {
+      const onboarding = await this.service.recordBackgroundCheckConsent();
+      this._onboarding.set(onboarding);
+      await this.completeStep(11);
+    });
     return result !== null;
   }
 

@@ -8,8 +8,14 @@
   } @else {
     @if (facade.bankAccount(); as account) {
       <div class="bank-account-summary">
-        <span>Current account ending in <strong>••••{{ account.accountNumberLast4 }}</strong></span>
-        <lib-status-chip [label]="account.verificationStatus" [tone]="verificationTone(account.verificationStatus)" />
+        <span
+          >Current account ending in
+          <strong>••••{{ account.accountNumberLast4 }}</strong></span
+        >
+        <lib-status-chip
+          [label]="account.verificationStatus"
+          [tone]="verificationTone(account.verificationStatus)"
+        />
       </div>
     }
 
@@ -20,35 +26,136 @@
       <p class="bank-account-error" role="alert">{{ facade.saveError() }}</p>
     }
 
-    <form class="bank-form" [formGroup]="bankForm" (ngSubmit)="onSubmit()">
+    <form
+      class="bank-form"
+      [formGroup]="bankForm"
+      (ngSubmit)="onSubmit()"
+      novalidate
+    >
+      <p class="form-required-legend">
+        <span class="form-required" aria-hidden="true">*</span> Required
+      </p>
+
       <label>
-        Account Holder Name
-        <input type="text" formControlName="accountHolderName" />
+        <span
+          >Account holder name<span class="form-required" aria-hidden="true"
+            >*</span
+          ></span
+        >
+        <input
+          type="text"
+          autocomplete="name"
+          placeholder="Name exactly as on your bank account"
+          required
+          formControlName="accountHolderName"
+          aria-describedby="bank-holder-error"
+        />
+        <lib-field-error
+          id="bank-holder-error"
+          [control]="bankForm.controls.accountHolderName"
+          [messages]="{ required: 'Account holder name is required.' }"
+        />
       </label>
 
       <label>
-        Account Number
-        <input type="text" formControlName="accountNumber" placeholder="Leave blank to keep the saved number" />
+        <span
+          >Account number<span class="form-required" aria-hidden="true"
+            >*</span
+          ></span
+        >
+        <input
+          type="text"
+          inputmode="numeric"
+          autocomplete="off"
+          placeholder="Enter your full account number"
+          required
+          formControlName="accountNumber"
+          aria-describedby="bank-number-hint bank-number-error"
+        />
+        <span id="bank-number-hint" class="form-field-hint">
+          @if (facade.bankAccount()) {
+            For security, re-enter the full number every time you save. Only the
+            last 4 digits are shown.
+          } @else {
+            Stored encrypted. Only the last 4 digits are ever shown.
+          }
+        </span>
+        <lib-field-error
+          id="bank-number-error"
+          [control]="bankForm.controls.accountNumber"
+          [messages]="{
+            required: 'Account number is required.',
+            minlength: 'Account number must be at least 6 characters.',
+          }"
+        />
       </label>
 
       <label>
-        Bank Name
-        <input type="text" formControlName="bankName" />
+        <span
+          >Bank name<span class="form-required" aria-hidden="true"
+            >*</span
+          ></span
+        >
+        <input
+          type="text"
+          placeholder="e.g. HDFC Bank"
+          required
+          formControlName="bankName"
+          aria-describedby="bank-name-error"
+        />
+        <lib-field-error
+          id="bank-name-error"
+          [control]="bankForm.controls.bankName"
+          [messages]="{ required: 'Bank name is required.' }"
+        />
       </label>
 
       <label>
-        Branch Name
-        <input type="text" formControlName="branchName" />
+        <span>Branch name (optional)</span>
+        <input
+          type="text"
+          placeholder="e.g. Secunderabad"
+          formControlName="branchName"
+        />
       </label>
 
       <label>
-        IFSC
-        <input type="text" formControlName="ifsc" (input)="onIfscInput($event)" placeholder="HDFC0000042" />
+        <span
+          >IFSC code<span class="form-required" aria-hidden="true"
+            >*</span
+          ></span
+        >
+        <input
+          type="text"
+          autocapitalize="characters"
+          maxlength="11"
+          placeholder="e.g. HDFC0000042"
+          required
+          formControlName="ifsc"
+          (input)="onIfscInput($event)"
+          aria-describedby="bank-ifsc-hint bank-ifsc-error"
+        />
+        <span id="bank-ifsc-hint" class="form-field-hint"
+          >11 characters: 4 letters, a zero, then 6 letters or digits.</span
+        >
+        <lib-field-error
+          id="bank-ifsc-error"
+          [control]="bankForm.controls.ifsc"
+          [messages]="{
+            required: 'IFSC code is required.',
+            pattern: 'Enter a valid 11-character IFSC code.',
+          }"
+        />
       </label>
 
       <label>
-        UPI ID
-        <input type="text" formControlName="upiId" placeholder="name@bank" />
+        <span>UPI ID (optional)</span>
+        <input
+          type="text"
+          autocomplete="off"
+          placeholder="e.g. name@bank"
+          formControlName="upiId"
+        />
       </label>
 
       <button type="submit" [disabled]="facade.saving()">

@@ -6,9 +6,14 @@
   } @else {
     <aside class="wizard-steps">
       <div class="wizard-progress">
-        <div class="wizard-progress-bar" [style.width.%]="facade.progressPercent()"></div>
+        <div
+          class="wizard-progress-bar"
+          [style.width.%]="facade.progressPercent()"
+        ></div>
       </div>
-      <span class="wizard-progress-label">{{ facade.progressPercent() }}% complete</span>
+      <span class="wizard-progress-label"
+        >{{ facade.progressPercent() }}% complete</span
+      >
 
       <ol>
         @for (stepMeta of steps; track stepMeta.step) {
@@ -18,7 +23,11 @@
             [class.locked]="!isStepUnlocked(stepMeta.step)"
             [class.changes-requested]="sectionHasRequestedChanges(stepMeta.key)"
           >
-            <button type="button" [disabled]="!isStepUnlocked(stepMeta.step)" (click)="goToStep(stepMeta.step)">
+            <button
+              type="button"
+              [disabled]="!isStepUnlocked(stepMeta.step)"
+              (click)="goToStep(stepMeta.step)"
+            >
               {{ stepMeta.step }}. {{ stepMeta.label }}
               @if (sectionHasRequestedChanges(stepMeta.key)) {
                 <span class="changes-badge">Changes Requested</span>
@@ -36,55 +45,205 @@
 
       <!-- Step 1: Personal -->
       @if (facade.activeStep() === 1) {
-        <form [formGroup]="personalForm" (ngSubmit)="onSubmitPersonal()">
+        <form
+          [formGroup]="personalForm"
+          (ngSubmit)="onSubmitPersonal()"
+          novalidate
+        >
           <h1>Personal Details</h1>
+          <p class="form-required-legend">
+            <span class="form-required" aria-hidden="true">*</span> Required
+          </p>
           <label>
-            Date of Birth
-            <input type="date" formControlName="dateOfBirth" />
+            <span
+              >Date of birth<span class="form-required" aria-hidden="true"
+                >*</span
+              ></span
+            >
+            <input
+              type="date"
+              required
+              [max]="maxBirthDate"
+              formControlName="dateOfBirth"
+              aria-describedby="wizard-dob-error"
+            />
+            <lib-field-error
+              id="wizard-dob-error"
+              [control]="personalForm.controls.dateOfBirth"
+              [messages]="{
+                required: 'Date of birth is required.',
+                future: 'Date of birth cannot be in the future.',
+              }"
+            />
           </label>
           <label>
-            Gender
-            <select formControlName="gender">
+            <span
+              >Gender<span class="form-required" aria-hidden="true"
+                >*</span
+              ></span
+            >
+            <select
+              formControlName="gender"
+              required
+              aria-describedby="wizard-gender-error"
+            >
               <option value="" disabled>Select</option>
               @for (gender of genders; track gender) {
                 <option [value]="gender">{{ gender }}</option>
               }
             </select>
+            <lib-field-error
+              id="wizard-gender-error"
+              [control]="personalForm.controls.gender"
+              [messages]="{ required: 'Select your gender.' }"
+            />
           </label>
           <label>
-            Languages Spoken
-            <input type="text" formControlName="languagesSpoken" placeholder="English, Hindi, Telugu" />
+            <span
+              >Languages spoken<span class="form-required" aria-hidden="true"
+                >*</span
+              ></span
+            >
+            <input
+              type="text"
+              required
+              formControlName="languagesSpoken"
+              placeholder="e.g. English, Hindi, Telugu"
+              aria-describedby="wizard-languages-hint wizard-languages-error"
+            />
+            <span id="wizard-languages-hint" class="form-field-hint"
+              >Separate languages with commas.</span
+            >
+            <lib-field-error
+              id="wizard-languages-error"
+              [control]="personalForm.controls.languagesSpoken"
+              [messages]="{ required: 'Enter at least one language.' }"
+            />
           </label>
-          <button type="submit" [disabled]="facade.saving()">{{ facade.saving() ? 'Saving…' : 'Continue' }}</button>
+          <button type="submit" [disabled]="facade.saving()">
+            {{ facade.saving() ? 'Saving…' : 'Continue' }}
+          </button>
         </form>
       }
 
       <!-- Step 2: Address -->
       @if (facade.activeStep() === 2) {
-        <form [formGroup]="addressForm" (ngSubmit)="onSubmitAddress()">
+        <form
+          [formGroup]="addressForm"
+          (ngSubmit)="onSubmitAddress()"
+          novalidate
+        >
           <h1>Address</h1>
+          <p class="form-required-legend">
+            <span class="form-required" aria-hidden="true">*</span> Required
+          </p>
 
-          <h2>Current Address</h2>
-          <lib-map-picker [initialPosition]="initialCurrentPosition" (locationChange)="onCurrentLocationPicked($event)" />
+          <h2>Current address</h2>
+          <p class="form-field-hint">
+            Pick your current location on the map<span
+              class="form-required"
+              aria-hidden="true"
+              >*</span
+            >
+          </p>
+          <lib-map-picker
+            [initialPosition]="initialCurrentPosition"
+            (locationChange)="onCurrentLocationPicked($event)"
+          />
+          <lib-field-error
+            id="wizard-location-error"
+            [control]="addressForm.controls.currentAddressLatitude"
+            [messages]="{
+              locationRequired: 'Pick your current location on the map.',
+            }"
+          />
           <label>
-            Address Line 1
-            <input type="text" formControlName="currentAddressLine1" />
+            <span
+              >Address line 1<span class="form-required" aria-hidden="true"
+                >*</span
+              ></span
+            >
+            <input
+              type="text"
+              required
+              autocomplete="address-line1"
+              placeholder="House number and street"
+              formControlName="currentAddressLine1"
+              aria-describedby="wizard-line1-error"
+            />
+            <lib-field-error
+              id="wizard-line1-error"
+              [control]="addressForm.controls.currentAddressLine1"
+              [messages]="{ required: 'Address line 1 is required.' }"
+            />
           </label>
           <label>
-            Address Line 2
-            <input type="text" formControlName="currentAddressLine2" />
+            <span>Address line 2 (optional)</span>
+            <input
+              type="text"
+              autocomplete="address-line2"
+              placeholder="Area, landmark"
+              formControlName="currentAddressLine2"
+            />
           </label>
           <label>
-            City
-            <input type="text" formControlName="currentCity" />
+            <span
+              >City<span class="form-required" aria-hidden="true">*</span></span
+            >
+            <input
+              type="text"
+              required
+              autocomplete="address-level2"
+              placeholder="Enter your city"
+              formControlName="currentCity"
+              aria-describedby="wizard-city-error"
+            />
+            <lib-field-error
+              id="wizard-city-error"
+              [control]="addressForm.controls.currentCity"
+              [messages]="{ required: 'City is required.' }"
+            />
           </label>
           <label>
-            State
-            <input type="text" formControlName="currentState" />
+            <span
+              >State<span class="form-required" aria-hidden="true"
+                >*</span
+              ></span
+            >
+            <input
+              type="text"
+              required
+              autocomplete="address-level1"
+              placeholder="Enter your state"
+              formControlName="currentState"
+              aria-describedby="wizard-state-error"
+            />
+            <lib-field-error
+              id="wizard-state-error"
+              [control]="addressForm.controls.currentState"
+              [messages]="{ required: 'State is required.' }"
+            />
           </label>
           <label>
-            Postal Code
-            <input type="text" formControlName="currentPostalCode" />
+            <span
+              >Postal code<span class="form-required" aria-hidden="true"
+                >*</span
+              ></span
+            >
+            <input
+              type="text"
+              required
+              inputmode="numeric"
+              autocomplete="postal-code"
+              placeholder="e.g. 500073"
+              formControlName="currentPostalCode"
+              aria-describedby="wizard-postal-error"
+            />
+            <lib-field-error
+              id="wizard-postal-error"
+              [control]="addressForm.controls.currentPostalCode"
+              [messages]="{ required: 'Postal code is required.' }"
+            />
           </label>
 
           <h2>Permanent Address</h2>
@@ -94,64 +253,142 @@
           </label>
 
           @if (!addressForm.controls.sameAsPermanentAddress.value) {
-            <lib-map-picker [initialPosition]="initialPermanentPosition" (locationChange)="onPermanentLocationPicked($event)" />
+            <lib-map-picker
+              [initialPosition]="initialPermanentPosition"
+              (locationChange)="onPermanentLocationPicked($event)"
+            />
             <label>
-              Address Line 1
-              <input type="text" formControlName="permanentAddressLine1" />
+              <span>Address line 1</span>
+              <input
+                type="text"
+                placeholder="House number and street"
+                formControlName="permanentAddressLine1"
+              />
             </label>
             <label>
-              Address Line 2
-              <input type="text" formControlName="permanentAddressLine2" />
+              <span>Address line 2</span>
+              <input
+                type="text"
+                placeholder="Area, landmark"
+                formControlName="permanentAddressLine2"
+              />
             </label>
             <label>
-              City
-              <input type="text" formControlName="permanentCity" />
+              <span>City</span>
+              <input
+                type="text"
+                placeholder="Enter your city"
+                formControlName="permanentCity"
+              />
             </label>
             <label>
-              State
-              <input type="text" formControlName="permanentState" />
+              <span>State</span>
+              <input
+                type="text"
+                placeholder="Enter your state"
+                formControlName="permanentState"
+              />
             </label>
             <label>
-              Postal Code
-              <input type="text" formControlName="permanentPostalCode" />
+              <span>Postal code</span>
+              <input
+                type="text"
+                inputmode="numeric"
+                placeholder="e.g. 500073"
+                formControlName="permanentPostalCode"
+              />
             </label>
           }
 
-          <button type="submit" [disabled]="facade.saving()">{{ facade.saving() ? 'Saving…' : 'Continue' }}</button>
+          <button type="submit" [disabled]="facade.saving()">
+            {{ facade.saving() ? 'Saving…' : 'Continue' }}
+          </button>
         </form>
       }
 
       <!-- Step 3: Vehicle -->
       @if (facade.activeStep() === 3) {
-        <form [formGroup]="vehicleForm" (ngSubmit)="onSubmitVehicle()">
+        <form
+          [formGroup]="vehicleForm"
+          (ngSubmit)="onSubmitVehicle()"
+          novalidate
+        >
           <h1>Vehicle</h1>
+          <p class="form-required-legend">
+            <span class="form-required" aria-hidden="true">*</span> Required
+          </p>
           <label>
-            Vehicle Type
-            <select formControlName="vehicleType">
+            <span
+              >Vehicle type<span class="form-required" aria-hidden="true"
+                >*</span
+              ></span
+            >
+            <select formControlName="vehicleType" required>
               @for (type of vehicleTypes; track type) {
                 <option [value]="type">{{ type }}</option>
               }
             </select>
           </label>
           <label>
-            Registration Number
-            <input type="text" formControlName="registrationNumber" placeholder="KA01AB1234" />
+            <span
+              >Registration number<span class="form-required" aria-hidden="true"
+                >*</span
+              ></span
+            >
+            <input
+              type="text"
+              required
+              autocapitalize="characters"
+              formControlName="registrationNumber"
+              placeholder="e.g. KA01AB1234"
+              aria-describedby="wizard-registration-error"
+            />
+            <lib-field-error
+              id="wizard-registration-error"
+              [control]="vehicleForm.controls.registrationNumber"
+              [messages]="{ required: 'Registration number is required.' }"
+            />
           </label>
           <label>
-            Brand
-            <input type="text" formControlName="brand" />
+            <span>Brand (optional)</span>
+            <input
+              type="text"
+              formControlName="brand"
+              placeholder="e.g. Honda"
+            />
           </label>
           <label>
-            Model
-            <input type="text" formControlName="model" />
+            <span>Model (optional)</span>
+            <input
+              type="text"
+              formControlName="model"
+              placeholder="e.g. Activa 6G"
+            />
           </label>
           <label>
-            Year
-            <input type="number" formControlName="year" />
+            <span>Year (optional)</span>
+            <input
+              type="number"
+              inputmode="numeric"
+              [min]="yearMin"
+              [max]="yearMax"
+              formControlName="year"
+              placeholder="e.g. 2022"
+              aria-describedby="wizard-year-error"
+            />
+            <lib-field-error
+              id="wizard-year-error"
+              [control]="vehicleForm.controls.year"
+              [messages]="{
+                min: 'Enter a year from ' + yearMin + ' onwards.',
+                max: 'Enter a year up to ' + yearMax + '.',
+              }"
+            />
           </label>
           <label>
-            Fuel Type
+            <span>Fuel type (optional)</span>
             <select formControlName="fuelType">
+              <option value="">Not specified</option>
               <option value="PETROL">PETROL</option>
               <option value="DIESEL">DIESEL</option>
               <option value="ELECTRIC">ELECTRIC</option>
@@ -160,10 +397,16 @@
             </select>
           </label>
           <label>
-            Color
-            <input type="text" formControlName="color" />
+            <span>Colour (optional)</span>
+            <input
+              type="text"
+              formControlName="color"
+              placeholder="e.g. Black"
+            />
           </label>
-          <button type="submit" [disabled]="facade.saving()">{{ facade.saving() ? 'Saving…' : 'Continue' }}</button>
+          <button type="submit" [disabled]="facade.saving()">
+            {{ facade.saving() ? 'Saving…' : 'Continue' }}
+          </button>
         </form>
       }
 
@@ -173,12 +416,19 @@
           <h1>Driving License</h1>
           <lib-file-upload
             label="Upload Driving License"
-            accept="image/png,image/jpeg,image/webp,application/pdf"
+            [accept]="documentLimits.accept"
             [uploading]="isUploading('DRIVING_LICENSE')"
-            hint="Upload a clear photo or scan of your driving license."
+            [hint]="
+              'Upload a clear photo or scan of your driving license. ' +
+              documentLimits.hint
+            "
             (fileSelected)="onDrivingLicenseSelected($event)"
           />
-          <button type="button" [disabled]="!hasDocument('DRIVING_LICENSE') || facade.saving()" (click)="onContinueDrivingLicense()">
+          <button
+            type="button"
+            [disabled]="!hasDocument('DRIVING_LICENSE') || facade.saving()"
+            (click)="onContinueDrivingLicense()"
+          >
             Continue
           </button>
         </div>
@@ -190,11 +440,18 @@
           <h1>Aadhaar</h1>
           <lib-file-upload
             label="Upload Aadhaar"
-            accept="image/png,image/jpeg,image/webp,application/pdf"
+            [accept]="documentLimits.accept"
+            [hint]="documentLimits.hint"
             [uploading]="isUploading('AADHAAR')"
             (fileSelected)="onAadhaarSelected($event)"
           />
-          <button type="button" [disabled]="!hasDocument('AADHAAR') || facade.saving()" (click)="onContinueAadhaar()">Continue</button>
+          <button
+            type="button"
+            [disabled]="!hasDocument('AADHAAR') || facade.saving()"
+            (click)="onContinueAadhaar()"
+          >
+            Continue
+          </button>
         </div>
       }
 
@@ -204,11 +461,18 @@
           <h1>PAN</h1>
           <lib-file-upload
             label="Upload PAN"
-            accept="image/png,image/jpeg,image/webp,application/pdf"
+            [accept]="documentLimits.accept"
+            [hint]="documentLimits.hint"
             [uploading]="isUploading('PAN')"
             (fileSelected)="onPanSelected($event)"
           />
-          <button type="button" [disabled]="!hasDocument('PAN') || facade.saving()" (click)="onContinuePan()">Continue</button>
+          <button
+            type="button"
+            [disabled]="!hasDocument('PAN') || facade.saving()"
+            (click)="onContinuePan()"
+          >
+            Continue
+          </button>
         </div>
       }
 
@@ -218,11 +482,18 @@
           <h1>Vehicle RC</h1>
           <lib-file-upload
             label="Upload Vehicle RC"
-            accept="image/png,image/jpeg,image/webp,application/pdf"
+            [accept]="documentLimits.accept"
+            [hint]="documentLimits.hint"
             [uploading]="isUploading('VEHICLE_RC')"
             (fileSelected)="onVehicleRcSelected($event)"
           />
-          <button type="button" [disabled]="!hasDocument('VEHICLE_RC') || facade.saving()" (click)="onContinueVehicleRc()">Continue</button>
+          <button
+            type="button"
+            [disabled]="!hasDocument('VEHICLE_RC') || facade.saving()"
+            (click)="onContinueVehicleRc()"
+          >
+            Continue
+          </button>
         </div>
       }
 
@@ -232,7 +503,8 @@
           <h1>Vehicle Insurance</h1>
           <lib-file-upload
             label="Upload Insurance"
-            accept="image/png,image/jpeg,image/webp,application/pdf"
+            [accept]="documentLimits.accept"
+            [hint]="documentLimits.hint"
             [uploading]="isUploading('VEHICLE_INSURANCE')"
             (fileSelected)="onVehicleInsuranceSelected($event)"
           />
@@ -240,7 +512,8 @@
           <h2>Fitness Certificate (optional)</h2>
           <lib-file-upload
             label="Upload Fitness Certificate"
-            accept="image/png,image/jpeg,image/webp,application/pdf"
+            [accept]="documentLimits.accept"
+            [hint]="documentLimits.hint"
             [uploading]="isUploading('VEHICLE_FITNESS')"
             (fileSelected)="onVehicleFitnessSelected($event)"
           />
@@ -248,12 +521,17 @@
           <h2>Pollution Certificate (optional)</h2>
           <lib-file-upload
             label="Upload Pollution Certificate"
-            accept="image/png,image/jpeg,image/webp,application/pdf"
+            [accept]="documentLimits.accept"
+            [hint]="documentLimits.hint"
             [uploading]="isUploading('VEHICLE_POLLUTION')"
             (fileSelected)="onVehiclePollutionSelected($event)"
           />
 
-          <button type="button" [disabled]="!hasDocument('VEHICLE_INSURANCE') || facade.saving()" (click)="onContinueVehicleInsurance()">
+          <button
+            type="button"
+            [disabled]="!hasDocument('VEHICLE_INSURANCE') || facade.saving()"
+            (click)="onContinueVehicleInsurance()"
+          >
             Continue
           </button>
         </div>
@@ -261,33 +539,125 @@
 
       <!-- Step 9: Bank -->
       @if (facade.activeStep() === 9) {
-        <form [formGroup]="bankForm" (ngSubmit)="onSubmitBank()">
+        <form [formGroup]="bankForm" (ngSubmit)="onSubmitBank()" novalidate>
           <h1>Bank Account</h1>
+          <p class="form-required-legend">
+            <span class="form-required" aria-hidden="true">*</span> Required
+          </p>
           <label>
-            Account Holder Name
-            <input type="text" formControlName="accountHolderName" />
+            <span
+              >Account holder name<span class="form-required" aria-hidden="true"
+                >*</span
+              ></span
+            >
+            <input
+              type="text"
+              required
+              autocomplete="name"
+              placeholder="Name exactly as on your bank account"
+              formControlName="accountHolderName"
+              aria-describedby="wizard-holder-error"
+            />
+            <lib-field-error
+              id="wizard-holder-error"
+              [control]="bankForm.controls.accountHolderName"
+              [messages]="{ required: 'Account holder name is required.' }"
+            />
           </label>
           <label>
-            Account Number
-            <input type="text" formControlName="accountNumber" />
+            <span
+              >Account number<span class="form-required" aria-hidden="true"
+                >*</span
+              ></span
+            >
+            <input
+              type="text"
+              required
+              inputmode="numeric"
+              autocomplete="off"
+              placeholder="Enter your full account number"
+              formControlName="accountNumber"
+              aria-describedby="wizard-account-hint wizard-account-error"
+            />
+            <span id="wizard-account-hint" class="form-field-hint"
+              >Stored encrypted. Only the last 4 digits are ever shown.</span
+            >
+            <lib-field-error
+              id="wizard-account-error"
+              [control]="bankForm.controls.accountNumber"
+              [messages]="{
+                required: 'Account number is required.',
+                minlength: 'Account number must be at least 6 characters.',
+              }"
+            />
           </label>
           <label>
-            Bank Name
-            <input type="text" formControlName="bankName" />
+            <span
+              >Bank name<span class="form-required" aria-hidden="true"
+                >*</span
+              ></span
+            >
+            <input
+              type="text"
+              required
+              placeholder="e.g. HDFC Bank"
+              formControlName="bankName"
+              aria-describedby="wizard-bank-error"
+            />
+            <lib-field-error
+              id="wizard-bank-error"
+              [control]="bankForm.controls.bankName"
+              [messages]="{ required: 'Bank name is required.' }"
+            />
           </label>
           <label>
-            Branch Name
-            <input type="text" formControlName="branchName" />
+            <span>Branch name (optional)</span>
+            <input
+              type="text"
+              placeholder="e.g. Secunderabad"
+              formControlName="branchName"
+            />
           </label>
           <label>
-            IFSC
-            <input type="text" formControlName="ifsc" (input)="onIfscInput($event)" placeholder="HDFC0000042" />
+            <span
+              >IFSC code<span class="form-required" aria-hidden="true"
+                >*</span
+              ></span
+            >
+            <input
+              type="text"
+              required
+              autocapitalize="characters"
+              maxlength="11"
+              formControlName="ifsc"
+              (input)="onIfscInput($event)"
+              placeholder="e.g. HDFC0000042"
+              aria-describedby="wizard-ifsc-hint wizard-ifsc-error"
+            />
+            <span id="wizard-ifsc-hint" class="form-field-hint"
+              >11 characters: 4 letters, a zero, then 6 letters or digits.</span
+            >
+            <lib-field-error
+              id="wizard-ifsc-error"
+              [control]="bankForm.controls.ifsc"
+              [messages]="{
+                required: 'IFSC code is required.',
+                pattern: 'Enter a valid 11-character IFSC code.',
+              }"
+            />
           </label>
           <label>
-            UPI ID
-            <input type="text" formControlName="upiId" />
+            <span>UPI ID (optional)</span>
+            <input
+              type="text"
+              autocomplete="off"
+              placeholder="e.g. name@bank"
+              formControlName="upiId"
+            />
           </label>
-          <button type="submit" [disabled]="facade.saving()">{{ facade.saving() ? 'Saving…' : 'Continue' }}</button>
+          <button type="submit" [disabled]="facade.saving()">
+            {{ facade.saving() ? 'Saving…' : 'Continue' }}
+          </button>
         </form>
       }
 
@@ -297,12 +667,21 @@
           <h1>Live Selfie</h1>
           <lib-file-upload
             label="Take/Upload Selfie"
-            accept="image/png,image/jpeg,image/webp"
+            [accept]="imageLimits.accept"
             [uploading]="isUploading('SELFIE')"
-            hint="Use your device camera for a clear, well-lit selfie."
+            [hint]="
+              'Use your device camera for a clear, well-lit selfie. ' +
+              imageLimits.hint
+            "
             (fileSelected)="onSelfieSelected($event)"
           />
-          <button type="button" [disabled]="!hasDocument('SELFIE') || facade.saving()" (click)="onContinueSelfie()">Continue</button>
+          <button
+            type="button"
+            [disabled]="!hasDocument('SELFIE') || facade.saving()"
+            (click)="onContinueSelfie()"
+          >
+            Continue
+          </button>
         </div>
       }
 
@@ -310,18 +689,43 @@
       @if (facade.activeStep() === 11) {
         <div class="document-step">
           <h1>Background Verification</h1>
-          <p>As part of verification, a background/police check will be conducted. Upload a police clearance certificate if you already have one (optional).</p>
+          <p>
+            As part of verification, a background/police check will be
+            conducted. Upload a police clearance certificate if you already have
+            one (optional).
+          </p>
           <lib-file-upload
             label="Upload Document (optional)"
-            accept="image/png,image/jpeg,image/webp,application/pdf"
+            [accept]="documentLimits.accept"
+            [hint]="documentLimits.hint"
             [uploading]="isUploading('BACKGROUND_VERIFICATION')"
             (fileSelected)="onBackgroundDocumentSelected($event)"
           />
           <label class="checkbox-label">
-            <input type="checkbox" [formControl]="backgroundConsent" />
-            I consent to a background verification check being conducted.
+            <input
+              type="checkbox"
+              required
+              [formControl]="backgroundConsent"
+              aria-describedby="wizard-consent-error"
+            />
+            I consent to a background verification check being conducted.<span
+              class="form-required"
+              aria-hidden="true"
+              >*</span
+            >
           </label>
-          <button type="button" [disabled]="facade.saving()" (click)="onContinueBackground()">Continue</button>
+          <lib-field-error
+            id="wizard-consent-error"
+            [control]="backgroundConsent"
+            [messages]="{ required: 'Give your consent to continue.' }"
+          />
+          <button
+            type="button"
+            [disabled]="facade.saving()"
+            (click)="onContinueBackground()"
+          >
+            Continue
+          </button>
         </div>
       }
 
@@ -333,47 +737,89 @@
           @if (facade.profile(); as profile) {
             <section>
               <h2>Personal</h2>
-              <p>{{ profile.dateOfBirth | date: 'mediumDate' }} · {{ profile.gender }}</p>
+              <p>
+                {{ profile.dateOfBirth | date: 'mediumDate' }} ·
+                {{ profile.gender }}
+              </p>
               <p>{{ profile.languagesSpoken.join(', ') }}</p>
             </section>
             <section>
               <h2>Address</h2>
-              <p>{{ profile.currentAddressLine1 }}, {{ profile.currentCity }}, {{ profile.currentState }} {{ profile.currentPostalCode }}</p>
+              <p>
+                {{ profile.currentAddressLine1 }}, {{ profile.currentCity }},
+                {{ profile.currentState }} {{ profile.currentPostalCode }}
+              </p>
             </section>
           }
 
           @if (facade.primaryVehicle(); as vehicle) {
             <section>
               <h2>Vehicle</h2>
-              <p>{{ vehicle.vehicleType }} · {{ vehicle.registrationNumber }}</p>
+              <p>
+                {{ vehicle.vehicleType }} · {{ vehicle.registrationNumber }}
+              </p>
             </section>
           }
 
           <section>
             <h2>Documents</h2>
             <ul>
-              <li>Driving License: {{ hasDocument('DRIVING_LICENSE') ? 'Uploaded' : 'Missing' }}</li>
-              <li>Aadhaar: {{ hasDocument('AADHAAR') ? 'Uploaded' : 'Missing' }}</li>
+              <li>
+                Driving License:
+                {{ hasDocument('DRIVING_LICENSE') ? 'Uploaded' : 'Missing' }}
+              </li>
+              <li>
+                Aadhaar: {{ hasDocument('AADHAAR') ? 'Uploaded' : 'Missing' }}
+              </li>
               <li>PAN: {{ hasDocument('PAN') ? 'Uploaded' : 'Missing' }}</li>
-              <li>Vehicle RC: {{ hasDocument('VEHICLE_RC') ? 'Uploaded' : 'Missing' }}</li>
-              <li>Vehicle Insurance: {{ hasDocument('VEHICLE_INSURANCE') ? 'Uploaded' : 'Missing' }}</li>
-              <li>Selfie: {{ hasDocument('SELFIE') ? 'Uploaded' : 'Missing' }}</li>
+              <li>
+                Vehicle RC:
+                {{ hasDocument('VEHICLE_RC') ? 'Uploaded' : 'Missing' }}
+              </li>
+              <li>
+                Vehicle Insurance:
+                {{ hasDocument('VEHICLE_INSURANCE') ? 'Uploaded' : 'Missing' }}
+              </li>
+              <li>
+                Selfie: {{ hasDocument('SELFIE') ? 'Uploaded' : 'Missing' }}
+              </li>
             </ul>
           </section>
 
           @if (facade.bankAccount(); as account) {
             <section>
               <h2>Bank Account</h2>
-              <p>{{ account.bankName }} — ••••{{ account.accountNumberLast4 }}</p>
+              <p>
+                {{ account.bankName }} — ••••{{ account.accountNumberLast4 }}
+              </p>
             </section>
           }
 
           <label class="checkbox-label">
-            <input type="checkbox" [formControl]="acceptTerms" />
-            I accept the terms and conditions and confirm all information provided is accurate.
+            <input
+              type="checkbox"
+              required
+              [formControl]="acceptTerms"
+              aria-describedby="wizard-terms-error"
+            />
+            I accept the terms and conditions and confirm all information
+            provided is accurate.<span class="form-required" aria-hidden="true"
+              >*</span
+            >
           </label>
+          <lib-field-error
+            id="wizard-terms-error"
+            [control]="acceptTerms"
+            [messages]="{
+              required: 'Accept the terms to submit your application.',
+            }"
+          />
 
-          <button type="button" [disabled]="facade.saving()" (click)="onSubmitApplication()">
+          <button
+            type="button"
+            [disabled]="facade.saving()"
+            (click)="onSubmitApplication()"
+          >
             {{ facade.saving() ? 'Submitting…' : 'Submit Application' }}
           </button>
         </div>

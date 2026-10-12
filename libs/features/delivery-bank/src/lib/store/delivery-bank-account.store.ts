@@ -1,12 +1,18 @@
 import { Injectable, inject, signal } from '@angular/core';
-import type { DeliveryBankAccountResponseDto, UpsertDeliveryBankAccountDto } from '@patheya-express-frontend/api-sdk';
+import { extractHttpErrorMessage } from '@patheya-express-frontend/core';
+import type {
+  DeliveryBankAccountResponseDto,
+  UpsertDeliveryBankAccountDto,
+} from '@patheya-express-frontend/api-sdk';
 import { DeliveryBankAccountFeatureService } from '../services/delivery-bank-account.service';
 
 @Injectable({ providedIn: 'root' })
 export class DeliveryBankAccountStore {
   private readonly service = inject(DeliveryBankAccountFeatureService);
 
-  private readonly _bankAccount = signal<DeliveryBankAccountResponseDto | null>(null);
+  private readonly _bankAccount = signal<DeliveryBankAccountResponseDto | null>(
+    null,
+  );
   private readonly _loading = signal(false);
   private readonly _error = signal<string | null>(null);
   private readonly _saving = signal(false);
@@ -41,7 +47,9 @@ export class DeliveryBankAccountStore {
       const account = await this.service.find();
       this._bankAccount.set(account);
     } catch {
-      this._error.set('Unable to load your bank account details. Please refresh and try again.');
+      this._error.set(
+        'Unable to load your bank account details. Please refresh and try again.',
+      );
     } finally {
       this._loading.set(false);
     }
@@ -54,10 +62,17 @@ export class DeliveryBankAccountStore {
     try {
       const account = await this.service.upsert(dto);
       this._bankAccount.set(account);
-      this._saveSuccessMessage.set('Bank account saved. It will be reviewed before verification is granted.');
+      this._saveSuccessMessage.set(
+        'Bank account saved. It will be reviewed before verification is granted.',
+      );
       return true;
-    } catch {
-      this._saveError.set('Unable to save your bank account. Please check the form and try again.');
+    } catch (error) {
+      this._saveError.set(
+        extractHttpErrorMessage(
+          error,
+          'Unable to save your bank account. Please check the form and try again.',
+        ),
+      );
       return false;
     } finally {
       this._saving.set(false);

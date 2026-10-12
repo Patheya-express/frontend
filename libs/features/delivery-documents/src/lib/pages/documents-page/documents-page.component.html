@@ -1,8 +1,16 @@
 <div class="documents-page">
   <h1>Documents</h1>
 
+  <p class="form-required-legend">
+    <span class="form-required" aria-hidden="true">*</span> Required for
+    verification
+  </p>
+
   @if (facade.uploadError()) {
     <p class="documents-page-error" role="alert">{{ facade.uploadError() }}</p>
+  }
+  @if (facade.uploadSuccess(); as message) {
+    <p class="form-success" role="status">{{ message }}</p>
   }
 
   @if (facade.loading()) {
@@ -18,27 +26,43 @@
             @let doc = facade.documentsByType().get(type);
             <div class="document-card">
               <div class="document-card-header">
-                <h3>{{ typeLabel(type) }}</h3>
+                <h3>
+                  {{ typeLabel(type) }}
+                  @if (isRequired(type)) {
+                    <span class="form-required" aria-hidden="true">*</span>
+                    <span class="sr-only">(required)</span>
+                  }
+                </h3>
                 @if (doc) {
-                  <lib-status-chip [label]="doc.status" [tone]="statusTone(doc.status)" />
+                  <lib-status-chip
+                    [label]="doc.status"
+                    [tone]="statusTone(doc.status)"
+                  />
                 }
               </div>
 
               @if (doc) {
                 <p class="document-card-meta">
                   Uploaded {{ doc.createdAt | date: 'mediumDate' }}
-                  @if (doc.expiryDate) { · Expires {{ doc.expiryDate | date: 'mediumDate' }} }
+                  @if (doc.expiryDate) {
+                    · Expires {{ doc.expiryDate | date: 'mediumDate' }}
+                  }
                 </p>
                 @if (doc.status === 'REJECTED' && doc.rejectedReason) {
                   <p class="document-card-rejected">{{ doc.rejectedReason }}</p>
                 }
-                <a [href]="doc.storageUrl" target="_blank" rel="noopener">Preview</a>
-                <button type="button" (click)="openHistory(type)">History</button>
+                <a [href]="doc.storageUrl" target="_blank" rel="noopener"
+                  >Preview</a
+                >
+                <button type="button" (click)="openHistory(type)">
+                  History
+                </button>
               }
 
               <lib-file-upload
                 [label]="doc ? 'Replace' : 'Upload'"
-                accept="image/png,image/jpeg,image/webp,application/pdf"
+                [accept]="uploadLimits.accept"
+                [hint]="uploadLimits.hint"
                 [uploading]="isUploading(type)"
                 [selectedFileName]="doc?.fileName"
                 (fileSelected)="onFileSelected(type, $event)"
@@ -63,7 +87,9 @@
             @for (entry of facade.history(); track entry.id) {
               <li>
                 v{{ entry.version }} — {{ entry.supersededAt | date: 'medium' }}
-                <a [href]="entry.storageUrl" target="_blank" rel="noopener">View</a>
+                <a [href]="entry.storageUrl" target="_blank" rel="noopener"
+                  >View</a
+                >
               </li>
             }
           </ul>

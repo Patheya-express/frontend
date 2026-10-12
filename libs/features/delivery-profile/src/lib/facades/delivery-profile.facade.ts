@@ -11,6 +11,7 @@ export class DeliveryProfileFacade {
   readonly error = this.store.error;
   readonly saving = this.store.saving;
   readonly saveError = this.store.saveError;
+  readonly saveSuccess = this.store.saveSuccess;
 
   initialize(): void {
     void this.store.load();

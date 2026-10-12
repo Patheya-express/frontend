@@ -14,7 +14,10 @@ import { DeliveryAssignmentsFacade } from '../../facades/delivery-assignments.fa
  * selected (the `confirmDisabled` wiring this consumer specifically needed).
  */
 describe('PickupPhotoDialogComponent', () => {
-  async function settle(fixture: { detectChanges(): void; whenStable(): Promise<void> }, rounds = 4): Promise<void> {
+  async function settle(
+    fixture: { detectChanges(): void; whenStable(): Promise<void> },
+    rounds = 4,
+  ): Promise<void> {
     for (let i = 0; i < rounds; i++) {
       TestBed.tick();
       fixture.detectChanges();
@@ -24,7 +27,9 @@ describe('PickupPhotoDialogComponent', () => {
     fixture.detectChanges();
   }
 
-  function baseDialogState(overrides: Partial<PickupPhotoDialogState> = {}): PickupPhotoDialogState {
+  function baseDialogState(
+    overrides: Partial<PickupPhotoDialogState> = {},
+  ): PickupPhotoDialogState {
     return {
       assignmentId: 'assignment-1',
       orderId: 'order-1',
@@ -36,7 +41,9 @@ describe('PickupPhotoDialogComponent', () => {
     };
   }
 
-  let pickupPhotoDialog: ReturnType<typeof signal<PickupPhotoDialogState | null>>;
+  let pickupPhotoDialog: ReturnType<
+    typeof signal<PickupPhotoDialogState | null>
+  >;
   let facade: {
     pickupPhotoDialog: typeof pickupPhotoDialog;
     selectPickupPhoto: jest.Mock;
@@ -84,8 +91,12 @@ describe('PickupPhotoDialogComponent', () => {
     const root = fixture.nativeElement as HTMLElement;
 
     expect(root.querySelector('.confirm-dialog')).not.toBeNull();
-    expect(root.querySelector('.confirm-dialog-title')?.textContent).toContain('Pickup verification');
-    expect(fixture.debugElement.query(By.directive(FileUploadComponent))).not.toBeNull();
+    expect(root.querySelector('.confirm-dialog-title')?.textContent).toContain(
+      'Parcel photo',
+    );
+    expect(
+      fixture.debugElement.query(By.directive(FileUploadComponent)),
+    ).not.toBeNull();
   });
 
   it('forwards a selected file to the facade', async () => {
@@ -94,7 +105,9 @@ describe('PickupPhotoDialogComponent', () => {
     await settle(fixture);
 
     const file = new File(['x'], 'parcel.jpg', { type: 'image/jpeg' });
-    fixture.debugElement.query(By.directive(FileUploadComponent)).triggerEventHandler('fileSelected', file);
+    fixture.debugElement
+      .query(By.directive(FileUploadComponent))
+      .triggerEventHandler('fileSelected', file);
 
     expect(facade.selectPickupPhoto).toHaveBeenCalledWith(file);
   });
@@ -134,11 +147,15 @@ describe('PickupPhotoDialogComponent', () => {
   });
 
   it('renders the dialog error message when present', async () => {
-    pickupPhotoDialog.set(baseDialogState({ error: 'Upload failed. Try again.' }));
+    pickupPhotoDialog.set(
+      baseDialogState({ error: 'Upload failed. Try again.' }),
+    );
     const fixture = await createFixture();
     await settle(fixture);
 
-    expect(fixture.nativeElement.textContent).toContain('Upload failed. Try again.');
+    expect(fixture.nativeElement.textContent).toContain(
+      'Upload failed. Try again.',
+    );
   });
 
   it('calls closePickupPhotoDialog when Cancel is clicked', async () => {
@@ -163,6 +180,8 @@ describe('PickupPhotoDialogComponent', () => {
     pickupPhotoDialog.set(null);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelector('.confirm-dialog')).not.toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('.confirm-dialog'),
+    ).not.toBeNull();
   });
 });

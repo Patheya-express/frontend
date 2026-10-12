@@ -1,5 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import type { CreateVehicleDto, UpdateVehicleDto } from '@patheya-express-frontend/api-sdk';
+import type {
+  CreateVehicleDto,
+  UpdateVehicleDto,
+} from '@patheya-express-frontend/api-sdk';
 import { DeliveryVehiclesStore } from '../store/delivery-vehicles.store';
 
 @Injectable({ providedIn: 'root' })
@@ -11,6 +14,7 @@ export class DeliveryVehiclesFacade {
   readonly error = this.store.error;
   readonly saving = this.store.saving;
   readonly saveError = this.store.saveError;
+  readonly saveSuccess = this.store.saveSuccess;
   readonly pendingVehicleId = this.store.pendingVehicleId;
   readonly primaryVehicle = this.store.primaryVehicle;
   readonly vehiclesWithWarnings = this.store.vehiclesWithWarnings;

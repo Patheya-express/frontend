@@ -1,5 +1,11 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { DeliveryAssignmentsFacade } from '../../facades/delivery-assignments.facade';
 
 /**
@@ -36,15 +42,10 @@ export class ProofOtpDialogComponent {
     });
   }
 
-  protected get title(): string {
-    return this.facade.otpDialog()?.type === 'pickup' ? 'Verify pickup' : 'Verify delivery';
-  }
-
-  protected get helpText(): string {
-    return this.facade.otpDialog()?.type === 'pickup'
-      ? 'Ask the customer for the pickup code and enter it below.'
-      : 'Ask the customer for the delivery code and enter it below.';
-  }
+  // Delivery only — pickup has no OTP since the 2026-10-11 pickup revision.
+  protected readonly title = 'Verify delivery';
+  protected readonly helpText =
+    'We sent a 6-digit delivery code to the customer. Ask them for it and enter it below.';
 
   protected onCodeInput(value: string): void {
     this.code.set(value.replace(/\D/g, '').slice(0, 6));
@@ -52,7 +53,12 @@ export class ProofOtpDialogComponent {
 
   protected canSubmit(): boolean {
     const dialog = this.facade.otpDialog();
-    return this.code().length === 6 && !!dialog && !dialog.verifying && !dialog.generating;
+    return (
+      this.code().length === 6 &&
+      !!dialog &&
+      !dialog.verifying &&
+      !dialog.generating
+    );
   }
 
   protected submit(): void {

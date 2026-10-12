@@ -1,10 +1,17 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import type { CreateVehicleDto, UpdateVehicleDto, VehicleResponseDto } from '@patheya-express-frontend/api-sdk';
+import type {
+  CreateVehicleDto,
+  UpdateVehicleDto,
+  VehicleResponseDto,
+} from '@patheya-express-frontend/api-sdk';
+import { extractHttpErrorMessage } from '@patheya-express-frontend/core';
 import { DeliveryVehiclesFeatureService } from '../services/delivery-vehicles.service';
 
 const EXPIRY_WARNING_WINDOW_DAYS = 30;
 
-function isExpiringOrExpired(dateIso: string | undefined): 'expired' | 'expiring' | null {
+function isExpiringOrExpired(
+  dateIso: string | undefined,
+): 'expired' | 'expiring' | null {
   if (!dateIso) {
     return null;
   }
@@ -28,6 +35,7 @@ export class DeliveryVehiclesStore {
   private readonly _error = signal<string | null>(null);
   private readonly _saving = signal(false);
   private readonly _saveError = signal<string | null>(null);
+  private readonly _saveSuccess = signal<string | null>(null);
   private readonly _pendingVehicleId = signal<string | null>(null);
 
   readonly vehicles = this._vehicles.asReadonly();
@@ -35,9 +43,13 @@ export class DeliveryVehiclesStore {
   readonly error = this._error.asReadonly();
   readonly saving = this._saving.asReadonly();
   readonly saveError = this._saveError.asReadonly();
+  /** Confirmation for the most recent successful action; cleared when the next one starts. */
+  readonly saveSuccess = this._saveSuccess.asReadonly();
   readonly pendingVehicleId = this._pendingVehicleId.asReadonly();
 
-  readonly primaryVehicle = computed(() => this._vehicles().find((v) => v.isPrimary) ?? null);
+  readonly primaryVehicle = computed(
+    () => this._vehicles().find((v) => v.isPrimary) ?? null,
+  );
 
   readonly vehiclesWithWarnings = computed(() =>
     this._vehicles().map((vehicle) => ({
@@ -70,7 +82,9 @@ export class DeliveryVehiclesStore {
       const vehicles = await this.service.list();
       this._vehicles.set(vehicles);
     } catch {
-      this._error.set('Unable to load your vehicles. Please refresh and try again.');
+      this._error.set(
+        'Unable to load your vehicles. Please refresh and try again.',
+      );
     } finally {
       this._loading.set(false);
     }
@@ -86,33 +100,56 @@ export class DeliveryVehiclesStore {
   async update(vehicleId: string, dto: UpdateVehicleDto): Promise<boolean> {
     return this.withSaving(vehicleId, async () => {
       const vehicle = await this.service.update(vehicleId, dto);
-      this._vehicles.update((existing) => existing.map((v) => (v.id === vehicleId ? vehicle : v)));
+      this._vehicles.update((existing) =>
+        existing.map((v) => (v.id === vehicleId ? vehicle : v)),
+      );
     });
   }
 
   async setPrimary(vehicleId: string): Promise<boolean> {
-    return this.withSaving(vehicleId, async () => {
-      await this.service.setPrimary(vehicleId);
-      await this.refresh();
-    });
+    return this.withSaving(
+      vehicleId,
+      async () => {
+        await this.service.setPrimary(vehicleId);
+        await this.refresh();
+      },
+      'Primary vehicle updated.',
+    );
   }
 
   async deactivate(vehicleId: string): Promise<boolean> {
-    return this.withSaving(vehicleId, async () => {
-      const vehicle = await this.service.deactivate(vehicleId);
-      this._vehicles.update((existing) => existing.map((v) => (v.id === vehicleId ? vehicle : v)));
-    });
+    return this.withSaving(
+      vehicleId,
+      async () => {
+        const vehicle = await this.service.deactivate(vehicleId);
+        this._vehicles.update((existing) =>
+          existing.map((v) => (v.id === vehicleId ? vehicle : v)),
+        );
+      },
+      'Vehicle deactivated.',
+    );
   }
 
-  private async withSaving(vehicleId: string | null, action: () => Promise<void>): Promise<boolean> {
+  private async withSaving(
+    vehicleId: string | null,
+    action: () => Promise<void>,
+    successMessage = 'Vehicle saved.',
+  ): Promise<boolean> {
     this._saving.set(true);
     this._saveError.set(null);
+    this._saveSuccess.set(null);
     this._pendingVehicleId.set(vehicleId);
     try {
       await action();
+      this._saveSuccess.set(successMessage);
       return true;
-    } catch {
-      this._saveError.set('Unable to save this vehicle. Please check the form and try again.');
+    } catch (error) {
+      this._saveError.set(
+        extractHttpErrorMessage(
+          error,
+          'Unable to save this vehicle. Please check the form and try again.',
+        ),
+      );
       return false;
     } finally {
       this._saving.set(false);

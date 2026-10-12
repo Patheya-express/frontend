@@ -37,8 +37,8 @@ export class DeliveryAssignmentsFacade {
     return this.store.rejectAssignment(assignmentId);
   }
 
-  openPickupOtpDialog(assignmentId: string): Promise<void> {
-    return this.store.openPickupOtpDialog(assignmentId);
+  confirmPickup(assignmentId: string): Promise<void> {
+    return this.store.confirmPickup(assignmentId);
   }
 
   openDeliveryOtpDialog(assignmentId: string): Promise<void> {
@@ -69,8 +69,8 @@ export class DeliveryAssignmentsFacade {
     this.store.closePickupPhotoDialog();
   }
 
-  selectPickupPhoto(file: File): void {
-    this.store.selectPickupPhoto(file);
+  selectPickupPhoto(file: File): Promise<void> {
+    return this.store.selectPickupPhoto(file);
   }
 
   submitPickupPhoto(): Promise<void> {

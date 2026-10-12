@@ -1,11 +1,29 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  inject,
+  signal,
+} from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { ErrorStateComponent, FileUploadComponent, SkeletonComponent, StatusChipComponent, type StatusChipTone } from '@patheya-express-frontend/ui';
+import {
+  DOCUMENT_UPLOAD_LIMITS,
+  ErrorStateComponent,
+  FileUploadComponent,
+  SkeletonComponent,
+  StatusChipComponent,
+  type StatusChipTone,
+} from '@patheya-express-frontend/ui';
 import type { DeliveryDocumentResponseDto } from '@patheya-express-frontend/api-sdk';
-import { DOCUMENT_GROUPS, DeliveryDocumentsFacade } from '../../facades/delivery-documents.facade';
+import {
+  DOCUMENT_GROUPS,
+  DeliveryDocumentsFacade,
+} from '../../facades/delivery-documents.facade';
 import type { DeliveryDocumentType } from '../../services/delivery-documents.service';
 
-function statusTone(status: DeliveryDocumentResponseDto['status']): StatusChipTone {
+function statusTone(
+  status: DeliveryDocumentResponseDto['status'],
+): StatusChipTone {
   switch (status) {
     case 'VERIFIED':
       return 'success';
@@ -18,6 +36,18 @@ function statusTone(status: DeliveryDocumentResponseDto['status']): StatusChipTo
       return 'neutral';
   }
 }
+
+/** Documents the onboarding application cannot be submitted without — mirrors the backend
+ *  onboarding step rules (onboarding-step-requirements.ts: steps 4–8 and 10). */
+const REQUIRED_DOCUMENT_TYPES: ReadonlySet<DeliveryDocumentType> =
+  new Set<DeliveryDocumentType>([
+    'DRIVING_LICENSE',
+    'AADHAAR',
+    'PAN',
+    'VEHICLE_RC',
+    'VEHICLE_INSURANCE',
+    'SELFIE',
+  ]);
 
 const TYPE_LABELS: Record<DeliveryDocumentType, string> = {
   DRIVING_LICENSE: 'Driving License',
@@ -40,7 +70,13 @@ const TYPE_LABELS: Record<DeliveryDocumentType, string> = {
 @Component({
   selector: 'lib-documents-page',
   standalone: true,
-  imports: [DatePipe, SkeletonComponent, ErrorStateComponent, StatusChipComponent, FileUploadComponent],
+  imports: [
+    DatePipe,
+    SkeletonComponent,
+    ErrorStateComponent,
+    StatusChipComponent,
+    FileUploadComponent,
+  ],
   templateUrl: './documents-page.component.html',
   styleUrl: './documents-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -48,8 +84,12 @@ const TYPE_LABELS: Record<DeliveryDocumentType, string> = {
 export class DocumentsPageComponent implements OnInit {
   protected readonly facade = inject(DeliveryDocumentsFacade);
   protected readonly groups = DOCUMENT_GROUPS;
+  protected readonly uploadLimits = DOCUMENT_UPLOAD_LIMITS;
+  protected readonly isRequired = (type: DeliveryDocumentType): boolean =>
+    REQUIRED_DOCUMENT_TYPES.has(type);
   protected readonly statusTone = statusTone;
-  protected readonly typeLabel = (type: DeliveryDocumentType): string => TYPE_LABELS[type];
+  protected readonly typeLabel = (type: DeliveryDocumentType): string =>
+    TYPE_LABELS[type];
 
   protected readonly historyOpenFor = signal<DeliveryDocumentType | null>(null);
 

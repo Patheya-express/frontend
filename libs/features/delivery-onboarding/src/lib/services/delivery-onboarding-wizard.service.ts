@@ -49,22 +49,42 @@ export class DeliveryOnboardingWizardService {
   private readonly bankAccountService = inject(DeliveryBankAccountService);
 
   async getState(): Promise<DeliveryOnboardingResponseDto> {
-    const response = await this.onboardingService.deliveryOnboardingControllerGetState();
+    const response =
+      await this.onboardingService.deliveryOnboardingControllerGetState();
     return unwrap(response);
   }
 
   async completeStep(step: number): Promise<DeliveryOnboardingResponseDto> {
-    const response = await this.onboardingService.deliveryOnboardingControllerCompleteStep({ step });
+    const response =
+      await this.onboardingService.deliveryOnboardingControllerCompleteStep({
+        step,
+      });
     return unwrap(response);
   }
 
-  async submit(dto: SubmitDeliveryOnboardingDto): Promise<DeliveryOnboardingResponseDto> {
-    const response = await this.onboardingService.deliveryOnboardingControllerSubmit({ body: dto });
+  async recordBackgroundCheckConsent(): Promise<DeliveryOnboardingResponseDto> {
+    const response =
+      await this.onboardingService.deliveryOnboardingControllerRecordBackgroundCheckConsent(
+        {
+          body: { consent: true },
+        },
+      );
+    return unwrap(response);
+  }
+
+  async submit(
+    dto: SubmitDeliveryOnboardingDto,
+  ): Promise<DeliveryOnboardingResponseDto> {
+    const response =
+      await this.onboardingService.deliveryOnboardingControllerSubmit({
+        body: dto,
+      });
     return unwrap(response);
   }
 
   async getVerification(): Promise<DeliveryVerificationResponseDto> {
-    const response = await this.verificationService.deliveryVerificationControllerGetStatus();
+    const response =
+      await this.verificationService.deliveryVerificationControllerGetStatus();
     return unwrap(response);
   }
 
@@ -73,8 +93,12 @@ export class DeliveryOnboardingWizardService {
     return unwrap(response);
   }
 
-  async updateProfile(dto: UpdateDeliveryProfileDto): Promise<DeliveryProfileResponseDto> {
-    const response = await this.profileService.profileControllerUpdateMyProfile({ body: dto });
+  async updateProfile(
+    dto: UpdateDeliveryProfileDto,
+  ): Promise<DeliveryProfileResponseDto> {
+    const response = await this.profileService.profileControllerUpdateMyProfile(
+      { body: dto },
+    );
     return unwrap(response);
   }
 
@@ -84,12 +108,15 @@ export class DeliveryOnboardingWizardService {
   }
 
   async createVehicle(dto: CreateVehicleDto): Promise<VehicleResponseDto> {
-    const response = await this.vehiclesService.vehiclesControllerCreate({ body: dto });
+    const response = await this.vehiclesService.vehiclesControllerCreate({
+      body: dto,
+    });
     return unwrap(response);
   }
 
   async getDocuments(): Promise<DeliveryDocumentResponseDto[]> {
-    const response = await this.documentsService.deliveryDocumentsControllerFindAll();
+    const response =
+      await this.documentsService.deliveryDocumentsControllerFindAll();
     return unwrap(response);
   }
 
@@ -98,28 +125,35 @@ export class DeliveryOnboardingWizardService {
     file: File,
     options?: { vehicleId?: string; previousVersionId?: string },
   ): Promise<DeliveryDocumentResponseDto> {
-    const response = await this.documentsService.deliveryDocumentsControllerUpload({
-      body: {
-        file,
-        documentType,
-        vehicleId: options?.vehicleId,
-        previousVersionId: options?.previousVersionId,
-      },
-    });
+    const response =
+      await this.documentsService.deliveryDocumentsControllerUpload({
+        body: {
+          file,
+          documentType,
+          vehicleId: options?.vehicleId,
+          previousVersionId: options?.previousVersionId,
+        },
+      });
     return unwrap(response);
   }
 
   async getBankAccount(): Promise<DeliveryBankAccountResponseDto | null> {
     try {
-      const response = await this.bankAccountService.deliveryBankAccountControllerFind();
+      const response =
+        await this.bankAccountService.deliveryBankAccountControllerFind();
       return unwrap(response);
     } catch {
       return null;
     }
   }
 
-  async upsertBankAccount(dto: UpsertDeliveryBankAccountDto): Promise<DeliveryBankAccountResponseDto> {
-    const response = await this.bankAccountService.deliveryBankAccountControllerUpsert({ body: dto });
+  async upsertBankAccount(
+    dto: UpsertDeliveryBankAccountDto,
+  ): Promise<DeliveryBankAccountResponseDto> {
+    const response =
+      await this.bankAccountService.deliveryBankAccountControllerUpsert({
+        body: dto,
+      });
     return unwrap(response);
   }
 }
