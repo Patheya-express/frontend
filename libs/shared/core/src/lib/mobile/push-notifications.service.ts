@@ -101,6 +101,32 @@ export class PushNotificationsService {
     await PushNotifications.register();
   }
 
+  /**
+   * Android 8+ only (no-op elsewhere): creates or updates a notification channel. Pushes that name
+   * this channel (FCM `android.notification.channel_id`) use its importance — e.g. importance 5
+   * for heads-up banners on time-sensitive alerts. Idempotent; best-effort.
+   */
+  async createAndroidChannel(channel: {
+    id: string;
+    name: string;
+    description: string;
+    importance: 1 | 2 | 3 | 4 | 5;
+  }): Promise<void> {
+    if (!this.isNative || Capacitor.getPlatform() !== 'android') {
+      return;
+    }
+
+    try {
+      await PushNotifications.createChannel({
+        ...channel,
+        visibility: 1,
+        vibration: true,
+      });
+    } catch {
+      // A missing channel only means the OS default channel is used — not worth surfacing.
+    }
+  }
+
   acknowledgeTap(): void {
     this._tapped.set(null);
   }

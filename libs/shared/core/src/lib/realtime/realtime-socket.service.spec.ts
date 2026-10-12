@@ -394,6 +394,34 @@ describe('RealtimeSocketService — M4 realtime hardening', () => {
       expect(service.connected()).toBe(false);
     });
 
+    it('listeners registered before logout keep receiving events on the socket opened after the next login', () => {
+      const service = TestBed.inject(RealtimeSocketService);
+      const handler = jest.fn();
+      service.on('delivery.assignment', handler);
+      logoutRegistry.runAll();
+
+      // Next login: a feature joins its room again, which opens a brand-new Socket.
+      service.joinRoom('user:1');
+      const secondSocket = currentSocket();
+      secondSocket.trigger('delivery.assignment', { assignmentId: 'a-1' });
+
+      expect(sockets).toHaveLength(2);
+      expect(handler).toHaveBeenCalledTimes(1);
+    });
+
+    it('an unsubscribed listener is not reattached to the socket opened after the next login', () => {
+      const service = TestBed.inject(RealtimeSocketService);
+      const handler = jest.fn();
+      const unsubscribe = service.on('delivery.assignment', handler);
+      unsubscribe();
+      logoutRegistry.runAll();
+
+      service.joinRoom('user:1');
+      currentSocket().trigger('delivery.assignment', { assignmentId: 'a-1' });
+
+      expect(handler).not.toHaveBeenCalled();
+    });
+
     it('a subsequent resume does not recreate a session after logout', () => {
       const service = TestBed.inject(RealtimeSocketService);
       service.joinRoom('order:1');
